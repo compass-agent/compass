@@ -73,3 +73,8 @@ config/
 # macOS specific
 Thumbs.db
 .DS_Store
+
+# Python compiled files
+*.pyc
+__pycache__/
+backend/env/
