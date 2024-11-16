@@ -1,21 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import StateManager from '../services/stateManager';
+import WebSocketService from '../services/websocket';
 
-function MessageInput({ onSendMessage }) {
+function MessageInput() {
   const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [playState, setPlayState] = useState('stopped');
+
+  useEffect(() => {
+    return StateManager.subscribe('agent', (state) => {
+      if (!state.processing && !state.playing) {
+        setPlayState('stopped');
+      } else if (state.processing && state.playing) {
+        setPlayState('running');
+      } else if (!state.playing) {
+        setPlayState('stopping');
+      }
+    });
+  }, []);
+
+  const handleChange = (e) => {
+    const newMessage = e.target.value;
+    setMessage(newMessage);
+    StateManager.setState('chat.currentInput', newMessage);
+  };
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || playState !== 'stopped') return;
 
-    setIsLoading(true);
-    await onSendMessage(message);
-    setMessage('');
-    setIsLoading(false);
+    try {
+      WebSocketService.sendMessage(message);
+      setMessage('');
+      StateManager.setState('chat.currentInput', '');
+    } catch (error) {
+      StateManager.setState('chat.error', error.message);
+    }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSubmit();
     }
   };
@@ -25,19 +49,12 @@ function MessageInput({ onSendMessage }) {
       <input 
         type="text" 
         className="message-input" 
-        placeholder="Ask Compass ..."
+        placeholder={playState !== 'stopped' ? "Processing..." : "Ask Compass ..."}
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={handleKeyPress}
-        disabled={isLoading}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        disabled={playState !== 'stopped'}
       />
-      <button 
-        className="send-button"
-        onClick={handleSubmit}
-        disabled={isLoading}
-      >
-        <span className="arrow">→</span>
-      </button>
     </div>
   );
 }

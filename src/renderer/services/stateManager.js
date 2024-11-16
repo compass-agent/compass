@@ -3,21 +3,21 @@ class StateManager {
     this.listeners = new Map();
     this.state = {
       connection: {
-        isConnected: false,
-        isReconnecting: false,
+        connected: false,
+        reconnecting: false,
         error: null
       },
       agent: {
-        isAutoMode: false,
-        isHighlightMode: false,
-        isPlaying: false,
-        isProcessing: false,
+        autoMode: false,
+        highlightMode: false,
+        playing: false,
+        processing: false,
         currentTask: null
       },
       chat: {
         messages: [],
-        isTyping: false,
-        error: null
+        error: null,
+        currentInput: ''
       }
     };
   }
@@ -26,9 +26,17 @@ class StateManager {
     const parts = path.split('.');
     let current = this.state;
     for (let i = 0; i < parts.length - 1; i++) {
+      if (!(parts[i] in current)) {
+        current[parts[i]] = {};
+      }
       current = current[parts[i]];
     }
-    current[parts[parts.length - 1]] = value;
+    const key = parts[parts.length - 1];
+    if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+      current[key] = { ...current[key], ...value };
+    } else {
+      current[key] = value;
+    }
 
     this.notifyListeners(path);
   }

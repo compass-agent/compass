@@ -105,3 +105,15 @@ body {
 .control-button:active:not(:disabled) {
   transform: scale(0.95);
 }
+
+/* Add animation for stopping state */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.control-button[title="Stopping"] {
+  animation: pulse 1s infinite;
+  background-color: #fff3e6;
+}

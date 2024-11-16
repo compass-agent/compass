@@ -1,34 +1,70 @@
 import asyncio
+import logging
 import threading
 from time import sleep
+from typing import Any, Dict
 
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 class AgentService:
     def __init__(self, socketio=None):
         self.socketio = socketio
-        self.current_task = None
-        self.is_running = False
-        self.state = {
-            'is_auto_mode': False,
-            'is_highlight_mode': False,
-            'is_playing': False,
-            'is_processing': False,
-            'current_task': None
-        }
         self.processing_thread = None
+        # Add state management
+        self.state = {
+            'autoMode': False,
+            'highlightMode': False,
+            'playing': False,
+            'processing': False,
+            'currentTask': None
+        }
+        logger.info("AgentService initialized")
 
-    def process_message(self, message):
-        """
-        Process message with iteration loop based on auto mode
-        """
-        # Stop any existing processing
+    def _update_state(self, state_update: Dict[str, Any]) -> None:
+        """Update internal state and emit update through socketio"""
+        # Update internal state
+        self.state.update(state_update)
+        
+        if self.socketio:
+            logger.debug(f"Emitting state update: {state_update}")
+            self.socketio.emit('state_update', state_update)
+
+    def _get_state(self, key: str) -> Any:
+        """Get current state from internal state"""
+        logger.debug(f"Getting state for key: {key}")
+        return self.state.get(key)
+
+    def _get_full_state(self) -> Dict[str, Any]:
+        """Get full current state"""
+        logger.debug("Getting full state")
+        return self.state.copy()
+
+    def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle state updates from the frontend"""
+        logger.info(f"Updating state: {state_update}")
+        self._update_state(state_update)
+        
+        if state_update.get('playing') is False:
+            self.stop_processing()
+            
+        return self._get_full_state()
+
+    def get_full_state(self) -> Dict[str, Any]:
+        """Get full current state"""
+        logger.debug("Getting full state")
+        return self.state.copy()
+
+    def process_message(self, message: str) -> Dict[str, Any]:
+        """Process message with iteration loop based on auto mode"""
+        logger.info(f"Processing new message: {message}")
         self.stop_processing()
         
-        # Set playing state to True when starting new message
-        self.state['is_playing'] = True
-        self.state['is_processing'] = True
-        
-        print(f"Current state before processing: {self.state}")  # Debug print
+        # Update state
+        self._update_state({
+            'playing': True,
+            'processing': True
+        })
         
         # Start new processing thread
         self.processing_thread = threading.Thread(
@@ -36,32 +72,28 @@ class AgentService:
             args=(message,)
         )
         self.processing_thread.start()
+        logger.info("Started new processing thread")
         
-        # Return initial message
         return {
             'type': 'ai',
             'text': f"Starting to process: {message}"
         }
 
-    def _process_message_loop(self, message):
-        """
-        Internal method to handle message processing loop
-        """
-        self.state['is_processing'] = True
-        max_iterations = 10 if self.state['is_auto_mode'] else 1
+    def _process_message_loop(self, message: str) -> None:
+        """Internal method to handle message processing loop"""
+        max_iterations = 10 if self._get_state('autoMode') else 1
         iteration = 1
-
-        print(f"Starting loop - Auto mode: {self.state['is_auto_mode']}, Max iterations: {max_iterations}")
+        
+        logger.info(f"Starting message loop - playing: {self._get_state('playing')}, processing: {self._get_state('processing')}, autoMode: {self._get_state('autoMode')}")
         
         while (iteration <= max_iterations and 
-               self.state['is_playing'] and 
-               self.state['is_processing']):
+               self._get_state('playing') and 
+               self._get_state('processing')):
             
-            print(f"Processing iteration {iteration}/{max_iterations}")
-            print(f"State: playing={self.state['is_playing']}, processing={self.state['is_processing']}")
-            
-            # Use socketio instance instead of emit directly
+            logger.debug(f"Processing iteration {iteration}/{max_iterations}")
             if self.socketio:
+                # Simulate LLM processing time
+                sleep(6)  # Add 3-second delay before response
                 self.socketio.emit('response', {
                     'type': 'ai',
                     'text': f"Message {iteration}/{max_iterations}: {message}"
@@ -69,55 +101,30 @@ class AgentService:
 
             iteration += 1
             if iteration <= max_iterations:
-                # Break the sleep into smaller chunks to check state more frequently
-                for _ in range(3):  # 3 seconds total, checking every second
-                    if not self.state['is_playing'] or not self.state['is_processing']:
-                        print("Loop interrupted by pause")
+                for _ in range(3):
+                    if not self._get_state('playing') or not self._get_state('processing'):
+                        logger.info(f"Processing interrupted - playing: {self._get_state('playing')}, processing: {self._get_state('processing')}")
                         break
                     sleep(1)
-                if not self.state['is_playing'] or not self.state['is_processing']:
+                if not self._get_state('playing') or not self._get_state('processing'):
                     break
 
-        print("Loop ended")
-        self.state['is_processing'] = False
-        if self.socketio:
-            self.socketio.emit('state_update', self.state)
+        logger.info("Message processing completed")
+        self._update_state({'processing': False})
 
-    def stop_processing(self):
-        """
-        Stop current processing loop
-        """
-        print("Stopping processing...")  # Debug print
-        self.state['is_processing'] = False
-        self.state['is_playing'] = False
+    def stop_processing(self) -> None:
+        """Stop current processing loop"""
         if self.processing_thread and self.processing_thread.is_alive():
-            self.processing_thread.join(timeout=1.0)  # Wait up to 1 second for thread to finish
-
-    def update_state(self, state_update):
-        """
-        Handle state updates from the frontend
-        """
-        print(f"AgentService updating state: {state_update}")
-        # Convert frontend keys to backend keys
-        key_mapping = {
-            'auto_mode': 'is_auto_mode',
-            'highlight_mode': 'is_highlight_mode',
-            'playing': 'is_playing'
-        }
-        
-        for key, value in state_update.items():
-            backend_key = key_mapping.get(key, key)
-            if backend_key in self.state:
-                self.state[backend_key] = value
-                print(f"Updated {backend_key} to {value}")  # Debug print
-                
-                # Stop processing if paused
-                if backend_key == 'is_playing' and not value:
-                    self.stop_processing()
-        
-        # Emit state update after changes
-        if self.socketio:
-            self.socketio.emit('state_update', self.state)
-        
-        print(f"Final state after update: {self.state}")  # Debug print
-        return self.state 
+            logger.info("Stopping active message processing thread")
+            # Only update playing state, keep processing true
+            self._update_state({
+                'playing': False
+            })
+            
+            self.processing_thread.join(timeout=1.0)
+            if self.processing_thread.is_alive():
+                logger.warning("Processing thread did not stop within timeout")
+            else:
+                logger.info("Processing thread successfully stopped")
+        else:
+            logger.info("No active processing thread to stop")

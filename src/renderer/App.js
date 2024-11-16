@@ -5,7 +5,6 @@ import MessageInput from './components/MessageInput';
 import ControlPanel from './components/ControlPanel';
 import WebSocketService from './services/websocket';
 import StateManager from './services/stateManager';
-import MessageHandler from './services/messageHandler';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -19,11 +18,6 @@ function App() {
     // Connect to WebSocket server
     WebSocketService.connect();
 
-    // Set up message handlers
-    WebSocketService.onMessage('response', (response) => {
-      MessageHandler.handleIncomingMessage(response);
-    });
-
     // Cleanup on unmount
     return () => {
       unsubscribeMessages();
@@ -31,17 +25,6 @@ function App() {
       WebSocketService.disconnect();
     };
   }, []);
-
-  const handleSendMessage = async (message) => {
-    // Add user message to state
-    StateManager.setState('chat.messages', [...messages, { 
-      type: 'user',
-      text: message 
-    }]);
-
-    // Queue message for sending
-    await MessageHandler.queueOutgoingMessage(message);
-  };
 
   return (
     <div className="App">
@@ -51,8 +34,7 @@ function App() {
         )}
         <ChatHistory messages={messages} />
         <MessageInput 
-          onSendMessage={handleSendMessage} 
-          disabled={!connectionStatus.isConnected}
+          disabled={!connectionStatus.connected}
         />
         <ControlPanel />
       </div>
