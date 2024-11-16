@@ -1,25 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import WebSocketService from '../services/websocket';
 
 function ControlPanel() {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [isHighlightMode, setIsHighlightMode] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  useEffect(() => {
+    WebSocketService.onMessage('state_update', (state) => {
+      setIsAutoMode(state.is_auto_mode);
+      setIsHighlightMode(state.is_highlight_mode);
+      setIsPlaying(state.is_playing);
+    });
+  }, []);
+
   const handleAutoModeToggle = () => {
-    setIsAutoMode(!isAutoMode);
-    if (!isAutoMode) {
+    const newState = !isAutoMode;
+    setIsAutoMode(newState);
+    WebSocketService.updateControlState({ auto_mode: newState });
+    if (newState) {
       setIsHighlightMode(false);
     }
   };
 
   const handleHighlightToggle = () => {
     if (!isAutoMode) {
-      setIsHighlightMode(!isHighlightMode);
+      const newState = !isHighlightMode;
+      setIsHighlightMode(newState);
+      WebSocketService.updateControlState({ highlight_mode: newState });
     }
   };
 
   const handlePlayPauseToggle = () => {
-    setIsPlaying(!isPlaying);
+    const newState = !isPlaying;
+    setIsPlaying(newState);
+    WebSocketService.updateControlState({ playing: newState });
   };
 
   return (

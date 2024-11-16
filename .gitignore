@@ -54,7 +54,10 @@ coverage/
 *.sln
 
 # Miscellaneous files
-.env
+backend/.env
+frontend/.env
+backend/.env
+frontend/.env
 *.env.local
 .env.development.local
 .env.test.local
