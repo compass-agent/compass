@@ -5,12 +5,14 @@ function ControlPanel() {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [isHighlightMode, setIsHighlightMode] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     WebSocketService.onMessage('state_update', (state) => {
       setIsAutoMode(state.is_auto_mode);
       setIsHighlightMode(state.is_highlight_mode);
       setIsPlaying(state.is_playing);
+      setIsProcessing(state.is_processing);
     });
   }, []);
 
@@ -64,7 +66,7 @@ function ControlPanel() {
         title={isPlaying ? "Pause" : "Play"}
       >
         <i className="icon-play">
-          {isPlaying ? '⏸️' : '▶️'}
+          {isPlaying ? '▶️' : '⏸️'}
         </i>
       </button>
     </div>

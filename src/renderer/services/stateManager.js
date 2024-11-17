@@ -11,6 +11,7 @@ class StateManager {
         isAutoMode: false,
         isHighlightMode: false,
         isPlaying: false,
+        isProcessing: false,
         currentTask: null
       },
       chat: {

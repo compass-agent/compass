@@ -16,7 +16,7 @@ socketio = SocketIO(app,
                    engineio_logger=True)
 
 # Initialize services
-agent_service = AgentService()
+agent_service = AgentService(socketio=socketio)
 websocket_service = WebSocketService(agent_service)
 
 # Mock agent state
