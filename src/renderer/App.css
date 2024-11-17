@@ -1,4 +1,25 @@
+body {
+  margin: 0;
+}
+
 .App {
   text-align: center;
   padding: 20px;
+  background-color: #fff;
+  margin: 10px;
+  position: relative;
+  height: calc(100vh - 20px);
+  width: calc(100vw - 20px);
+  display: flex;
+  flex-direction: column;
+}
+
+.title-bar {
+  height: 30px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-app-region: drag;
+  background-color: #d31717;
 }

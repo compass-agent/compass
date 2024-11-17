@@ -9,6 +9,9 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false
     },
+    alwaysOnTop: true,
+    frame: true,
+    resizable: true
   });
 
   const indexPath = path.join(__dirname, '../renderer/index.html');

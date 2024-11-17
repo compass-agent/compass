@@ -7,7 +7,8 @@
     "watch": "webpack --watch",
     "build": "webpack --mode production",
     "package": "npm run build && electron-builder build --mac",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run watch\" \"npm run start\""
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "@babel/preset-react": "^7.25.9",
     "@electron/remote": "^2.1.2",
     "babel-loader": "^9.2.1",
+    "concurrently": "^9.1.0",
     "css-loader": "^7.1.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
