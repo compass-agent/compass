@@ -1,53 +1,60 @@
 import io from 'socket.io-client';
-import StateManager from './stateManager';
 
 class WebSocketService {
   constructor() {
     this.socket = null;
+    this.stateHandlers = null;
+  }
+
+  setStateHandlers(handlers) {
+    this.stateHandlers = handlers;
   }
 
   connect() {
     this.socket = io('http://localhost:5001');
 
     this.socket.on('connect', () => {
-      StateManager.setState('connection.connected', true);
+      this.stateHandlers?.onConnect();
     });
 
     this.socket.on('disconnect', () => {
-      StateManager.setState('connection.connected', false);
+      this.stateHandlers?.onDisconnect();
     });
 
     this.socket.on('response', (data) => {
-      if (data.type === 'ai') {
-        const currentMessages = StateManager.getState('chat.messages');
-        StateManager.setState('chat.messages', [...currentMessages, data]);
-      }
+      this.stateHandlers?.onResponse(data);
     });
 
     this.socket.on('state_update', (data) => {
-      StateManager.setState('agent', data);
+      if (data && typeof data === 'object') {
+        this.stateHandlers?.onStateUpdate({
+          ...data,
+          processing: data.processing ?? false,
+          playing: data.playing ?? false
+        });
+      }
     });
 
     this.socket.on('error', (error) => {
-      StateManager.setState('chat.error', error.message);
+      this.stateHandlers?.onError(error);
     });
   }
 
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
+      this.socket = null;
     }
   }
 
   sendMessage(message) {
-    if (this.socket) {
+    if (this.socket?.connected) {
       this.socket.emit('message', { text: message });
-      this.socket.emit('control_update', { playing: true });
     }
   }
 
   updateControlState(state) {
-    if (this.socket) {
+    if (this.socket?.connected) {
       this.socket.emit('control_update', state);
     }
   }

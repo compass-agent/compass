@@ -1,165 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import WebSocketService from '../services/websocket';
-import StateManager from '../services/stateManager';
-
-// Define play states as constants
-const PLAY_STATES = {
-  STOPPED: 'stopped',
-  RUNNING: 'running',
-  STOPPING: 'stopping'
-};
-
-// Add at the top of the file
-const logState = (message, state = {}) => {
-  console.log(`[ControlPanel] ${message}`, {
-    timestamp: new Date().toISOString(),
-    ...state
-  });
-};
+import { useAppState } from '../context/AppContext';
 
 function ControlPanel() {
-  const [isAutoMode, setIsAutoMode] = useState(false);
-  const [isHighlightMode, setIsHighlightMode] = useState(false);
-  const [playState, setPlayState] = useState(PLAY_STATES.STOPPED);
-  const [currentInput, setCurrentInput] = useState('');
+  const { state, dispatch } = useAppState();
+  const { agent: agentState, chat } = state;
 
-  useEffect(() => {
-    return StateManager.subscribe('agent', (state) => {
-      logState('Received agent state update:', {
-        autoMode: state.autoMode,
-        highlightMode: state.highlightMode,
-        playing: state.playing,
-        processing: state.processing,
-        currentPlayState: playState,
-      });
-
-      setIsAutoMode(state.autoMode);
-      setIsHighlightMode(state.highlightMode);
-      
-      // Log state transition logic
-      if (!state.processing && !state.playing) {
-        logState('Transitioning to STOPPED state', { reason: 'not processing and not playing' });
-        setPlayState(PLAY_STATES.STOPPED);
-      } else if (state.processing && state.playing) {
-        logState('Transitioning to RUNNING state', { reason: 'processing and playing' });
-        setPlayState(PLAY_STATES.RUNNING);
-      } else if (state.processing && !state.playing) {
-        logState('Transitioning to STOPPING state', { reason: 'processing but not playing' });
-        setPlayState(PLAY_STATES.STOPPING);
-      } else {
-        logState('Unexpected state combination', {
-          processing: state.processing,
-          playing: state.playing
-        });
+  const handlePlayToggle = () => {
+    if (!agentState.processing && !agentState.playing) {
+      if (chat.currentInput?.trim()) {
+        dispatch({ type: 'START_PROCESSING' });
+        WebSocketService.sendMessage(chat.currentInput);
       }
-    });
-  }, [playState]); // Added playState to dependencies
-
-  useEffect(() => {
-    logState('PlayState changed', { newPlayState: playState });
-  }, [playState]);
-
-  useEffect(() => {
-    return StateManager.subscribe('chat.currentInput', (input) => {
-      logState('Current input updated', { input });
-      setCurrentInput(input);
-    });
-  }, []);
-
-  const handlePlayStateToggle = () => {
-    logState('Play button clicked', { 
-      currentPlayState: playState,
-      hasInput: Boolean(currentInput?.trim())
-    });
-
-    switch (playState) {
-      case PLAY_STATES.STOPPED:
-        if (currentInput?.trim()) {
-          logState('Starting new task', { input: currentInput });
-          setPlayState(PLAY_STATES.RUNNING);
-          WebSocketService.sendMessage(currentInput);
-        } else {
-          logState('Cannot start - no input');
-        }
-        break;
-      case PLAY_STATES.RUNNING:
-        logState('Requesting stop');
-        setPlayState(PLAY_STATES.STOPPING);
-        WebSocketService.updateControlState({ playing: false });
-        break;
-      case PLAY_STATES.STOPPING:
-        logState('Already stopping - button should be disabled');
-        break;
-      default:
-        logState('Unexpected play state', { playState });
-        break;
+    } else {
+      dispatch({ type: 'STOP_PROCESSING' });
+      WebSocketService.updateControlState({ playing: false });
     }
   };
 
   const handleAutoModeToggle = () => {
-    const newState = !isAutoMode;
-    logState('Auto mode toggled', { newState });
-    setIsAutoMode(newState);
-    WebSocketService.updateControlState({ autoMode: newState });
-    if (newState) {
-      setIsHighlightMode(false);
-    }
+    const newAutoMode = !agentState.autoMode;
+    WebSocketService.updateControlState({ 
+      autoMode: newAutoMode,
+      highlightMode: newAutoMode ? false : agentState.highlightMode 
+    });
   };
 
   const handleHighlightToggle = () => {
-    if (!isAutoMode) {
-      const newState = !isHighlightMode;
-      logState('Highlight mode toggled', { newState });
-      setIsHighlightMode(newState);
-      WebSocketService.updateControlState({ highlightMode: newState });
-    } else {
-      logState('Cannot toggle highlight mode - auto mode is active');
+    if (!agentState.autoMode) {
+      WebSocketService.updateControlState({ 
+        highlightMode: !agentState.highlightMode 
+      });
     }
   };
 
-  const getPlayStateIcon = () => {
-    switch (playState) {
-      case PLAY_STATES.RUNNING:
-        return '⏸️'; // Running, can be paused
-      case PLAY_STATES.STOPPING:
-        return '⏳'; // Stopping in progress
-      case PLAY_STATES.STOPPED:
-        return '▶️'; // Stopped, can be started
-      default:
-        return '▶️';
-    }
+  const getPlayButtonIcon = () => {
+    if (agentState.processing && agentState.playing) return '⏸️';
+    if (agentState.processing && !agentState.playing) return '⏳';
+    return '▶️';
   };
 
   return (
     <div className="control-panel">
       <button 
-        className={`control-button ${isAutoMode ? 'active' : ''}`}
+        className={`control-button ${agentState.autoMode ? 'active' : ''}`}
         onClick={handleAutoModeToggle}
-        title={isAutoMode ? "Automatic Mode (On)" : "Automatic Mode (Off)"}
+        title={agentState.autoMode ? "Automatic Mode (On)" : "Automatic Mode (Off)"}
       >
         <i className="icon-auto">
-          {isAutoMode ? '➡️➡️➡️' : '➡️'}
+          {agentState.autoMode ? '➡️➡️➡️' : '➡️'}
         </i>
       </button>
+      
       <button 
-        className={`control-button ${isHighlightMode ? 'active' : ''}`}
+        className={`control-button ${agentState.highlightMode ? 'active' : ''}`}
         onClick={handleHighlightToggle}
-        disabled={isAutoMode}
-        title={isHighlightMode ? "Highlight Mode (On)" : "Highlight Mode (Off)"}
+        disabled={agentState.autoMode}
+        title={agentState.highlightMode ? "Highlight Mode (On)" : "Highlight Mode (Off)"}
       >
         <i className="icon-highlight">
-          {isHighlightMode ? '💡' : 'ℹ️'}
+          {agentState.highlightMode ? '💡' : 'ℹ️'}
         </i>
       </button>
+      
       <button 
-        className={`control-button ${playState === PLAY_STATES.RUNNING ? 'active' : ''}`}
-        onClick={handlePlayStateToggle}
-        disabled={playState === PLAY_STATES.STOPPING}
-        title={playState.charAt(0).toUpperCase() + playState.slice(1)}
+        className={`control-button ${agentState.playing ? 'active' : ''}`}
+        onClick={handlePlayToggle}
+        disabled={!chat.currentInput?.trim() && !agentState.processing}
+        title={agentState.playing ? "Stop" : "Start"}
       >
-        <i className="icon-play">
-          {getPlayStateIcon()}
-        </i>
+        <i className="icon-play">{getPlayButtonIcon()}</i>
       </button>
     </div>
   );

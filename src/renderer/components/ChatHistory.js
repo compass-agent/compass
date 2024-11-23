@@ -1,6 +1,10 @@
 import React from 'react';
+import { useAppState } from '../context/AppContext';
 
-function ChatHistory({ messages }) {
+function ChatHistory() {
+  const { state } = useAppState();
+  const { messages } = state.chat;
+
   return (
     <div className="chat-history">
       {messages.map((msg, index) => (

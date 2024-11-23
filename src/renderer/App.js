@@ -1,44 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './App.css';
 import ChatHistory from './components/ChatHistory';
 import MessageInput from './components/MessageInput';
 import ControlPanel from './components/ControlPanel';
-import WebSocketService from './services/websocket';
-import StateManager from './services/stateManager';
+import { AppProvider, useAppState } from './context/AppContext';
 
-function App() {
-  const [messages, setMessages] = useState([]);
-  const [connectionStatus, setConnectionStatus] = useState({});
-
-  useEffect(() => {
-    // Subscribe to state changes
-    const unsubscribeMessages = StateManager.subscribe('chat.messages', setMessages);
-    const unsubscribeConnection = StateManager.subscribe('connection', setConnectionStatus);
-
-    // Connect to WebSocket server
-    WebSocketService.connect();
-
-    // Cleanup on unmount
-    return () => {
-      unsubscribeMessages();
-      unsubscribeConnection();
-      WebSocketService.disconnect();
-    };
-  }, []);
+// Separate component for the main app content to use the context
+function AppContent() {
+  const { state } = useAppState();
+  const { connection } = state;
 
   return (
     <div className="App">
       <div className="content">
-        {connectionStatus.error && (
-          <div className="error-banner">{connectionStatus.error}</div>
+        {connection.error && (
+          <div className="error-banner">{connection.error}</div>
         )}
-        <ChatHistory messages={messages} />
+        <ChatHistory />
         <MessageInput 
-          disabled={!connectionStatus.connected}
+          disabled={!connection.connected}
         />
         <ControlPanel />
       </div>
     </div>
+  );
+}
+
+// Main App component wrapped with the provider
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
   );
 }
 

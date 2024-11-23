@@ -1,39 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import StateManager from '../services/stateManager';
+import React, { useState } from 'react';
 import WebSocketService from '../services/websocket';
+import { useAppState } from '../context/AppContext';
 
 function MessageInput() {
+  const { state, dispatch } = useAppState();
+  const { agent, chat } = state;
   const [message, setMessage] = useState('');
-  const [playState, setPlayState] = useState('stopped');
 
-  useEffect(() => {
-    return StateManager.subscribe('agent', (state) => {
-      if (!state.processing && !state.playing) {
-        setPlayState('stopped');
-      } else if (state.processing && state.playing) {
-        setPlayState('running');
-      } else if (!state.playing) {
-        setPlayState('stopping');
-      }
-    });
-  }, []);
+  const getPlayState = () => {
+    if (!agent.processing && !agent.playing) return 'stopped';
+    if (agent.processing && agent.playing) return 'running';
+    return 'stopping';
+  };
 
   const handleChange = (e) => {
     const newMessage = e.target.value;
     setMessage(newMessage);
-    StateManager.setState('chat.currentInput', newMessage);
+    dispatch({ 
+      type: 'SET_CHAT_INPUT', 
+      payload: newMessage 
+    });
   };
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
+    const playState = getPlayState();
+    
     if (!message.trim() || playState !== 'stopped') return;
 
     try {
       WebSocketService.sendMessage(message);
       setMessage('');
-      StateManager.setState('chat.currentInput', '');
+      dispatch({ 
+        type: 'SET_CHAT_INPUT', 
+        payload: '' 
+      });
     } catch (error) {
-      StateManager.setState('chat.error', error.message);
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error.message 
+      });
     }
   };
 
@@ -43,6 +49,8 @@ function MessageInput() {
       handleSubmit();
     }
   };
+
+  const playState = getPlayState();
 
   return (
     <div className="message-input-container">

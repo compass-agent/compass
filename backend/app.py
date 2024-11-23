@@ -45,15 +45,6 @@ socketio = SocketIO(app,
 agent_service = AgentService(socketio=socketio)
 websocket_service = WebSocketService(agent_service)
 
-# Mock agent state
-agent_state = {
-    'autoMode': False,
-    'highlightMode': False,
-    'playing': False,
-    'processing': False,
-    'currentTask': None
-}
-
 def signal_handler(sig, frame):
     logger.info('Shutting down gracefully...')
     socketio.stop()
@@ -77,6 +68,7 @@ def handle_message(data):
     
     try:
         response = agent_service.process_message(data.get('text', ''))
+        emit('state_update', agent_service.get_state())
         websocket_service.handle_message(response)
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
@@ -87,11 +79,8 @@ def handle_control_update(data):
     logger.info(f'Control update received: {data}')
     
     try:
-        # Update agent state through agent service
-        agent_service.update_state(data)
-        
-        # Broadcast full state update using websocket service
-        websocket_service.broadcast_state(agent_state)
+        updated_state = agent_service.update_state(data)
+        emit('state_update', updated_state, broadcast=True)
     except Exception as e:
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
         emit('error', {'message': str(e)})
