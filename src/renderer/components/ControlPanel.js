@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import WebSocketService from '../services/websocket';
 import { useAppState } from '../context/AppContext';
 
@@ -6,14 +6,25 @@ function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
 
+  useEffect(() => {
+    console.log('ControlPanel - Agent state updated:', {
+      processing: agentState.processing,
+      playing: agentState.playing,
+      currentInput: chat.currentInput
+    });
+  }, [agentState.processing, agentState.playing, chat.currentInput]);
+
   const handlePlayToggle = () => {
+    console.log('ControlPanel - Play toggle clicked:', {
+      processing: agentState.processing,
+      playing: agentState.playing
+    });
+
     if (!agentState.processing && !agentState.playing) {
       if (chat.currentInput?.trim()) {
-        dispatch({ type: 'START_PROCESSING' });
         WebSocketService.sendMessage(chat.currentInput);
       }
     } else {
-      dispatch({ type: 'STOP_PROCESSING' });
       WebSocketService.updateControlState({ playing: false });
     }
   };

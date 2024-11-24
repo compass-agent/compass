@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import threading
 from typing import Any, Dict
@@ -6,8 +5,8 @@ from typing import Any, Dict
 logger = logging.getLogger(__name__)
 
 class AgentService:
-    def __init__(self, socketio=None):
-        self.socketio = socketio
+    def __init__(self, websocket_service):
+        self.websocket_service = websocket_service
         self.processing_thread = None
         self.stop_event = threading.Event()
         self.state = {
@@ -20,9 +19,10 @@ class AgentService:
         logger.info("AgentService initialized")
 
     def _update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
-        """Update internal state and return the new state"""
+        """Update internal state and emit the new state"""
         self.state.update(state_update)
         logger.debug(f"State updated: {self.state}")
+        self.websocket_service.emit_state_update(self.state.copy())
         return self.state.copy()
 
     def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
@@ -34,7 +34,7 @@ class AgentService:
         
         return self._update_state(state_update)
 
-    def process_message(self, message: str) -> Dict[str, Any]:
+    def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
         logger.info(f"Processing new message: {message}")
         self.stop_processing()  # Stop any existing processing
@@ -55,11 +55,6 @@ class AgentService:
             args=(message,)
         )
         self.processing_thread.start()
-        
-        return {
-            'type': 'ai',
-            'text': f"Starting to process: {message}"
-        }
 
     def _process_message_loop(self, message: str) -> None:
         """Internal method to handle message processing loop"""
@@ -73,19 +68,18 @@ class AgentService:
                 
                 logger.debug(f"Processing iteration {iteration}/{max_iterations}")
                 
-                if self.socketio:
-                    # Check stop event every second instead of sleeping for 6 seconds
-                    for _ in range(6):
-                        if self.stop_event.is_set():
-                            logger.info("Processing interrupted by stop event")
-                            break
-                        threading.Event().wait(1.0)  # Non-blocking sleep
-                    
-                    if not self.stop_event.is_set():
-                        self.socketio.emit('response', {
-                            'type': 'ai',
-                            'text': f"Message {iteration}/{max_iterations}: {message}"
-                        })
+                # Check stop event every second instead of sleeping for 6 seconds
+                for _ in range(6):
+                    if self.stop_event.is_set():
+                        logger.info("Processing interrupted by stop event")
+                        break
+                    threading.Event().wait(1.0)  # Non-blocking sleep
+                
+                if not self.stop_event.is_set():
+                    self.websocket_service.handle_message({
+                        'type': 'ai',
+                        'text': f"Message {iteration}/{max_iterations}: {message}"
+                    })
 
                 iteration += 1
 
@@ -93,6 +87,7 @@ class AgentService:
             # Ensure state is updated when processing ends
             self._update_state({
                 'processing': False,
+                'playing': False,
                 'currentTask': None
             })
             logger.info("Message processing completed")

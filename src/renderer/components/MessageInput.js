@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WebSocketService from '../services/websocket';
 import { useAppState } from '../context/AppContext';
 
@@ -7,14 +7,36 @@ function MessageInput() {
   const { agent, chat } = state;
   const [message, setMessage] = useState('');
 
+  // Add logging for initial render and state changes
+  useEffect(() => {
+    console.log('MessageInput - Component mounted or updated');
+    console.log('Current agent state:', agent);
+    console.log('Current chat state:', chat);
+  }, [agent, chat]);
+
+  // Add effect to clear input when processing completes
+  useEffect(() => {
+    if (!agent.processing && !agent.playing) {
+      console.log('MessageInput - Clearing input after processing completed');
+      setMessage('');
+      dispatch({ 
+        type: 'SET_CHAT_INPUT', 
+        payload: '' 
+      });
+    }
+  }, [agent.processing, agent.playing]);
+
   const getPlayState = () => {
-    if (!agent.processing && !agent.playing) return 'stopped';
-    if (agent.processing && agent.playing) return 'running';
-    return 'stopping';
+    const playState = !agent.processing && !agent.playing ? 'stopped' 
+                     : agent.processing && agent.playing ? 'running' 
+                     : 'stopping';
+    console.log('MessageInput - getPlayState:', playState, 'agent:', agent);
+    return playState;
   };
 
   const handleChange = (e) => {
     const newMessage = e.target.value;
+    console.log('MessageInput - handleChange:', newMessage);
     setMessage(newMessage);
     dispatch({ 
       type: 'SET_CHAT_INPUT', 
@@ -25,10 +47,18 @@ function MessageInput() {
   const handleSubmit = async (e) => {
     e?.preventDefault();
     const playState = getPlayState();
+    console.log('MessageInput - handleSubmit attempt:', { message, playState });
     
-    if (!message.trim() || playState !== 'stopped') return;
+    if (!message.trim() || playState !== 'stopped') {
+      console.log('MessageInput - handleSubmit cancelled:', { 
+        hasMessage: !!message.trim(), 
+        playState 
+      });
+      return;
+    }
 
     try {
+      console.log('MessageInput - sending message:', message);
       WebSocketService.sendMessage(message);
       setMessage('');
       dispatch({ 
@@ -36,6 +66,7 @@ function MessageInput() {
         payload: '' 
       });
     } catch (error) {
+      console.error('MessageInput - error sending message:', error);
       dispatch({ 
         type: 'SET_ERROR', 
         payload: error.message 
@@ -45,12 +76,18 @@ function MessageInput() {
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+      console.log('MessageInput - Enter key pressed');
       e.preventDefault();
       handleSubmit();
     }
   };
 
   const playState = getPlayState();
+  console.log('MessageInput - Render:', { 
+    playState, 
+    message, 
+    isDisabled: playState !== 'stopped' 
+  });
 
   return (
     <div className="message-input-container">

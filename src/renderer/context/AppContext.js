@@ -37,6 +37,9 @@ const ActionTypes = {
 
 // Reducer
 function appReducer(state, action) {
+  console.log('AppReducer - Action:', action.type, 'Payload:', action.payload);
+  console.log('AppReducer - Current State:', state.agent);
+
   switch (action.type) {
     case ActionTypes.SET_CONNECTION_STATUS:
       return {
@@ -45,10 +48,13 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.SET_AGENT_STATE:
-      return {
+      // Backend state should take precedence
+      const newState = {
         ...state,
         agent: { ...state.agent, ...action.payload }
       };
+      console.log('AppReducer - New State after SET_AGENT_STATE:', newState.agent);
+      return newState;
     
     case ActionTypes.SET_CHAT_INPUT:
       return {
@@ -72,6 +78,7 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.START_PROCESSING:
+      console.log('AppReducer - Starting Processing');
       return {
         ...state,
         agent: {
@@ -82,6 +89,7 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.STOP_PROCESSING:
+      console.log('AppReducer - Stopping Processing');
       return {
         ...state,
         agent: {

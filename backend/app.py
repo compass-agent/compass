@@ -42,8 +42,8 @@ socketio = SocketIO(app,
     debug=False)
 
 # Initialize services
-agent_service = AgentService(socketio=socketio)
-websocket_service = WebSocketService(agent_service)
+websocket_service = WebSocketService(socketio)
+agent_service = AgentService(websocket_service)
 
 def signal_handler(sig, frame):
     logger.info('Shutting down gracefully...')
@@ -67,9 +67,8 @@ def handle_message(data):
     logger.info(f'Received message: {data}')
     
     try:
-        response = agent_service.process_message(data.get('text', ''))
+        agent_service.process_message(data.get('text', ''))
         emit('state_update', agent_service.get_state())
-        websocket_service.handle_message(response)
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})
