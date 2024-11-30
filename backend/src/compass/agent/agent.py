@@ -448,44 +448,44 @@ class AgentService:
         """
         
 
-        # logger.debug("Simulating LLM API call delay...")
-        # time.sleep(1)
+        logger.debug("Simulating LLM API call delay...")
+        time.sleep(1)
         
         # Mock response for development
-        # return [
-        #     {
-        #         'type': 'text',
-        #         'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
-        #     },
-        #     {
-        #         'type': 'tool_use',
-        #         'name': 'computer',
-        #         'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
-        #         'input': {
-        #             'action': 'mouse_move',
-        #             'coordinate': [94, 462]  # You'll need to add the actual coordinates here
-        #         }
-        #     }
-        # ]
+        return [
+            {
+                'type': 'text',
+                'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
+            },
+            {
+                'type': 'tool_use',
+                'name': 'computer',
+                'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
+                'input': {
+                    'action': 'mouse_move',
+                    'coordinate': [94, 462]  # You'll need to add the actual coordinates here
+                }
+            }
+        ]
         
         # Real API call implementation below
-        try:
-            system = self._get_current_system_prompt()
-            if PROMPT_CACHING:
-                self._inject_prompt_caching(self.messages)
-                system["cache_control"] = {"type": "ephemeral"}
+        # try:
+        #     system = self._get_current_system_prompt()
+        #     if PROMPT_CACHING:
+        #         self._inject_prompt_caching(self.messages)
+        #         system["cache_control"] = {"type": "ephemeral"}
                 
-            raw_response = self.client.beta.messages.with_raw_response.create(
-                max_tokens=MAX_TOKENS,
-                messages=self.messages,
-                model=MODEL_NAME,
-                system=[system],
-                tools=self.tool_collection.to_params(),
-                betas=self.betas,
-            )
-            response = raw_response.parse()
-            return _response_to_params(response)
+        #     raw_response = self.client.beta.messages.with_raw_response.create(
+        #         max_tokens=MAX_TOKENS,
+        #         messages=self.messages,
+        #         model=MODEL_NAME,
+        #         system=[system],
+        #         tools=self.tool_collection.to_params(),
+        #         betas=self.betas,
+        #     )
+        #     response = raw_response.parse()
+        #     return _response_to_params(response)
             
-        except (APIStatusError, APIResponseValidationError) as e:
-            logger.error(f"LLM API call failed: {e}")
-            raise
+        # except (APIStatusError, APIResponseValidationError) as e:
+        #     logger.error(f"LLM API call failed: {e}")
+        #     raise

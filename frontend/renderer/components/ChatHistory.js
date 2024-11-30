@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAppState } from '../context/AppContext';
-import '../styles/ChatHistory.css';
+import '../styles/ChatHistory.scss';
 
 const TOOL_ACTION_MAPPING = {
   screenshot: { icon: '📸', text: 'Taking screenshot...' },

@@ -1,6 +1,6 @@
 import React from 'react';
-import './styles/common.css';
-import './styles/App.css';
+import './styles/common.scss';
+import './styles/App.scss';
 import ChatHistory from './components/ChatHistory';
 import MessageInput from './components/MessageInput';
 import ControlPanel from './components/ControlPanel';

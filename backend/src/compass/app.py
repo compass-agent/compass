@@ -1,5 +1,8 @@
 import logging
 
+import dotenv
+print("Dotenv module path:", dotenv.__file__)
+
 # Configure logging BEFORE other imports
 logging.basicConfig(
     level=logging.INFO,
@@ -20,9 +23,8 @@ werkzeug_logger.setLevel(logging.WARNING)
 import json
 import signal
 import sys
-
 from flask import Flask
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit # type: ignore
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import WebSocketService from '../services/websocket';
 import { useAppState, AgentStatus } from '../context/AppContext';
-import '../styles/ControlPanel.css';
+import '../styles/ControlPanel.scss';
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
