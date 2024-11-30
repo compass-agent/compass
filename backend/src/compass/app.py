@@ -1,7 +1,9 @@
 import logging
+import os
+import sys
 
-import dotenv
-print("Dotenv module path:", dotenv.__file__)
+# Add the src directory to the system path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Configure logging BEFORE other imports
 logging.basicConfig(
