@@ -4,6 +4,7 @@
   "main": "frontend/main/main.js",
   "scripts": {
     "start": "electron .",
+    "serve": "npx webpack serve --mode development",
     "watch": "npx webpack --watch",
     "build": "webpack --mode production",
     "package": "npm run build && electron-builder build --mac",
@@ -26,6 +27,7 @@
     "css-loader": "^7.1.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
+    "html-webpack-plugin": "^5.6.3",
     "sass": "^1.81.0",
     "sass-loader": "^16.0.3",
     "style-loader": "^4.0.0",

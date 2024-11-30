@@ -41,19 +41,29 @@ To start the development environment:
    cd backend
    source venv/bin/activate  # This works on MacOS/Linux
    venv\Scripts\activate     # This works on Windows
-   python app.py
+   python src/compass/app.py
    ```
 
 2. In a new terminal, start the frontend:
+   # First:
    In one terminal you need to first:
    ```bash
    npm run watch
    ```
-
+   # OR Using Webpack Dev Server:
+   In one terminal you need to first:
+   ```
+   npm run serve
+   # Open your browser and navigate to: http://localhost:9000
+   ```  
+   # Second:
+   ```
    Then in another terminal:
    ```bash
    npm run dev
    ```
+
+
 The reason for running `npm run watch` first is because it will watch for changes in the React code and automatically rebuild the application.
 
 The above commands will concurrently run:
