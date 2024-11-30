@@ -2,22 +2,27 @@ const path = require('path');
 
 module.exports = {
   mode: 'development',
-  entry: './src/renderer/index.js',
+  entry: './frontend/renderer/index.js',
   output: {
-    path: path.resolve(__dirname, 'src/renderer/build'),
+    path: path.resolve(__dirname, 'frontend/renderer/build'),
     filename: 'renderer.js',
   },
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-react', '@babel/preset-env'],
-          },
-        },
+            presets: [
+              '@babel/preset-env',
+              ['@babel/preset-react', {
+                runtime: 'automatic'
+              }]
+            ]
+          }
+        }
       },
       {
         test: /\.css$/,
@@ -28,4 +33,5 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx'],
   },
+  devtool: 'source-map'
 };

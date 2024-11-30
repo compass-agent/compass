@@ -44,7 +44,8 @@ out/
 
 # Coverage directory used by tools like istanbul
 coverage/
-
+venv/
+backend/venv/
 # IDE directories and files
 .idea/
 .vscode/
