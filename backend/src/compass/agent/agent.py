@@ -1,7 +1,7 @@
 import logging
 import threading
 from typing import Any, Dict
-from enum import StrEnum
+from enum import StrEnum, Enum
 import httpx
 from typing import Any, cast
 from anthropic import (
@@ -88,6 +88,11 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
     return result_text
 
 
+class AgentStatus(Enum):
+    IDLE = "IDLE"
+    RUNNING = "RUNNING"
+    STOPPING = "STOPPING"
+
 class AgentService:
     def __init__(self, websocket_service):
         self.websocket_service = websocket_service
@@ -97,7 +102,7 @@ class AgentService:
             'autoMode': False,
             'highlightMode': False,
             'playing': False,
-            'processing': False,
+            'status': AgentStatus.IDLE.value,
             'currentTask': None
         }
         self.messages: list[BetaMessageParam] = []
@@ -140,13 +145,9 @@ class AgentService:
         logger.info(f"Processing new message: {message}")
         self.stop_processing()  # Stop any existing processing
         
-        # Log the received message
-        self.json_logger.log_action('received_message', message)
-        
-        # Update state
+        # Update state to RUNNING - remove 'playing'
         self._update_state({
-            'playing': True,
-            'processing': True,
+            'status': AgentStatus.RUNNING.value,
             'currentTask': message
         })
         
@@ -179,7 +180,7 @@ class AgentService:
         try:
             while (iteration <= max_iterations and 
                    not self.stop_event.is_set() and 
-                   self.state['processing']):
+                   self.state['status'] == AgentStatus.RUNNING.value):
                 logger.debug(f"Processing iteration {iteration}/{max_iterations}")
                 
                 # Add delay between iterations (skip delay for first iteration)
@@ -190,7 +191,7 @@ class AgentService:
                 self._take_screenshot()
                 
                 # Get response from LLM and send to frontend
-                response_params = self._call_llm(mock=True)  # Set to False for production
+                response_params = self._call_llm()  # Set to False for production
                 
                 # Log the AI response
                 self.json_logger.log_action('ai_response', response_params)
@@ -255,8 +256,7 @@ class AgentService:
 
         finally:
             self._update_state({
-                'processing': False,
-                'playing': False,
+                'status': AgentStatus.IDLE.value,
                 'currentTask': None
             })
             logger.info("Message processing completed")
@@ -291,15 +291,40 @@ class AgentService:
         if self.processing_thread and self.processing_thread.is_alive():
             logger.info("Stopping active message processing thread")
             self.stop_event.set()
-            self._update_state({'playing': False})
+            self._update_state({'status': AgentStatus.STOPPING.value})
             
-            self.processing_thread.join(timeout=2.0)
+            # Try multiple times to join
+            max_attempts = 3
+            attempt_timeout = 2.0  # seconds per attempt
+            
+            for attempt in range(max_attempts):
+                logger.info(f"Attempt {attempt + 1}/{max_attempts} to stop thread")
+                self.processing_thread.join(timeout=attempt_timeout)
+                
+                if not self.processing_thread.is_alive():
+                    logger.info(f"Processing thread successfully stopped on attempt {attempt + 1}")
+                    break
+                
+                if attempt < max_attempts - 1:  # Don't log "failed" for the last attempt
+                    logger.warning(f"Thread stop attempt {attempt + 1} failed, retrying...")
+            
+            # Final check and state update
             if self.processing_thread.is_alive():
-                logger.warning("Processing thread did not stop within timeout")
-            else:
-                logger.info("Processing thread successfully stopped")
+                logger.error(f"Failed to stop thread after {max_attempts} attempts")
+                # We still update the state to IDLE since we can't do anything else
+                # The thread might continue running in the background
+            
+            # Update state to IDLE regardless of thread state
+            self._update_state({
+                'status': AgentStatus.IDLE.value,
+                'currentTask': None
+            })
         else:
             logger.info("No active processing thread to stop")
+            self._update_state({
+                'status': AgentStatus.IDLE.value,
+                'currentTask': None
+            })
 
     def get_state(self) -> Dict[str, Any]:
         """Return the current state"""
@@ -343,33 +368,34 @@ class AgentService:
         except Exception as e:
             logger.error(f"Failed to take screenshot: {e}")
 
-    def _call_llm(self, mock=True) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
-        """Call the LLM (or return mock data during development)
+    def _call_llm(self) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
+        """Call the LLM API
         
-        Args:
-            mock: If True, returns mock data instead of calling the actual API
-            
         Returns:
             list of content blocks (text or tool use blocks)
         """
-        if mock:
-            # Mock response for development - includes both text response and tool use
-            return [
-                {
-                    'type': 'text',
-                    'text': 'I see a desktop environment with several windows open. The main window appears to be a messaging or chat application with a dark theme. Let me take another screenshot to analyze further.'
-                },
-                {
-                    'type': 'tool_use',
-                    'name': 'computer',
-                    'id': 'mock_tool_1',
-                    'input': {
-                        'action': 'screenshot'
-                    }
-                }
-            ]
+        # MOCK CODE - TO BE REMOVED LATER
+        # Simulate API delay
+        logger.debug("Simulating LLM API call delay...")
+        time.sleep(4)
         
-        # Real API call
+        # Mock response for development
+        return [
+            {
+                'type': 'text',
+                'text': 'I see a desktop environment with several windows open. The main window appears to be a messaging or chat application with a dark theme. Let me take another screenshot to analyze further.'
+            },
+            {
+                'type': 'tool_use',
+                'name': 'computer',
+                'id': 'mock_tool_1',
+                'input': {
+                    'action': 'screenshot'
+                }
+            }
+        ]
+        
+        # Real API call implementation below
         try:
             if PROMPT_CACHING:
                 self._inject_prompt_caching(self.messages)

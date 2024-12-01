@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import WebSocketService from '../services/websocket';
-import { useAppState } from '../context/AppContext';
+import { useAppState, AgentStatus } from '../context/AppContext';
 
 function MessageInput() {
   const { state, dispatch } = useAppState();
@@ -101,16 +101,22 @@ function MessageInput() {
     isDisabled: playState !== 'stopped' 
   });
 
+  const isInputEnabled = agent.status === AgentStatus.IDLE;
+
   return (
     <div className="message-input-container">
       <input 
         type="text" 
         className="message-input" 
-        placeholder={playState !== 'stopped' ? "Processing..." : "Ask Compass ..."}
+        placeholder={
+          agent.status === AgentStatus.IDLE 
+            ? "Ask Compass ..." 
+            : "Processing..."
+        }
         value={message}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        disabled={playState !== 'stopped'}
+        disabled={!isInputEnabled}
       />
     </div>
   );

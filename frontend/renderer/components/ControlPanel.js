@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import WebSocketService from '../services/websocket';
-import { useAppState } from '../context/AppContext';
+import { useAppState, AgentStatus } from '../context/AppContext';
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
@@ -8,20 +8,20 @@ function ControlPanel() {
 
   useEffect(() => {
     console.log('ControlPanel - Agent state updated:', {
-      processing: agentState.processing,
+      status: agentState.status,
       playing: agentState.playing,
       currentInput: chat.currentInput
     });
-  }, [agentState.processing, agentState.playing, chat.currentInput]);
+  }, [agentState.status, agentState.playing, chat.currentInput]);
 
   const handlePlayToggle = () => {
     console.log('ControlPanel - Play toggle clicked:', {
-      processing: agentState.processing,
+      status: agentState.status,
       playing: agentState.playing,
       currentInput: chat.currentInput
     });
 
-    if (!agentState.processing && !agentState.playing) {
+    if (agentState.status === AgentStatus.IDLE && !agentState.playing) {
       if (chat.currentInput?.trim()) {
         dispatch({
           type: 'ADD_CHAT_MESSAGE',
@@ -39,7 +39,7 @@ function ControlPanel() {
           payload: '' 
         });
       }
-    } else {
+    } else if (agentState.status === AgentStatus.RUNNING) {
       WebSocketService.updateControlState({ playing: false });
     }
   };
@@ -61,9 +61,14 @@ function ControlPanel() {
   };
 
   const getPlayButtonIcon = () => {
-    if (agentState.processing && agentState.playing) return '⏸️';
-    if (agentState.processing && !agentState.playing) return '⏳';
-    return '▶️';
+    switch (agentState.status) {
+      case AgentStatus.RUNNING:
+        return '⏸️';
+      case AgentStatus.STOPPING:
+        return '⏳';
+      default:
+        return '▶️';
+    }
   };
 
   return (
@@ -92,7 +97,10 @@ function ControlPanel() {
       <button 
         className={`control-button ${agentState.playing ? 'active' : ''}`}
         onClick={handlePlayToggle}
-        disabled={!chat.currentInput?.trim() && !agentState.processing}
+        disabled={
+          !chat.currentInput?.trim() && agentState.status === AgentStatus.IDLE ||
+          agentState.status === AgentStatus.STOPPING
+        }
         title={agentState.playing ? "Stop" : "Start"}
       >
         <i className="icon-play">{getPlayButtonIcon()}</i>

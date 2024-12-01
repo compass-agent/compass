@@ -3,6 +3,13 @@ import WebSocketService from '../services/websocket';
 
 const AppContext = createContext();
 
+// States
+export const AgentStatus = {
+  IDLE: 'IDLE',
+  RUNNING: 'RUNNING',
+  STOPPING: 'STOPPING',
+};
+
 // Initial state
 const initialState = {
   connection: {
@@ -14,7 +21,7 @@ const initialState = {
     autoMode: false,
     highlightMode: false,
     playing: false,
-    processing: false,
+    status: AgentStatus.IDLE,
     currentTask: null
   },
   chat: {
