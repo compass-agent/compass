@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import WebSocketService from '../services/websocket';
 import { useAppState, AgentStatus } from '../context/AppContext';
 import '../styles/ControlPanel.css';
@@ -6,6 +6,7 @@ import '../styles/ControlPanel.css';
 function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
+  const [lastClickTime, setLastClickTime] = useState(0);
 
   useEffect(() => {
     console.log('ControlPanel - Agent state updated:', {
@@ -15,60 +16,67 @@ function ControlPanel() {
     });
   }, [agentState.status, agentState.playing, chat.currentInput]);
 
-  const handlePlayToggle = () => {
-    console.log('ControlPanel - Play toggle clicked:', {
-      status: agentState.status,
-      playing: agentState.playing,
-      currentInput: chat.currentInput
-    });
-
-    if (agentState.status === AgentStatus.IDLE && !agentState.playing) {
-      if (chat.currentInput?.trim()) {
-        dispatch({
-          type: 'ADD_CHAT_MESSAGE',
-          payload: {
-            type: 'user',
-            text: chat.currentInput.trim(),
-            timestamp: new Date().toISOString()
-          }
-        });
-
-        WebSocketService.sendMessage(chat.currentInput);
-        
-        dispatch({ 
-          type: 'SET_CHAT_INPUT', 
-          payload: '' 
-        });
-      }
-    } else if (agentState.status === AgentStatus.RUNNING) {
-      WebSocketService.updateControlState({ playing: false });
+  const handlePlayClick = () => {
+    const currentTime = new Date().getTime();
+    const timeDiff = currentTime - lastClickTime;
+    
+    if (timeDiff < 300) { // Double click detected
+      handleDoubleClick();
+    } else {
+      handleSingleClick();
+      setLastClickTime(currentTime);
     }
   };
 
+  const handleSingleClick = () => {
+    if (agentState.status !== AgentStatus.IDLE) return;
+
+    if (agentState.pendingTools > 0) {
+      // Execute next pending tool
+      WebSocketService.executeNextTool();
+    } else if (chat.currentInput?.trim()) {
+      // Process new message
+      dispatch({
+        type: 'ADD_CHAT_MESSAGE',
+        payload: {
+          type: 'user',
+          text: chat.currentInput.trim(),
+          timestamp: new Date().toISOString()
+        }
+      });
+      WebSocketService.sendMessage(chat.currentInput);
+      dispatch({ type: 'SET_CHAT_INPUT', payload: '' });
+    } else {
+      // Generate next action
+      WebSocketService.generateNextAction();
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (agentState.status !== AgentStatus.IDLE) return;
+    WebSocketService.executeNextTool();
+    WebSocketService.generateNextAction();
+  };
+
   const handleAutoModeToggle = () => {
-    const newAutoMode = !agentState.autoMode;
-    WebSocketService.updateControlState({ 
-      autoMode: newAutoMode,
-      highlightMode: newAutoMode ? false : agentState.highlightMode 
+    WebSocketService.updateControlState({
+      autoMode: !agentState.autoMode
     });
   };
 
   const handleHighlightToggle = () => {
-    if (!agentState.autoMode) {
-      WebSocketService.updateControlState({ 
-        highlightMode: !agentState.highlightMode 
-      });
-    }
+    WebSocketService.updateControlState({
+      highlightMode: !agentState.highlightMode
+    });
   };
 
   const getPlayButtonIcon = () => {
-    switch (agentState.status) {
-      case AgentStatus.RUNNING:
-        return '⏸️';
-      case AgentStatus.STOPPING:
-        return '⏳';
-      default:
-        return '▶️';
+    if (agentState.status !== AgentStatus.IDLE) {
+      return '⏳'; // Processing
+    } else if (agentState.pendingTools > 0) {
+      return '🔨'; // Pending tools
+    } else {
+      return '▶️'; // Ready to generate next action
     }
   };
 
@@ -76,37 +84,46 @@ function ControlPanel() {
     return agentState.autoMode ? '⚡️⚡️' : '⚡️';
   };
 
+  const getPlayButtonTitle = () => {
+    if (agentState.status !== AgentStatus.IDLE) {
+      return 'Processing...';
+    } else if (agentState.pendingTools > 0) {
+      return 'Execute Next Tool';
+    } else if (chat.currentInput?.trim()) {
+      return 'Process Message';
+    } else {
+      return 'Generate Next Action';
+    }
+  };
+
   return (
     <div className="control-panel">
-      <button 
-        className={`control-button ${agentState.autoMode ? 'active' : ''}`}
-        onClick={handleAutoModeToggle}
-        title={agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"}
-      >
-        <i className="icon-auto">
-          {getAutoModeIcon()}
-        </i>
-      </button>
-      
-      <button 
-        className={`control-button ${agentState.highlightMode ? 'active' : ''}`}
-        onClick={handleHighlightToggle}
-        disabled={agentState.autoMode}
-        title={agentState.highlightMode ? "Highlight Mode (On)" : "Highlight Mode (Off)"}
-      >
-        <i className="icon-highlight">
-          {agentState.highlightMode ? '💡' : 'ℹ️'}
-        </i>
-      </button>
+      <div className="left-controls">
+        <button 
+          className={`control-button ${agentState.autoMode ? 'active' : ''}`}
+          onClick={handleAutoModeToggle}
+          title={agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"}
+        >
+          <i className="icon-auto">{getAutoModeIcon()}</i>
+        </button>
+        
+        <button 
+          className={`control-button ${agentState.highlightMode ? 'active' : ''}`}
+          onClick={handleHighlightToggle}
+          disabled={agentState.autoMode}
+          title={agentState.highlightMode ? "Highlight Mode (On)" : "Highlight Mode (Off)"}
+        >
+          <i className="icon-highlight">
+            {agentState.highlightMode ? '💡' : 'ℹ️'}
+          </i>
+        </button>
+      </div>
       
       <button 
         className={`control-button ${agentState.playing ? 'active' : ''}`}
-        onClick={handlePlayToggle}
-        disabled={
-          !chat.currentInput?.trim() && agentState.status === AgentStatus.IDLE ||
-          agentState.status === AgentStatus.STOPPING
-        }
-        title={agentState.playing ? "Stop" : "Start"}
+        onClick={handlePlayClick}
+        disabled={agentState.status !== AgentStatus.IDLE}
+        title={getPlayButtonTitle()}
       >
         <i className="icon-play">{getPlayButtonIcon()}</i>
       </button>

@@ -37,8 +37,7 @@ function MessageInput() {
 
   const handleChange = (e) => {
     const newMessage = e.target.value;
-    console.log('MessageInput - handleChange:', newMessage);
-    setMessage(newMessage);
+    setMessage(newMessage);  // Update local state
     dispatch({ 
       type: 'SET_CHAT_INPUT', 
       payload: newMessage 

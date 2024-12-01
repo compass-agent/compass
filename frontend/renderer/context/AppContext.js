@@ -22,7 +22,8 @@ const initialState = {
     highlightMode: false,
     playing: false,
     status: AgentStatus.IDLE,
-    currentTask: null
+    currentTask: null,
+    pendingTools: 0
   },
   chat: {
     messages: [],
@@ -40,20 +41,13 @@ const ActionTypes = {
   SET_ERROR: 'SET_ERROR',
   START_PROCESSING: 'START_PROCESSING',
   STOP_PROCESSING: 'STOP_PROCESSING',
+  UPDATE_PENDING_TOOLS: 'UPDATE_PENDING_TOOLS',
 };
 
 // Reducer
 function appReducer(state, action) {
   console.log('AppReducer - Action:', action.type, 'Payload:', action.payload);
-  console.log('AppReducer - Current State:', state.agent);
-
-  if (action.type === ActionTypes.ADD_CHAT_MESSAGE) {
-    console.log('Adding chat message:', action.payload);
-    console.log('Current messages:', state.chat.messages);
-  }
-
-  console.log('AppReducer - Received action:', action.type, 'with payload:', action.payload);
-
+  
   switch (action.type) {
     case ActionTypes.SET_CONNECTION_STATUS:
       return {
@@ -62,13 +56,14 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.SET_AGENT_STATE:
-      // Backend state should take precedence
-      const newState = {
+      return {
         ...state,
-        agent: { ...state.agent, ...action.payload }
+        agent: { 
+          ...state.agent, 
+          ...action.payload,
+          pendingTools: action.payload.pendingTools ?? state.agent.pendingTools
+        }
       };
-      console.log('AppReducer - New State after SET_AGENT_STATE:', newState.agent);
-      return newState;
     
     case ActionTypes.SET_CHAT_INPUT:
       return {
@@ -77,14 +72,14 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.ADD_CHAT_MESSAGE:
-      console.log('AppReducer - Before adding message:', state.chat.messages);
-      const newMessages = [...state.chat.messages, action.payload];
-      console.log('AppReducer - After adding message:', newMessages);
       return {
         ...state,
         chat: {
           ...state.chat,
-          messages: newMessages
+          messages: [...state.chat.messages, {
+            ...action.payload,
+            timestamp: action.payload.timestamp || new Date().toISOString()
+          }]
         }
       };
     
@@ -95,24 +90,31 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.START_PROCESSING:
-      console.log('AppReducer - Starting Processing');
       return {
         ...state,
         agent: {
           ...state.agent,
-          processing: true,
+          status: AgentStatus.RUNNING,
           playing: true
         }
       };
     
     case ActionTypes.STOP_PROCESSING:
-      console.log('AppReducer - Stopping Processing');
       return {
         ...state,
         agent: {
           ...state.agent,
-          processing: false,
+          status: AgentStatus.IDLE,
           playing: false
+        }
+      };
+    
+    case ActionTypes.UPDATE_PENDING_TOOLS:
+      return {
+        ...state,
+        agent: {
+          ...state.agent,
+          pendingTools: action.payload
         }
       };
     
@@ -147,10 +149,13 @@ export function AppProvider({ children }) {
         });
       },
       
-      onStateUpdate: (data) => dispatch({ 
-        type: ActionTypes.SET_AGENT_STATE, 
-        payload: data 
-      }),
+      onStateUpdate: (data) => {
+        console.log('Received state update:', data);
+        dispatch({ 
+          type: ActionTypes.SET_AGENT_STATE, 
+          payload: data 
+        });
+      },
       
       onError: (error) => dispatch({ 
         type: ActionTypes.SET_ERROR, 

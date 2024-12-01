@@ -24,7 +24,7 @@ import sys
 from flask import Flask
 from flask_socketio import SocketIO, emit
 from compass.agent.agent import AgentService
-from compass.services.websocket_service import WebSocketService
+from compass.services.state_manager import StateManager
 
 # Create logger for this module
 logger = logging.getLogger(__name__)
@@ -42,8 +42,8 @@ socketio = SocketIO(app,
     debug=False)
 
 # Initialize services
-websocket_service = WebSocketService(socketio)
-agent_service = AgentService(websocket_service)
+state_manager = StateManager(socketio)
+agent_service = AgentService(state_manager)
 
 def signal_handler(sig, frame):
     logger.info('Shutting down gracefully...')
@@ -65,10 +65,8 @@ def handle_disconnect():
 @socketio.on('message')
 def handle_message(data):
     logger.info(f'Received message: {data}')
-    
     try:
         agent_service.process_message(data.get('text', ''))
-        emit('state_update', agent_service.get_state())
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -76,12 +74,28 @@ def handle_message(data):
 @socketio.on('control_update')
 def handle_control_update(data):
     logger.info(f'Control update received: {data}')
-    
     try:
-        updated_state = agent_service.update_state(data)
-        emit('state_update', updated_state, broadcast=True)
+        state_manager.update_state(data)
     except Exception as e:
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('execute_next_tool')
+def handle_execute_next_tool():
+    logger.info('Received execute_next_tool request')
+    try:
+        agent_service.execute_next_pending_tool()
+    except Exception as e:
+        logger.error(f"Error executing tool: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('generate_next_action')
+def handle_generate_next_action():
+    logger.info('Received generate_next_action request')
+    try:
+        agent_service.process_next_action()
+    except Exception as e:
+        logger.error(f"Error generating next action: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 if __name__ == '__main__':

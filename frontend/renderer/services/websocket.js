@@ -28,29 +28,27 @@ class WebSocketService {
     });
 
     this.socket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
       this.stateHandlers?.onDisconnect();
     });
 
+    this.socket.on('state_update', (data) => {
+      console.log('WebSocket received state update:', data);
+      this.stateHandlers?.onStateUpdate(data);
+    });
+
     this.socket.on('response', (data) => {
+      console.log('WebSocket received response:', data);
       this.stateHandlers?.onResponse(data);
     });
 
-    this.socket.on('state_update', (data) => {
-      if (data && typeof data === 'object') {
-        this.stateHandlers?.onStateUpdate({
-          ...data,
-          processing: data.processing ?? false,
-          playing: data.playing ?? false
-        });
-      }
-    });
-
     this.socket.on('error', (error) => {
+      console.error('WebSocket error:', error);
       this.stateHandlers?.onError(error);
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
+    this.socket.on('connect_error', () => {
+      console.log('WebSocket connection failed');
       this.stateHandlers?.onError({ 
         message: 'Connection failed. Retrying...' 
       });
@@ -73,6 +71,20 @@ class WebSocketService {
   updateControlState(state) {
     if (this.socket?.connected) {
       this.socket.emit('control_update', state);
+    }
+  }
+
+  executeNextTool() {
+    if (this.socket?.connected) {
+      console.log('WebSocket sending execute_next_tool');
+      this.socket.emit('execute_next_tool');
+    }
+  }
+
+  generateNextAction() {
+    if (this.socket?.connected) {
+      console.log('WebSocket sending generate_next_action');
+      this.socket.emit('generate_next_action');
     }
   }
 }

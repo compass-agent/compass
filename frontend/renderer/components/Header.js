@@ -31,7 +31,7 @@ function Header() {
         <button className="window-control close" onClick={handleClose}>✕</button>
         <button className="window-control minimize" onClick={handleMinimize}>−</button>
       </div>
-      <span className="title">Compass AI Assistant</span>
+      <span className="title">Compass</span>
       <div className="header-controls">
         <button className="header-button" onClick={handleSettings} title="Settings">
           ⚙️

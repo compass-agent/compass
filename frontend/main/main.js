@@ -15,8 +15,13 @@ function createWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     trafficLightPosition: { x: 10, y: 10 },
-    hasShadow: true
+    hasShadow: true,
+    resizable: true,
+    minWidth: 500,
+    minHeight: 300
   });
+
+  win.setResizable(true);
 
   const indexPath = path.join(__dirname, '../renderer/index.html');
   win.loadFile(indexPath);

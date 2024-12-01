@@ -1,8 +1,7 @@
 import logging
 import threading
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from enum import StrEnum, Enum
-import httpx
 from typing import Any, cast
 from anthropic import (
     Anthropic,
@@ -24,12 +23,16 @@ import time
 from compass.tools import ComputerTool, ToolCollection, ToolResult
 from compass.key import ANTHROPIC_API_KEY
 from compass.agent.prompt import get_system_prompt
-from compass.constants import MODEL_NAME, MAX_TOKENS, PROMPT_CACHING
-from compass.utils.utility import JSONLogger
-
-
-COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
-PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
+from compass.constants import (
+    MODEL_NAME,
+    MAX_TOKENS,
+    PROMPT_CACHING,
+    MAX_ITERATIONS,
+    COMPUTER_USE_BETA_FLAG,
+    PROMPT_CACHING_BETA_FLAG
+)
+from compass.utils.utility import HistoryLogger
+from compass.services.state_manager import StateManager, AgentStatus
 
 logger = logging.getLogger(__name__)
 
@@ -88,171 +91,194 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
     return result_text
 
 
-class AgentStatus(Enum):
-    IDLE = "IDLE"
-    RUNNING = "RUNNING"
-    STOPPING = "STOPPING"
-
 class AgentService:
-    def __init__(self, websocket_service):
-        self.websocket_service = websocket_service
+    def __init__(self, state_manager: StateManager):
+        self.state_manager = state_manager
         self.processing_thread = None
         self.stop_event = threading.Event()
-        self.state = {
-            'autoMode': False,
-            'highlightMode': False,
-            'playing': False,
-            'status': AgentStatus.IDLE.value,
-            'currentTask': None
-        }
         self.messages: list[BetaMessageParam] = []
-        self.system_prompt = get_system_prompt()
         
         # Initialize beta flags and client
         self.betas = [COMPUTER_USE_BETA_FLAG, PROMPT_CACHING_BETA_FLAG]
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
         
-        # Initialize tool collection and system prompt
-        self.tool_collection = ToolCollection(ComputerTool())
-        self.system = BetaTextBlockParam(
-            type="text",
-            text=self.system_prompt
-        )
+        # Initialize history logger
+        self.logger = HistoryLogger()
         
-        # Initialize JSON logger
-        self.json_logger = JSONLogger()
+        # Pass logger to ComputerTool
+        self.tool_collection = ToolCollection(ComputerTool(logger=self.logger))
         
         logger.info("AgentService initialized")
+        self.pending_tool_queue = []  # Add queue for pending tools
 
-    def _update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
-        """Update internal state and emit the new state"""
-        self.state.update(state_update)
-        logger.debug(f"State updated: {self.state}")
-        self.websocket_service.emit_state_update(self.state.copy())
-        return self.state.copy()
-
-    def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle state updates and return the new state"""
-        logger.info(f"Updating state: {state_update}")
-        
-        if state_update.get('playing') is False:
-            self.stop_processing()
-        
-        return self._update_state(state_update)
+    def _get_current_system_prompt(self) -> BetaTextBlockParam:
+        """Get the appropriate system prompt based on current highlight mode"""
+        system_prompts = get_system_prompt()
+        mode = "highlight" if self.state_manager.highlight_mode else "tool"
+        return BetaTextBlockParam(
+            type="text",
+            text=system_prompts[mode]
+        )
 
     def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
         logger.info(f"Processing new message: {message}")
-        self.stop_processing()  # Stop any existing processing
-        
-        # Update state to RUNNING - remove 'playing'
-        self._update_state({
-            'status': AgentStatus.RUNNING.value,
-            'currentTask': message
-        })
-        
-        # Clear stop event before starting new thread
-        self.stop_event.clear()
-        
-        # Start new processing thread
-        self.processing_thread = threading.Thread(
-            target=self._process_message_loop,
-            args=(message,)
-        )
-        self.processing_thread.start()
+        self.stop_processing()
 
-    def _process_message_loop(self, message: str) -> None:
-        """Internal method to handle message processing loop"""
-        max_iterations = 10 if self.state['autoMode'] else 1
-        iteration = 1
         self.messages = [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": message
-                    }
-                ]
+                "content": [{"type": "text", "text": message}]
             }
         ]
         
+        self.state_manager.set_status(AgentStatus.RUNNING, message)
+        self.stop_event.clear()
+        
+        if self.state_manager.auto_mode:
+            self.processing_thread = threading.Thread(
+                target=self._process_message_loop,
+                args=(message,)
+            )
+        else:
+            self.processing_thread = threading.Thread(
+                target=self._process_message_single_mode,
+                args=(message,)
+            )
+
+        self.processing_thread.start()
+
+    def _process_message_single_mode(self, message: Optional[str]) -> None:
         try:
-            while (iteration <= max_iterations and 
-                   not self.stop_event.is_set() and 
-                   self.state['status'] == AgentStatus.RUNNING.value):
-                logger.debug(f"Processing iteration {iteration}/{max_iterations}")
+            logger.info("Processing message in single mode")
+            response_params = self._next_step_proposal()
+
+            if self.state_manager.highlight_mode:
+                # In highlight mode, only keep text responses
+                response_params = [
+                    block for block in response_params 
+                    if block["type"] == "text"
+                ]
+            else:
+                # Store tool proposals without executing
+                self._store_pending_tool_proposals(response_params)
+
+
+        finally:
+            self.state_manager.set_status(AgentStatus.IDLE)
+            self.stop_event.clear()
+            self.processing_thread = None
+            logger.info("Single mode processing completed and cleaned up")
+
+    def _store_pending_tool_proposals(self, response_params):
+        """Store tool proposals for later execution"""
+        for block in response_params:
+            if block["type"] == "tool_use":
+                self.pending_tool_queue.append(block)
+        
+        # Update pending tools count in state
+        self.state_manager.set_pending_tools(len(self.pending_tool_queue))
+
+    def execute_next_pending_tool(self):
+        """Execute all pending tools in the queue"""
+        if not self.pending_tool_queue:
+            logger.info("No pending tools to execute")
+            return
+
+        self.state_manager.set_status(AgentStatus.RUNNING)
+        
+        try:
+            # Process all pending tools
+            while self.pending_tool_queue:
+                content_block = self.pending_tool_queue.pop(0)
                 
-                # Add delay between iterations (skip delay for first iteration)
-                if iteration > 1:
-                    logger.debug("Waiting 4 seconds before next iteration...")
-                    time.sleep(4)
-                
-                self._take_screenshot()
-                
-                # Get response from LLM and send to frontend
-                response_params = self._call_llm()  # Set to False for production
-                
-                # Log the AI response
-                self.json_logger.log_action('ai_response', response_params)
-                
-                # Send AI response to frontend
-                for content_block in response_params:
-                    if content_block["type"] == "text":
-                        self.websocket_service.handle_message({
-                            "type": "ai_response",
-                            "content": content_block["text"]
-                        })
-                
-                self.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": response_params,
-                    }
+                # Execute the tool
+                result = self.tool_collection.run(
+                    name=content_block["name"],
+                    tool_input=cast(dict[str, Any], content_block["input"]),
                 )
+
+                # Log tool result
+                self.logger.log_action('tool_result', {
+                    "output": result.output,
+                    "error": result.error,
+                    "has_image": bool(result.base64_image)
+                })
+
+                # Convert result to API format
+                tool_result_content = _make_api_tool_result(result, content_block["id"])
+
+                # Append tool result to messages
+                self.messages.append({"role": "user", "content": [tool_result_content]})
+
+                # Send tool result to frontend
+                self.state_manager.emit_response({
+                    "type": "tool_result",
+                    "content": tool_result_content,
+                })
+
+        finally:
+            self.state_manager.set_status(AgentStatus.IDLE)
+            # Update pending tools count
+            self.state_manager.set_pending_tools(len(self.pending_tool_queue))
+
+    def process_next_action(self):
+        """Generate the next action without executing tools"""
+        if not self.processing_thread or not self.processing_thread.is_alive():
+            self.processing_thread = threading.Thread(
+                target=self._process_message_single_mode,
+                args=(None,)
+            )
+            self.processing_thread.start()
+        else:
+            logger.info("Agent is already processing")
+
+    def _process_message_loop(self, message: str) -> None:
+        """Internal method to handle message processing loop"""
+        iteration = 1
+        try:
+            while (iteration <= MAX_ITERATIONS and 
+                   not self.stop_event.is_set() and 
+                   self.state_manager.status == AgentStatus.RUNNING.value):
+                logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
                 
-                tool_result_content: list[BetaToolResultBlockParam] = []
-                for content_block in response_params:
-                    if content_block["type"] == "tool_use":
-                        # Log tool usage
-                        self.json_logger.log_action('tool_use', content_block)
-                        
-                        # Send tool usage to frontend - simplified
-                        self.websocket_service.handle_message({
-                            "type": "tool_use",
-                            "parameters": content_block["input"]
-                        })
-                        
-                        result = self.tool_collection.run(
-                            name=content_block["name"],
-                            tool_input=cast(dict[str, Any], content_block["input"]),
-                        )
-                        
-                        # Log tool result
-                        self.json_logger.log_action('tool_result', {
-                            "output": result.output,
-                            "error": result.error,
-                            "has_image": bool(result.base64_image)
-                        })
-                                                
-                        tool_result_content.append(
-                            _make_api_tool_result(result, content_block["id"])
-                        )
-
+                response_params = self._next_step_proposal()
+                
+                tool_result_content = self._execute_tool(response_params)
                 if not tool_result_content:
-                    # Job is done
                     break
-
-                self.messages.append({"role": "user", "content": tool_result_content})
                 iteration += 1
 
         finally:
-            self._update_state({
-                'status': AgentStatus.IDLE.value,
-                'currentTask': None
-            })
-            logger.info("Message processing completed")
+            self.state_manager.set_status(AgentStatus.IDLE)
+            # Clear the stop event and thread reference
+            self.stop_event.clear()
+            self.processing_thread = None
+            logger.info("Message processing loop completed and cleaned up")
 
+
+    def _next_step_proposal(self):
+        self._take_screenshot()
+        # Get response from LLM and send to frontend
+        response_params = self._call_llm()  # Set to False for production
+        # Log the AI response
+        self.logger.log_action('ai_response', response_params)
+        
+        # Send AI response to frontend
+        for content_block in response_params:
+            if content_block["type"] == "text":
+                self.state_manager.emit_response({
+                    "type": "ai_response",
+                    "content": content_block["text"]
+                })
+        
+        self.messages.append(
+            {
+                "role": "assistant",
+                "content": response_params,
+            }
+        )
+        return response_params
     def _inject_prompt_caching(self,
         messages: list[BetaMessageParam],
     ):
@@ -277,13 +303,48 @@ class AgentService:
                     break
 
 
+    def _execute_tool(self, response_params):
+        tool_result_content: list[BetaToolResultBlockParam] = []
+        for content_block in response_params:
+            if content_block["type"] == "tool_use":
+                # Log tool usage
+                self.logger.log_action('tool_use', content_block)
+                
+                # Send tool usage to frontend - simplified
+                self.state_manager.emit_response({
+                    "type": "tool_use",
+                    "parameters": content_block["input"]
+                })
+                
+                result = self.tool_collection.run(
+                    name=content_block["name"],
+                    tool_input=cast(dict[str, Any], content_block["input"]),
+                )
+                
+                # Log tool result
+                self.logger.log_action('tool_result', {
+                    "output": result.output,
+                    "error": result.error,
+                    "has_image": bool(result.base64_image)
+                })
+                                        
+                tool_result_content.append(
+                    _make_api_tool_result(result, content_block["id"])
+                )
+
+        if not tool_result_content:
+            # Job is done
+            return
+        else:
+            self.messages.append({"role": "user", "content": tool_result_content})
+            return tool_result_content
 
     def stop_processing(self) -> None:
         """Stop current processing loop"""
         if self.processing_thread and self.processing_thread.is_alive():
             logger.info("Stopping active message processing thread")
             self.stop_event.set()
-            self._update_state({'status': AgentStatus.STOPPING.value})
+            self.state_manager.set_status(AgentStatus.STOPPING)
             
             # Try multiple times to join
             max_attempts = 3
@@ -307,25 +368,45 @@ class AgentService:
                 # The thread might continue running in the background
             
             # Update state to IDLE regardless of thread state
-            self._update_state({
-                'status': AgentStatus.IDLE.value,
-                'currentTask': None
-            })
+            self.state_manager.set_status(AgentStatus.IDLE)
         else:
             logger.info("No active processing thread to stop")
-            self._update_state({
-                'status': AgentStatus.IDLE.value,
-                'currentTask': None
-            })
-
-    def get_state(self) -> Dict[str, Any]:
-        """Return the current state"""
-        return self.state.copy()
+            self.state_manager.set_status(AgentStatus.IDLE)
 
     def _take_screenshot(self) -> None:
-        """Takes a screenshot and adds it to the message history"""
+        """Takes a screenshot and adds cursor position to the message history"""
         try:
-            # First, add assistant message requesting screenshot
+            # First get cursor position
+            self.messages.append({
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "computer",
+                        "id": f"tool_cursor_{len(self.messages)}",
+                        "input": {"action": "cursor_position"}
+                    }
+                ]
+            })
+            
+            # Execute cursor position check
+            cursor_result = self.tool_collection.run(
+                name="computer",
+                tool_input={"action": "cursor_position"}
+            )
+            
+            # Add cursor position result
+            self.messages.append({
+                "role": "user",
+                "content": [
+                    _make_api_tool_result(
+                        result=cursor_result,
+                        tool_use_id=f"tool_cursor_{len(self.messages)-1}"
+                    )
+                ]
+            })
+
+            # Then take screenshot (existing code)
             self.messages.append({
                 "role": "assistant",
                 "content": [
@@ -344,21 +425,20 @@ class AgentService:
                 tool_input={"action": "screenshot"}
             )
             
-            # Convert the tool result to API format
-            tool_result = _make_api_tool_result(
-                result=result,
-                tool_use_id=f"tool_screenshot_{len(self.messages)-1}"  # Match the ID from assistant's message
-            )
-            
-            # Add screenshot result to messages
+            # Add screenshot result
             self.messages.append({
                 "role": "user",
-                "content": [tool_result]
+                "content": [
+                    _make_api_tool_result(
+                        result=result,
+                        tool_use_id=f"tool_screenshot_{len(self.messages)-1}"
+                    )
+                ]
             })
             
-            logger.info("Screenshot captured and added to message history")
+            logger.info("Screenshot and cursor position captured and added to message history")
         except Exception as e:
-            logger.error(f"Failed to take screenshot: {e}")
+            logger.error(f"Failed to take screenshot or get cursor position: {e}")
 
     def _call_llm(self) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
         """Call the LLM API
@@ -366,38 +446,40 @@ class AgentService:
         Returns:
             list of content blocks (text or tool use blocks)
         """
-        # MOCK CODE - TO BE REMOVED LATER
-        # Simulate API delay
-        logger.debug("Simulating LLM API call delay...")
-        time.sleep(4)
+        
+
+        # logger.debug("Simulating LLM API call delay...")
+        # time.sleep(1)
         
         # Mock response for development
-        return [
-            {
-                'type': 'text',
-                'text': 'I see a desktop environment with several windows open. The main window appears to be a messaging or chat application with a dark theme. Let me take another screenshot to analyze further.'
-            },
-            {
-                'type': 'tool_use',
-                'name': 'computer',
-                'id': 'mock_tool_1',
-                'input': {
-                    'action': 'screenshot'
-                }
-            }
-        ]
+        # return [
+        #     {
+        #         'type': 'text',
+        #         'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
+        #     },
+        #     {
+        #         'type': 'tool_use',
+        #         'name': 'computer',
+        #         'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
+        #         'input': {
+        #             'action': 'mouse_move',
+        #             'coordinate': [94, 462]  # You'll need to add the actual coordinates here
+        #         }
+        #     }
+        # ]
         
         # Real API call implementation below
         try:
+            system = self._get_current_system_prompt()
             if PROMPT_CACHING:
                 self._inject_prompt_caching(self.messages)
-                self.system["cache_control"] = {"type": "ephemeral"}
+                system["cache_control"] = {"type": "ephemeral"}
                 
             raw_response = self.client.beta.messages.with_raw_response.create(
                 max_tokens=MAX_TOKENS,
                 messages=self.messages,
                 model=MODEL_NAME,
-                system=[self.system],
+                system=[system],
                 tools=self.tool_collection.to_params(),
                 betas=self.betas,
             )
