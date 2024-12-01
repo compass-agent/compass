@@ -1,37 +1,21 @@
-import logging
-
-# Configure logging BEFORE other imports
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    force=True
-)
-
-# Disable engineio logging completely
-engineio_logger = logging.getLogger('engineio.server')
-engineio_logger.setLevel(logging.WARNING)  # Only show warnings and errors
-
-# Disable werkzeug logging (Flask's default logger)
-werkzeug_logger = logging.getLogger('werkzeug')
-werkzeug_logger.setLevel(logging.WARNING)
-
-# Now import other modules
-import json
 import signal
 import sys
-
 from flask import Flask
 from flask_socketio import SocketIO, emit
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
+from compass.utils.utility import HistoryLogger
+
+# Initialize logging first
+history_logger = HistoryLogger()
 
 # Create logger for this module
+import logging
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
+app.config.from_object('compass.config.config.Config')
 
 # Initialize SocketIO with logging disabled
 socketio = SocketIO(app, 
@@ -43,7 +27,7 @@ socketio = SocketIO(app,
 
 # Initialize services
 state_manager = StateManager(socketio)
-agent_service = AgentService(state_manager)
+agent_service = AgentService(state_manager, history_logger)
 
 def signal_handler(sig, frame):
     logger.info('Shutting down gracefully...')

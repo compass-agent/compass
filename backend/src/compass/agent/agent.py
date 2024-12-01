@@ -31,7 +31,7 @@ from compass.constants import (
     COMPUTER_USE_BETA_FLAG,
     PROMPT_CACHING_BETA_FLAG
 )
-from compass.utils.utility import HistoryLogger
+from compass.utils.utility import HistoryLogger, TokenTracker
 from compass.services.state_manager import StateManager, AgentStatus
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
 
 
 class AgentService:
-    def __init__(self, state_manager: StateManager):
+    def __init__(self, state_manager: StateManager, history_logger: HistoryLogger):
         self.state_manager = state_manager
         self.processing_thread = None
         self.stop_event = threading.Event()
@@ -102,19 +102,23 @@ class AgentService:
         self.betas = [COMPUTER_USE_BETA_FLAG, PROMPT_CACHING_BETA_FLAG]
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
         
-        # Initialize history logger
-        self.logger = HistoryLogger()
+        # Use provided history_logger
+        self.history_tracker = history_logger
         
-        # Pass logger to ComputerTool
-        self.tool_collection = ToolCollection(ComputerTool(logger=self.logger))
+        # Initialize token tracker
+        self.token_tracker = TokenTracker()
+        
+        # Pass history tracker to ComputerTool
+        self.tool_collection = ToolCollection(ComputerTool(history_tracker=self.history_tracker))
         
         logger.info("AgentService initialized")
-        self.pending_tool_queue = []  # Add queue for pending tools
+        self.pending_tool_queue = []
 
     def _get_current_system_prompt(self) -> BetaTextBlockParam:
         """Get the appropriate system prompt based on current highlight mode"""
         system_prompts = get_system_prompt()
         mode = "highlight" if self.state_manager.highlight_mode else "tool"
+
         return BetaTextBlockParam(
             type="text",
             text=system_prompts[mode]
@@ -122,7 +126,7 @@ class AgentService:
 
     def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
-        logger.info(f"Processing new message: {message}")
+        logger.info(f"New message received: {message}")
         self.stop_processing()
 
         self.messages = [
@@ -136,11 +140,13 @@ class AgentService:
         self.stop_event.clear()
         
         if self.state_manager.auto_mode:
+            logger.info("Processing message in auto mode")
             self.processing_thread = threading.Thread(
                 target=self._process_message_loop,
                 args=(message,)
             )
         else:
+            logger.info("Processing message in single mode")
             self.processing_thread = threading.Thread(
                 target=self._process_message_single_mode,
                 args=(message,)
@@ -150,21 +156,21 @@ class AgentService:
 
     def _process_message_single_mode(self, message: Optional[str]) -> None:
         try:
-            logger.info("Processing message in single mode")
             response_params = self._next_step_proposal()
 
             if self.state_manager.highlight_mode:
-                # In highlight mode, only keep text responses
                 response_params = [
                     block for block in response_params 
                     if block["type"] == "text"
                 ]
+                logger.info(f"Skipping tool proposals since in highlight mode")
             else:
-                # Store tool proposals without executing
+                logger.info(f"Storing {len(response_params) - 1} tool proposals in queue")
                 self._store_pending_tool_proposals(response_params)
 
 
         finally:
+            logger.info("Setting status to IDLE, clearing stop event, and cleaning up thread")
             self.state_manager.set_status(AgentStatus.IDLE)
             self.stop_event.clear()
             self.processing_thread = None
@@ -174,6 +180,7 @@ class AgentService:
         """Store tool proposals for later execution"""
         for block in response_params:
             if block["type"] == "tool_use":
+                logger.info(f"Tool action: {block['input']}")
                 self.pending_tool_queue.append(block)
         
         # Update pending tools count in state
@@ -191,7 +198,7 @@ class AgentService:
             # Process all pending tools
             while self.pending_tool_queue:
                 content_block = self.pending_tool_queue.pop(0)
-                
+                logger.info(f"Executing tool action: {content_block['input']}")
                 # Execute the tool
                 result = self.tool_collection.run(
                     name=content_block["name"],
@@ -199,7 +206,7 @@ class AgentService:
                 )
 
                 # Log tool result
-                self.logger.log_action('tool_result', {
+                self.history_tracker.log_action('tool_result', {
                     "output": result.output,
                     "error": result.error,
                     "has_image": bool(result.base64_image)
@@ -262,7 +269,7 @@ class AgentService:
         # Get response from LLM and send to frontend
         response_params = self._call_llm()  # Set to False for production
         # Log the AI response
-        self.logger.log_action('ai_response', response_params)
+        self.history_tracker.log_action('ai_response', response_params)
         
         # Send AI response to frontend
         for content_block in response_params:
@@ -308,7 +315,7 @@ class AgentService:
         for content_block in response_params:
             if content_block["type"] == "tool_use":
                 # Log tool usage
-                self.logger.log_action('tool_use', content_block)
+                self.history_tracker.log_action('tool_use', content_block)
                 
                 # Send tool usage to frontend - simplified
                 self.state_manager.emit_response({
@@ -322,7 +329,7 @@ class AgentService:
                 )
                 
                 # Log tool result
-                self.logger.log_action('tool_result', {
+                self.history_tracker.log_action('tool_result', {
                     "output": result.output,
                     "error": result.error,
                     "has_image": bool(result.base64_image)
@@ -451,7 +458,7 @@ class AgentService:
         # logger.debug("Simulating LLM API call delay...")
         # time.sleep(1)
         
-        # Mock response for development
+        #Mock response for development
         # return [
         #     {
         #         'type': 'text',
@@ -467,6 +474,7 @@ class AgentService:
         #         }
         #     }
         # ]
+        # self.lst_call_idx += 1
         
         # Real API call implementation below
         try:
@@ -484,6 +492,13 @@ class AgentService:
                 betas=self.betas,
             )
             response = raw_response.parse()
+            
+            # Track token usage
+            self.token_tracker.track_usage(
+                response.usage.input_tokens,
+                response.usage.output_tokens
+            )
+            
             return _response_to_params(response)
             
         except (APIStatusError, APIResponseValidationError) as e:
