@@ -11,8 +11,11 @@ function createWindow() {
       webSecurity: false
     },
     alwaysOnTop: true,
-    frame: true,
-    resizable: true
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    trafficLightPosition: { x: 10, y: 10 },
+    hasShadow: true
   });
 
   const indexPath = path.join(__dirname, '../renderer/index.html');

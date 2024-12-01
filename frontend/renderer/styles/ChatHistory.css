@@ -1,6 +1,7 @@
 .chat-history {
   flex: 1;
-  border: 1px solid #ddd;
+  border: 1px solid #333;
+  background-color: rgba(30, 30, 30, 0.7);
   border-radius: 8px;
   padding: 20px;
   overflow-y: auto;
@@ -13,8 +14,6 @@
   align-items: flex-start;
   gap: 10px;
   min-height: 20px;
-  padding: 8px;
-  border: 1px solid #eee;
 }
 
 .message-icon {
@@ -25,16 +24,13 @@
 
 .message-content {
   flex: 1;
-  color: #000;
+  color: #e0e0e0;
 }
 
 .user-message {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background-color: #f0f2f5;
-  padding: 12px;
-  border-radius: 8px;
   margin: 8px 0;
   min-width: 50px;
 }
@@ -43,9 +39,6 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background-color: #f8f9fa;
-  padding: 12px;
-  border-radius: 8px;
   margin: 8px 0;
 }
 
@@ -53,9 +46,6 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background-color: #e6f3ff;
-  padding: 12px;
-  border-radius: 8px;
   margin: 8px 0;
 }
 
@@ -78,9 +68,6 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  background-color: #f0f8f0;
-  padding: 12px;
-  border-radius: 8px;
   margin: 8px 0;
 }
 

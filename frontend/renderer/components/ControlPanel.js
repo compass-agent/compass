@@ -72,15 +72,19 @@ function ControlPanel() {
     }
   };
 
+  const getAutoModeIcon = () => {
+    return agentState.autoMode ? '⚡️⚡️' : '⚡️';
+  };
+
   return (
     <div className="control-panel">
       <button 
         className={`control-button ${agentState.autoMode ? 'active' : ''}`}
         onClick={handleAutoModeToggle}
-        title={agentState.autoMode ? "Automatic Mode (On)" : "Automatic Mode (Off)"}
+        title={agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"}
       >
         <i className="icon-auto">
-          {agentState.autoMode ? '➡️➡️➡️' : '➡️'}
+          {getAutoModeIcon()}
         </i>
       </button>
       
