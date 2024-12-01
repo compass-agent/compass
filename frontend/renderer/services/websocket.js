@@ -11,9 +11,19 @@ class WebSocketService {
   }
 
   connect() {
-    this.socket = io('http://localhost:5001');
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+
+    this.socket = io('http://localhost:5001', {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      transports: ['websocket']
+    });
 
     this.socket.on('connect', () => {
+      console.log('WebSocket connected');
       this.stateHandlers?.onConnect();
     });
 
@@ -41,7 +51,9 @@ class WebSocketService {
 
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
-      this.stateHandlers?.onError({ message: 'Connection failed' });
+      this.stateHandlers?.onError({ 
+        message: 'Connection failed. Retrying...' 
+      });
     });
   }
 

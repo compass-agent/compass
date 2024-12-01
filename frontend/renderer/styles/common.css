@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+}
+
+.error-banner {
+  background-color: #fff0f0;
+  color: #dc3545;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+  text-align: center;
+} 

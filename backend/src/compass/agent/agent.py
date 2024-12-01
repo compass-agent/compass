@@ -234,15 +234,7 @@ class AgentService:
                             "error": result.error,
                             "has_image": bool(result.base64_image)
                         })
-                        
-                        # Send tool result to frontend - simplified
-                        self.websocket_service.handle_message({
-                            "type": "tool_result",
-                            "output": result.output,
-                            "error": result.error,
-                            "has_image": bool(result.base64_image)
-                        })
-                        
+                                                
                         tool_result_content.append(
                             _make_api_tool_result(result, content_block["id"])
                         )

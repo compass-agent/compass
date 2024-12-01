@@ -1,0 +1,60 @@
+.message-input-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.message-input-container.collapsed {
+  height: 40px;
+  overflow: hidden;
+}
+
+.collapse-toggle {
+  position: absolute;
+  right: 10px;
+  top: -20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Add new styles for collapsed state */
+.chat-history-container.collapsed .chat-history {
+  max-height: 150px;
+}
+
+.tool-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.tool-icon {
+  font-size: 1.2em;
+}
+
+.tool-text {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.message-input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.send-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+} 

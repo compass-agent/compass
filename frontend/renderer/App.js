@@ -1,9 +1,11 @@
 import React from 'react';
-import './App.css';
+import './styles/common.css';
+import './styles/App.css';
 import ChatHistory from './components/ChatHistory';
 import MessageInput from './components/MessageInput';
 import ControlPanel from './components/ControlPanel';
 import { AppProvider, useAppState } from './context/AppContext';
+import Header from './components/Header';
 
 // Separate component for the main app content to use the context
 function AppContent() {
@@ -12,15 +14,20 @@ function AppContent() {
 
   return (
     <div className="App">
+      <Header />
       <div className="content">
         {connection.error && (
           <div className="error-banner">{connection.error}</div>
         )}
-        <ChatHistory />
-        <MessageInput 
-          disabled={!connection.connected}
-        />
-        <ControlPanel />
+        <div className="chat-container">
+          <ChatHistory />
+        </div>
+        <div className="bottom-controls">
+          <div className="control-panel-wrapper">
+            <ControlPanel />
+          </div>
+          <MessageInput />
+        </div>
       </div>
     </div>
   );

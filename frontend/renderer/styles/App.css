@@ -1,0 +1,82 @@
+.App {
+  text-align: center;
+  background-color: #fff;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.title-bar {
+  height: 30px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-app-region: drag;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+}
+
+.chat-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  padding: 20px;
+  padding-bottom: 0;
+}
+
+.chat-history-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.bottom-controls {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-top: 1px solid #ddd;
+}
+
+.control-panel-wrapper {
+  flex-shrink: 0;
+  padding: 10px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.message-input-container {
+  flex-shrink: 0;
+  padding: 10px;
+  background-color: white;
+} 

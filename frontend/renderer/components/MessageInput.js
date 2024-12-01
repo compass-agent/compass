@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import WebSocketService from '../services/websocket';
 import { useAppState, AgentStatus } from '../context/AppContext';
+import '../styles/MessageInput.css';
 
 function MessageInput() {
   const { state, dispatch } = useAppState();
