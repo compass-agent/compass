@@ -1,10 +1,12 @@
-import asyncio
+import subprocess
 import base64
 import os
 import shlex
 from pathlib import Path
 from typing import Literal, TypedDict
 from uuid import uuid4
+import re
+import logging
 
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
@@ -12,6 +14,8 @@ from .base import BaseAnthropicTool, ToolError, ToolResult
 from .run import run
 
 OUTPUT_DIR = "/tmp/outputs"
+
+logger = logging.getLogger(__name__)
 
 Action = Literal[
     "screenshot",
@@ -57,12 +61,20 @@ class ComputerTool(BaseAnthropicTool):
 
     def __init__(self):
         super().__init__()
-
+        
+        # Try environment variables first
         self.width = int(os.getenv("WIDTH") or 0)
         self.height = int(os.getenv("HEIGHT") or 0)
-        assert self.width and self.height, "WIDTH and HEIGHT must be set"
+        
+        # If not set via environment, detect from system
+        if not (self.width and self.height):
+            self.width, self.height = get_screen_dimensions()
+        
+        # Validate we have valid dimensions
+        if not (self.width and self.height):
+            raise ToolError("Could not determine screen dimensions")
 
-    async def __call__(
+    def __call__(
         self,
         *,
         action: Action,
@@ -70,14 +82,14 @@ class ComputerTool(BaseAnthropicTool):
         **kwargs,
     ):
         if action == "screenshot":
-            return await self.screenshot()
+            return self.screenshot()
         elif action in ("left_click", "right_click"):
-            return await self.handle_click(action, coordinate)
+            return self.handle_click(action, coordinate)
         else:
             # Placeholder for other actions
             raise ToolError(f"Action '{action}' is not implemented yet.")
 
-    async def handle_click(
+    def handle_click(
         self, 
         action: Literal["left_click", "right_click"], 
         coordinate: tuple[int, int] | None
@@ -103,16 +115,16 @@ class ComputerTool(BaseAnthropicTool):
             raise ToolError(f"Coordinates {x}, {y} are out of bounds")
             
         click_type = "c" if action == "left_click" else "rc"
-        return await self.shell(f"cliclick {click_type}:{x},{y}")
+        return self.shell(f"cliclick {click_type}:{x},{y}")
 
-    async def screenshot(self):
+    def screenshot(self):
         """Take a screenshot of the current screen on MacOS and return the base64 encoded image."""
         output_dir = Path(OUTPUT_DIR)
         output_dir.mkdir(parents=True, exist_ok=True)
         path = output_dir / f"screenshot_{uuid4().hex}.png"
 
         screenshot_cmd = f"screencapture -x {shlex.quote(str(path))}"
-        result = await self.shell(screenshot_cmd, take_screenshot=False)
+        result = self.shell(screenshot_cmd, take_screenshot=False)
 
         if path.exists():
             return result.replace(
@@ -120,13 +132,52 @@ class ComputerTool(BaseAnthropicTool):
             )
         raise ToolError(f"Failed to take screenshot: {result.error}")
 
-    async def shell(self, command: str, take_screenshot=True) -> ToolResult:
+    def shell(self, command: str, take_screenshot=True) -> ToolResult:
         """Run a shell command and return the output, error, and optionally a screenshot."""
-        _, stdout, stderr = await run(command)
-        base64_image = None
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            stdout = result.stdout
+            stderr = result.stderr
+            base64_image = None
 
-        return ToolResult(
-            output=stdout or None,  
-            error=stderr or None,  # Convert empty string to None
-            base64_image=base64_image
+            if result.returncode != 0:
+                raise ToolError(stderr)
+
+            return ToolResult(
+                output=stdout or None,
+                error=stderr or None,
+                base64_image=base64_image
+            )
+        except Exception as e:
+            raise ToolError(str(e))
+
+def get_screen_dimensions():
+    """Get the main display dimensions on macOS.
+    
+    Returns:
+        tuple[int, int]: Width and height in pixels, or (0, 0) if detection fails
+    """
+    try:
+        # Using system_profiler which is native to macOS
+        output = subprocess.check_output(
+            ['system_profiler', 'SPDisplaysDataType'], 
+            text=True
         )
+        
+        # Look for the main display resolution
+        match = re.search(r'Resolution: (\d+) x (\d+)', output)
+        if match:
+            width = int(match.group(1))
+            height = int(match.group(2))
+            logger.info(f"Detected screen dimensions: {width}x{height}")
+            return width, height
+            
+        logger.warning("Could not parse screen dimensions from system_profiler output")
+        return 0, 0
+        
+    except subprocess.SubprocessError as e:
+        logger.error(f"Failed to execute system_profiler: {e}")
+        return 0, 0
+    except Exception as e:
+        logger.error(f"Unexpected error getting screen dimensions: {e}")
+        return 0, 0

@@ -79,3 +79,6 @@ Thumbs.db
 *.pyc
 __pycache__/
 backend/env/
+
+
+backend/src/compass/key.py
