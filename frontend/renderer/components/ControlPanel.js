@@ -17,12 +17,27 @@ function ControlPanel() {
   const handlePlayToggle = () => {
     console.log('ControlPanel - Play toggle clicked:', {
       processing: agentState.processing,
-      playing: agentState.playing
+      playing: agentState.playing,
+      currentInput: chat.currentInput
     });
 
     if (!agentState.processing && !agentState.playing) {
       if (chat.currentInput?.trim()) {
+        dispatch({
+          type: 'ADD_CHAT_MESSAGE',
+          payload: {
+            type: 'user',
+            text: chat.currentInput.trim(),
+            timestamp: new Date().toISOString()
+          }
+        });
+
         WebSocketService.sendMessage(chat.currentInput);
+        
+        dispatch({ 
+          type: 'SET_CHAT_INPUT', 
+          payload: '' 
+        });
       }
     } else {
       WebSocketService.updateControlState({ playing: false });

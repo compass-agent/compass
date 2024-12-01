@@ -38,6 +38,11 @@ class WebSocketService {
     this.socket.on('error', (error) => {
       this.stateHandlers?.onError(error);
     });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      this.stateHandlers?.onError({ message: 'Connection failed' });
+    });
   }
 
   disconnect() {

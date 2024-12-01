@@ -19,11 +19,13 @@ from anthropic.types.beta import (
     BetaToolResultBlockParam,
     BetaToolUseBlockParam,
 )
+import time
 
 from compass.tools import ComputerTool, ToolCollection, ToolResult
 from compass.key import ANTHROPIC_API_KEY
 from compass.agent.prompt import get_system_prompt
-from compass.constants import MODEL_NAME, MAX_TOKENS
+from compass.constants import MODEL_NAME, MAX_TOKENS, PROMPT_CACHING
+from compass.utils.utility import JSONLogger
 
 
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
@@ -95,7 +97,7 @@ class AgentService:
             'autoMode': False,
             'highlightMode': False,
             'playing': False,
-            'procgessing': False,
+            'processing': False,
             'currentTask': None
         }
         self.messages: list[BetaMessageParam] = []
@@ -111,6 +113,9 @@ class AgentService:
             type="text",
             text=self.system_prompt
         )
+        
+        # Initialize JSON logger
+        self.json_logger = JSONLogger()
         
         logger.info("AgentService initialized")
 
@@ -134,6 +139,9 @@ class AgentService:
         """Process message with iteration loop based on auto mode"""
         logger.info(f"Processing new message: {message}")
         self.stop_processing()  # Stop any existing processing
+        
+        # Log the received message
+        self.json_logger.log_action('received_message', message)
         
         # Update state
         self._update_state({
@@ -174,35 +182,66 @@ class AgentService:
                    self.state['processing']):
                 logger.debug(f"Processing iteration {iteration}/{max_iterations}")
                 
-                self._inject_prompt_caching(self.messages)
-                self.system["cache_control"] = {"type": "ephemeral"}
-                try:
-                    raw_response = self.client.beta.messages.with_raw_response.create(
-                        max_tokens=MAX_TOKENS,
-                        messages=self.messages,
-                        model=MODEL_NAME,
-                        system=[self.system],
-                        tools=self.tool_collection.to_params(),
-                        betas=self.betas,
-                    )
-                except (APIStatusError, APIResponseValidationError) as e:
-                    # TODO: handle errors appropriately
-                    pass
-                response = raw_response.parse()
-                response_params = _response_to_params(response)
+                # Add delay between iterations (skip delay for first iteration)
+                if iteration > 1:
+                    logger.debug("Waiting 4 seconds before next iteration...")
+                    time.sleep(4)
+                
+                self._take_screenshot()
+                
+                # Get response from LLM and send to frontend
+                response_params = self._call_llm(mock=True)  # Set to False for production
+                
+                # Log the AI response
+                self.json_logger.log_action('ai_response', response_params)
+                
+                # Send AI response to frontend
+                for content_block in response_params:
+                    if content_block["type"] == "text":
+                        self.websocket_service.handle_message({
+                            "type": "ai_response",
+                            "content": content_block["text"]
+                        })
+                
                 self.messages.append(
                     {
                         "role": "assistant",
                         "content": response_params,
                     }
                 )
+                
                 tool_result_content: list[BetaToolResultBlockParam] = []
                 for content_block in response_params:
                     if content_block["type"] == "tool_use":
+                        # Log tool usage
+                        self.json_logger.log_action('tool_use', content_block)
+                        
+                        # Send tool usage to frontend - simplified
+                        self.websocket_service.handle_message({
+                            "type": "tool_use",
+                            "parameters": content_block["input"]
+                        })
+                        
                         result = self.tool_collection.run(
                             name=content_block["name"],
                             tool_input=cast(dict[str, Any], content_block["input"]),
                         )
+                        
+                        # Log tool result
+                        self.json_logger.log_action('tool_result', {
+                            "output": result.output,
+                            "error": result.error,
+                            "has_image": bool(result.base64_image)
+                        })
+                        
+                        # Send tool result to frontend - simplified
+                        self.websocket_service.handle_message({
+                            "type": "tool_result",
+                            "output": result.output,
+                            "error": result.error,
+                            "has_image": bool(result.base64_image)
+                        })
+                        
                         tool_result_content.append(
                             _make_api_tool_result(result, content_block["id"])
                         )
@@ -215,7 +254,6 @@ class AgentService:
                 iteration += 1
 
         finally:
-            # Ensure state is updated when processing ends
             self._update_state({
                 'processing': False,
                 'playing': False,
@@ -266,3 +304,88 @@ class AgentService:
     def get_state(self) -> Dict[str, Any]:
         """Return the current state"""
         return self.state.copy()
+
+    def _take_screenshot(self) -> None:
+        """Takes a screenshot and adds it to the message history"""
+        try:
+            # First, add assistant message requesting screenshot
+            self.messages.append({
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "computer",
+                        "id": f"tool_screenshot_{len(self.messages)}",
+                        "input": {"action": "screenshot"}
+                    }
+                ]
+            })
+            
+            # Execute screenshot action using tool collection
+            result = self.tool_collection.run(
+                name="computer",
+                tool_input={"action": "screenshot"}
+            )
+            
+            # Convert the tool result to API format
+            tool_result = _make_api_tool_result(
+                result=result,
+                tool_use_id=f"tool_screenshot_{len(self.messages)-1}"  # Match the ID from assistant's message
+            )
+            
+            # Add screenshot result to messages
+            self.messages.append({
+                "role": "user",
+                "content": [tool_result]
+            })
+            
+            logger.info("Screenshot captured and added to message history")
+        except Exception as e:
+            logger.error(f"Failed to take screenshot: {e}")
+
+    def _call_llm(self, mock=True) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
+        """Call the LLM (or return mock data during development)
+        
+        Args:
+            mock: If True, returns mock data instead of calling the actual API
+            
+        Returns:
+            list of content blocks (text or tool use blocks)
+        """
+        if mock:
+            # Mock response for development - includes both text response and tool use
+            return [
+                {
+                    'type': 'text',
+                    'text': 'I see a desktop environment with several windows open. The main window appears to be a messaging or chat application with a dark theme. Let me take another screenshot to analyze further.'
+                },
+                {
+                    'type': 'tool_use',
+                    'name': 'computer',
+                    'id': 'mock_tool_1',
+                    'input': {
+                        'action': 'screenshot'
+                    }
+                }
+            ]
+        
+        # Real API call
+        try:
+            if PROMPT_CACHING:
+                self._inject_prompt_caching(self.messages)
+                self.system["cache_control"] = {"type": "ephemeral"}
+                
+            raw_response = self.client.beta.messages.with_raw_response.create(
+                max_tokens=MAX_TOKENS,
+                messages=self.messages,
+                model=MODEL_NAME,
+                system=[self.system],
+                tools=self.tool_collection.to_params(),
+                betas=self.betas,
+            )
+            response = raw_response.parse()
+            return _response_to_params(response)
+            
+        except (APIStatusError, APIResponseValidationError) as e:
+            logger.error(f"LLM API call failed: {e}")
+            raise

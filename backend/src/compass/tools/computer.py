@@ -21,7 +21,6 @@ Action = Literal[
     "screenshot",
     "left_click",
     "right_click",
-    # Remaining placeholders
     # "key",
     # "type",
     # "mouse_move",

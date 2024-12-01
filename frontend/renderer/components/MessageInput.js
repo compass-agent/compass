@@ -45,9 +45,11 @@ function MessageInput() {
   };
 
   const handleSubmit = async (e) => {
+    // Add logging at the start of submission
+    console.log('MessageInput - Starting submission with message:', message);
+    
     e?.preventDefault();
     const playState = getPlayState();
-    console.log('MessageInput - handleSubmit attempt:', { message, playState });
     
     if (!message.trim() || playState !== 'stopped') {
       console.log('MessageInput - handleSubmit cancelled:', { 
@@ -58,7 +60,21 @@ function MessageInput() {
     }
 
     try {
-      console.log('MessageInput - sending message:', message);
+      // Add logging before dispatch
+      console.log('MessageInput - Dispatching user message');
+      
+      dispatch({
+        type: 'ADD_CHAT_MESSAGE',
+        payload: {
+          type: 'user',
+          text: message.trim(),
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      // Add logging after dispatch
+      console.log('MessageInput - Message dispatched, sending to WebSocket');
+      
       WebSocketService.sendMessage(message);
       setMessage('');
       dispatch({ 
@@ -67,10 +83,6 @@ function MessageInput() {
       });
     } catch (error) {
       console.error('MessageInput - error sending message:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error.message 
-      });
     }
   };
 

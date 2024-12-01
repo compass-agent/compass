@@ -40,6 +40,13 @@ function appReducer(state, action) {
   console.log('AppReducer - Action:', action.type, 'Payload:', action.payload);
   console.log('AppReducer - Current State:', state.agent);
 
+  if (action.type === ActionTypes.ADD_CHAT_MESSAGE) {
+    console.log('Adding chat message:', action.payload);
+    console.log('Current messages:', state.chat.messages);
+  }
+
+  console.log('AppReducer - Received action:', action.type, 'with payload:', action.payload);
+
   switch (action.type) {
     case ActionTypes.SET_CONNECTION_STATUS:
       return {
@@ -63,11 +70,14 @@ function appReducer(state, action) {
       };
     
     case ActionTypes.ADD_CHAT_MESSAGE:
+      console.log('AppReducer - Before adding message:', state.chat.messages);
+      const newMessages = [...state.chat.messages, action.payload];
+      console.log('AppReducer - After adding message:', newMessages);
       return {
         ...state,
         chat: {
           ...state.chat,
-          messages: [...state.chat.messages, action.payload]
+          messages: newMessages
         }
       };
     
@@ -121,9 +131,13 @@ export function AppProvider({ children }) {
       }),
       
       onResponse: (data) => {
-        if (data.type === 'ai') {
-          dispatch({ type: ActionTypes.ADD_CHAT_MESSAGE, payload: data });
-        }
+        dispatch({ 
+          type: ActionTypes.ADD_CHAT_MESSAGE, 
+          payload: {
+            ...data,
+            timestamp: new Date().toISOString()
+          } 
+        });
       },
       
       onStateUpdate: (data) => dispatch({ 
