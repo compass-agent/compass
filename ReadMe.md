@@ -45,12 +45,12 @@ To start the development environment:
    ```
 
 2. In a new terminal, start the frontend:
-   # First:
+   # First: Loads the app in Electron (Full App)
    In one terminal you need to first:
    ```bash
    npm run watch
    ```
-   # OR Using Webpack Dev Server:
+   # OR Using Webpack Dev Server: Runs the app in a browser.
    In one terminal you need to first:
    ```
    npm run serve

@@ -9,6 +9,6 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"
   },
-  "include": ["frontend/**/*.ts", "frontend/**/*.tsx"],
+  "include": ["frontend/**/*.ts", "frontend/**/*.tsx", "frontend/main/constants.js"],
   "exclude": ["node_modules", "dist"]
 }
