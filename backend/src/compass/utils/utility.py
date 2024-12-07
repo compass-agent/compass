@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 class HistoryLogger:
     def __init__(self, log_dir='logs'):
-        # Generate session ID with timestamp and 4 random digits
         timestamp = datetime.now().strftime('%Y%m%d-%H%M')
         random_suffix = ''.join(random.choices(string.digits, k=4))
         self.session_id = f"{timestamp}-{random_suffix}"
@@ -19,21 +18,13 @@ class HistoryLogger:
         self.log_dir = Path(log_dir) / self.session_id
         self.screenshots_dir = self.log_dir / 'screenshots'
         
-        # Create directory structure
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize logging files
         self.history_file = self.log_dir / 'history.json'
         self.app_log_file = self.log_dir / 'app.log'
         self.logs = []
         
-        # Create history file if it doesn't exist
-        if not self.history_file.exists():
-            with open(self.history_file, 'w') as f:
-                json.dump([], f)
-        
-        # Configure logging
         self._configure_logging()
 
     def _configure_logging(self):
@@ -72,26 +63,19 @@ class HistoryLogger:
         werkzeug_logger = logging.getLogger('werkzeug')
         werkzeug_logger.setLevel(logging.WARNING)
 
-    def log_action(self, action_type, content):
-        """Log specialized history actions"""
-        log_entry = {
-            'timestamp': datetime.now().isoformat(),
-            'session_id': self.session_id,
-            'action_type': action_type,
-            'content': content
-        }
-        self.logs.append(log_entry)
-        self._write_to_file()
-
-    def _write_to_file(self):
-        """Write history logs to JSON file"""
-        with open(self.history_file, 'w') as f:
-            json.dump(self.logs, f, indent=4)
-
     @property
     def session_path(self) -> Path:
         """Get the base path for this session's logs"""
         return self.log_dir
+
+    def save_messages(self, messages: list) -> None:
+        """Save messages to a JSON file in the session directory"""
+        messages_file = self.log_dir / 'messages.json'
+        try:
+            with open(messages_file, 'w') as f:
+                json.dump(messages, f, indent=4)
+        except Exception as e:
+            logger.error(f"Failed to save messages: {e}")
 
 class TokenTracker:
     def __init__(self):

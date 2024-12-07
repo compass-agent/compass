@@ -93,6 +93,7 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
 
 class AgentService:
     def __init__(self, state_manager: StateManager, history_logger: HistoryLogger):
+        logger.info("Initializing Agent")
         self.state_manager = state_manager
         self.processing_thread = None
         self.stop_event = threading.Event()
@@ -101,7 +102,6 @@ class AgentService:
         # Initialize beta flags and client
         self.betas = [COMPUTER_USE_BETA_FLAG, PROMPT_CACHING_BETA_FLAG]
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
-        
         # Use provided history_logger
         self.history_tracker = history_logger
         
@@ -110,9 +110,10 @@ class AgentService:
         
         # Pass history tracker to ComputerTool
         self.tool_collection = ToolCollection(ComputerTool(history_tracker=self.history_tracker))
-        
-        logger.info("AgentService initialized")
+        self.tools_params = self.tool_collection.to_params()
+        logger.info(f"Tools params: {self.tools_params}")
         self.pending_tool_queue = []
+        logger.info("Agent successfully initialized")
 
     def _get_current_system_prompt(self) -> BetaTextBlockParam:
         """Get the appropriate system prompt based on current highlight mode"""
@@ -124,29 +125,30 @@ class AgentService:
             text=system_prompts[mode]
         )
 
+    def _append_message(self, message: BetaMessageParam) -> None:
+        """Helper method to append message and save messages state"""
+        self.messages.append(message)
+        self.history_tracker.save_messages(self.messages)
+
     def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
         logger.info(f"New message received: {message}")
         self.stop_processing()
 
-        self.messages = [
-            {
-                "role": "user",
-                "content": [{"type": "text", "text": message}]
-            }
-        ]
+        self._append_message({
+            "role": "user",
+            "content": [{"type": "text", "text": message}]
+        })
         
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
         
         if self.state_manager.auto_mode:
-            logger.info("Processing message in auto mode")
             self.processing_thread = threading.Thread(
                 target=self._process_message_loop,
                 args=(message,)
             )
         else:
-            logger.info("Processing message in single mode")
             self.processing_thread = threading.Thread(
                 target=self._process_message_single_mode,
                 args=(message,)
@@ -155,6 +157,7 @@ class AgentService:
         self.processing_thread.start()
 
     def _process_message_single_mode(self, message: Optional[str]) -> None:
+        logger.info(f"Starting to process message in single mode: {message}")
         try:
             response_params = self._next_step_proposal()
 
@@ -205,20 +208,8 @@ class AgentService:
                     tool_input=cast(dict[str, Any], content_block["input"]),
                 )
 
-                # Log tool result
-                self.history_tracker.log_action('tool_result', {
-                    "output": result.output,
-                    "error": result.error,
-                    "has_image": bool(result.base64_image)
-                })
-
-                # Convert result to API format
                 tool_result_content = _make_api_tool_result(result, content_block["id"])
-
-                # Append tool result to messages
-                self.messages.append({"role": "user", "content": [tool_result_content]})
-
-                # Send tool result to frontend
+                self._append_message({"role": "user", "content": [tool_result_content]})
                 self.state_manager.emit_response({
                     "type": "tool_result",
                     "content": tool_result_content,
@@ -242,6 +233,7 @@ class AgentService:
 
     def _process_message_loop(self, message: str) -> None:
         """Internal method to handle message processing loop"""
+        logger.info(f"Starting to process message in loop mode: {message}")
         iteration = 1
         try:
             while (iteration <= MAX_ITERATIONS and 
@@ -265,13 +257,11 @@ class AgentService:
 
 
     def _next_step_proposal(self):
+        
+        logger.info("Taking screenshot and cursor position before calling AI")
         self._take_screenshot()
         # Get response from LLM and send to frontend
         response_params = self._call_llm()  # Set to False for production
-        # Log the AI response
-        self.history_tracker.log_action('ai_response', response_params)
-        
-        # Send AI response to frontend
         for content_block in response_params:
             if content_block["type"] == "text":
                 self.state_manager.emit_response({
@@ -279,7 +269,7 @@ class AgentService:
                     "content": content_block["text"]
                 })
         
-        self.messages.append(
+        self._append_message(
             {
                 "role": "assistant",
                 "content": response_params,
@@ -314,10 +304,6 @@ class AgentService:
         tool_result_content: list[BetaToolResultBlockParam] = []
         for content_block in response_params:
             if content_block["type"] == "tool_use":
-                # Log tool usage
-                self.history_tracker.log_action('tool_use', content_block)
-                
-                # Send tool usage to frontend - simplified
                 self.state_manager.emit_response({
                     "type": "tool_use",
                     "parameters": content_block["input"]
@@ -327,13 +313,6 @@ class AgentService:
                     name=content_block["name"],
                     tool_input=cast(dict[str, Any], content_block["input"]),
                 )
-                
-                # Log tool result
-                self.history_tracker.log_action('tool_result', {
-                    "output": result.output,
-                    "error": result.error,
-                    "has_image": bool(result.base64_image)
-                })
                                         
                 tool_result_content.append(
                     _make_api_tool_result(result, content_block["id"])
@@ -343,13 +322,14 @@ class AgentService:
             # Job is done
             return
         else:
-            self.messages.append({"role": "user", "content": tool_result_content})
+            self._append_message({"role": "user", "content": tool_result_content})
             return tool_result_content
 
     def stop_processing(self) -> None:
         """Stop current processing loop"""
+        logger.info("Attempting to stop processing thread if it exists")
         if self.processing_thread and self.processing_thread.is_alive():
-            logger.info("Stopping active message processing thread")
+            logger.info(f"Stopping active message processing thread: {self.processing_thread}")
             self.stop_event.set()
             self.state_manager.set_status(AgentStatus.STOPPING)
             
@@ -368,13 +348,9 @@ class AgentService:
                 if attempt < max_attempts - 1:  # Don't log "failed" for the last attempt
                     logger.warning(f"Thread stop attempt {attempt + 1} failed, retrying...")
             
-            # Final check and state update
             if self.processing_thread.is_alive():
                 logger.error(f"Failed to stop thread after {max_attempts} attempts")
-                # We still update the state to IDLE since we can't do anything else
-                # The thread might continue running in the background
             
-            # Update state to IDLE regardless of thread state
             self.state_manager.set_status(AgentStatus.IDLE)
         else:
             logger.info("No active processing thread to stop")
@@ -383,8 +359,8 @@ class AgentService:
     def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
         try:
-            # First get cursor position
-            self.messages.append({
+            # Replace direct appends with helper method
+            self._append_message({
                 "role": "assistant",
                 "content": [
                     {
@@ -396,14 +372,12 @@ class AgentService:
                 ]
             })
             
-            # Execute cursor position check
             cursor_result = self.tool_collection.run(
                 name="computer",
                 tool_input={"action": "cursor_position"}
             )
             
-            # Add cursor position result
-            self.messages.append({
+            self._append_message({
                 "role": "user",
                 "content": [
                     _make_api_tool_result(
@@ -413,8 +387,7 @@ class AgentService:
                 ]
             })
 
-            # Then take screenshot (existing code)
-            self.messages.append({
+            self._append_message({
                 "role": "assistant",
                 "content": [
                     {
@@ -426,14 +399,12 @@ class AgentService:
                 ]
             })
             
-            # Execute screenshot action using tool collection
             result = self.tool_collection.run(
                 name="computer",
                 tool_input={"action": "screenshot"}
             )
             
-            # Add screenshot result
-            self.messages.append({
+            self._append_message({
                 "role": "user",
                 "content": [
                     _make_api_tool_result(
@@ -488,7 +459,7 @@ class AgentService:
                 messages=self.messages,
                 model=MODEL_NAME,
                 system=[system],
-                tools=self.tool_collection.to_params(),
+                tools=self.tools_params,
                 betas=self.betas,
             )
             response = raw_response.parse()

@@ -1,21 +1,21 @@
-import subprocess
+import pyautogui
 import base64
-import os
+from PIL import Image
 import shlex
 from pathlib import Path
 from typing import Literal, TypedDict, Optional
 from uuid import uuid4
-import re
 import logging
 import time
 from datetime import datetime
 from enum import StrEnum
+import subprocess
 
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
 from .base import BaseAnthropicTool, ToolError, ToolResult
 from .run import run
-from compass.constants import SCREENSHOT_SCALE_FACTOR, SCREENSHOT_COLOR_DEPTH, KEEP_SCREENSHOTS
+from compass.constants import SCREENSHOT_SCALE_FACTOR, SCREENSHOT_COLOR_DEPTH, KEEP_SCREENSHOTS, SCALING_ENABLED
 from compass.utils.utility import HistoryLogger
 
 OUTPUT_DIR = "/tmp/outputs"
@@ -44,9 +44,9 @@ class ScalingSource(StrEnum):
     API = "api"
 
 MAX_SCALING_TARGETS: dict[str, Resolution] = {
-    "XGA": Resolution(width=1024, height=768),    # 4:3
-    "WXGA": Resolution(width=1280, height=800),   # 16:10
-    "FWXGA": Resolution(width=1366, height=768),  # ~16:9
+    "XGA": Resolution(width=1024, height=768),    # 4:3 1.33333
+    "WXGA": Resolution(width=1280, height=800),   # 16:10 1.6
+    "FWXGA": Resolution(width=1366, height=768),  # ~16:9 1.77864
 }
 
 class ComputerToolOptions(TypedDict):
@@ -66,14 +66,14 @@ class ComputerTool(BaseAnthropicTool):
     height: int
 
     _screenshot_delay = 2.0
-    _scaling_enabled = True
+    _scaling_enabled = SCALING_ENABLED
     _scaling_factor = SCREENSHOT_SCALE_FACTOR
 
     @property
     def options(self) -> ComputerToolOptions:
         return {
-            "display_width_px": self.width,
-            "display_height_px": self.height,
+            "display_width_px": self.scaled_width, 
+            "display_height_px": self.scaled_height,
         }
 
     def to_params(self) -> BetaToolComputerUse20241022Param:
@@ -81,56 +81,63 @@ class ComputerTool(BaseAnthropicTool):
 
     def __init__(self, history_tracker: 'HistoryLogger'):
         super().__init__()
-        
-        # Store history tracker instance
-        self.history_tracker = history_tracker
-        
-        # Get original dimensions
-        self._original_width, self._original_height = get_screen_dimensions()
-        
-        # Store the original dimensions
-        self.width = self._original_width
-        self.height = self._original_height
+        logger.info("Initializing ComputerTool")
+        self.history_tracker = history_tracker        
+        self.width, self.height = pyautogui.size()
+        logger.info(f"Original dimensions: {self.width}, {self.height}")
         
         if not (self.width and self.height):
+            logger.error("Could not determine screen dimensions, thus quitting") 
             raise ToolError("Could not determine screen dimensions")
 
-        # Calculate target dimensions and scaling factors once
-        self._target_dimension = self._find_best_target_dimension()
-        if self._target_dimension:
-            base_x_scale = self._target_dimension["width"] / self.width
-            base_y_scale = self._target_dimension["height"] / self.height
-            self._x_scaling_factor = base_x_scale * self._scaling_factor
-            self._y_scaling_factor = base_y_scale * self._scaling_factor
-        else:
-            self._x_scaling_factor = self._y_scaling_factor = self._scaling_factor
-
-    def _find_best_target_dimension(self) -> Optional[Resolution]:
-        """Find the best matching target resolution based on aspect ratio."""
-        ratio = self.width / self.height
+        logger.info("Finding best target dimension, XGA, WXGA, FWXGA...")
+        self._find_best_standard_dimension()
         
+        logger.info(f"Computer works with image dimensions of {self.width}x{self.height}")
+        logger.info(f"Agent will be working with image dimensions of {self.scaled_width}x{self.scaled_height}")
+ 
+    def _find_best_standard_dimension(self) -> None:
+        """
+        Find the best matching standard resolution based on aspect ratio.
+        """
+        ratio = self.width / self.height
+        logger.info(f"checking for best standard dimension that matches aspect ratio of {ratio}")
+        
+        base_x_scale = base_y_scale = 1.0
+        match_found = False
         for dimension in MAX_SCALING_TARGETS.values():
-            # Allow small error in aspect ratio
-            if abs(dimension["width"] / dimension["height"] - ratio) < 0.02:
-                if dimension["width"] < self.width:
-                    logger.info(f"Found best target dimension rations: {dimension}")
-                    return dimension
-        logger.info("No best target dimension found")
-        return None
+            # Set tolerance to 0.06 to catch appropriate ratios
+            if abs(dimension["width"] / dimension["height"] - ratio) < 0.064 and dimension["width"] < self.width:
+                logger.info(f"Found best standard dimension ratios: {dimension}")
+                # Calculate scaling factors
+                base_x_scale = dimension["width"] / self.width
+                base_y_scale = dimension["height"] / self.height
+                logger.info(f"base scaling factors: {base_x_scale}, {base_y_scale}")
+                match_found = True
+                break
+        
+        if not match_found:
+            logger.warning(f"No matching standard dimensions found for ratio {ratio:.3f} (dimensions: {self.width}x{self.height})")
+
+        self._x_scaling_factor = base_x_scale * self._scaling_factor
+        self._y_scaling_factor = base_y_scale * self._scaling_factor
+        logger.info(f"final scaling factors: {self._x_scaling_factor}, {self._y_scaling_factor}")
+        self.scaled_width = round(self.width * self._x_scaling_factor)
+        self.scaled_height = round(self.height * self._y_scaling_factor)
+        logger.info(f"scaled dimensions: {self.scaled_width}, {self.scaled_height}")
 
     def scale_coordinates(self, source: ScalingSource, x: int, y: int) -> tuple[int, int]:
         """Scale coordinates using pre-calculated scaling factors."""
-        if not self._scaling_enabled:
+        if not self._scaling_enabled: # FIXME: Check make sure we used it during init
             return x, y
 
         if source == ScalingSource.API:
-            # Scale up from API to computer coordinates
-            if x > self.width or y > self.height:
-                logger.error(f"Coordinates {x}, {y} are out of bounds ({self.width}, {self.height})")
-                raise ToolError(f"Coordinates {x}, {y} are out of bounds")
+            if x > self.scaled_width or y > self.scaled_height:
+                message = f"Coordinates {x}, {y} are out of bounds ({self.scaled_width}, {self.scaled_height})"
+                logger.error(message)
+                raise ToolError(message)
             return round(x / self._x_scaling_factor), round(y / self._y_scaling_factor)
         else:
-            # Scale down from computer to API coordinates
             return round(x * self._x_scaling_factor), round(y * self._y_scaling_factor)
 
     def __call__(
@@ -159,102 +166,86 @@ class ComputerTool(BaseAnthropicTool):
         action: Literal["left_click", "right_click"], 
         coordinate: tuple[int, int] | None
     ) -> ToolResult:
-        """Handle mouse click actions at the current cursor position.
-        
-        Args:
-            action: The type of click action ("left_click" or "right_click")
-            
-        Returns:
-            ToolResult: The result of the click action
-        """
+        """Handle mouse click actions at the current cursor position."""
         if coordinate is not None:
             raise ToolError(f"coordinate is not accepted for {action}")
         
-        click_type = "c" if action == "left_click" else "rc"
-        logger.info(f"Executing click action: {click_type}")
-        return self.shell(f"cliclick {click_type}")
+        button = 'left' if action == "left_click" else 'right'
+        pyautogui.click(button=button)
+        logger.info(f"Executing click action: {action}")
+        return ToolResult(output=None, error=None)
 
     def handle_text_input(
         self,
         action: Literal["key", "type"],
         text: str | None
     ) -> ToolResult:
-        """Handle keyboard input actions.
-        
-        Args:
-            action: The type of text input ("key" or "type")
-            text: The text to type or key command to send
-            
-        Raises:
-            ToolError: If text is invalid or missing
-        """
+        """Handle keyboard input actions."""
         if text is None:
             logger.error(f"text is required for {action}")
             raise ToolError(f"text is required for {action}")
 
         if action == "key":
             logger.info(f"Executing key action: {text}")
-            return self.shell(f"cliclick kp:{text}")
+            pyautogui.press(text)
+            return ToolResult(output=None, error=None)
         else:  # type action
             logger.info(f"Executing type action: {text}")
             chunks = [text[i:i + TYPING_GROUP_SIZE] 
                      for i in range(0, len(text), TYPING_GROUP_SIZE)]
             
-            result = None
             for chunk in chunks:
-                result = self.shell(f"cliclick t:{shlex.quote(chunk)}")
+                pyautogui.write(chunk, interval=TYPING_DELAY_MS/1000)
                 if len(chunks) > 1:
                     time.sleep(TYPING_DELAY_MS / 1000)
-            return result or ToolResult(output=None, error=None)
+            return ToolResult(output=None, error=None)
 
     def screenshot(self):
         """Take and process a screenshot with proper scaling"""
         try:
             timestamp = datetime.now().strftime('%H_%M_%S')
-            
             original_path = self.history_tracker.screenshots_dir / f"{timestamp}__1.png"
             scaled_path = self.history_tracker.screenshots_dir / f"{timestamp}__2.png"
             final_path = self.history_tracker.screenshots_dir / f"{timestamp}__3.png"
-
-            screenshot_cmd = f"screencapture -x {shlex.quote(str(original_path))}"
-            result = self.shell(screenshot_cmd, take_screenshot=False)
-
+            screenshot = pyautogui.screenshot()
+            screenshot.save(str(original_path))
             if not original_path.exists():
-                logger.error(f"Failed to take screenshot: {result.error}")
-                raise ToolError(f"Failed to take screenshot: {result.error}")
-            logger.info(f"took screenshot to {original_path}, dimensions {self.width}x{self.height}")
-
-            scaled_width, scaled_height = self.scale_coordinates(
-                ScalingSource.COMPUTER, 
-                self.width, 
-                self.height
-            )
-            scale_cmd = (
-                f"sips -z {scaled_height} {scaled_width} "
-                f"{shlex.quote(str(original_path))} "
-                f"--out {shlex.quote(str(scaled_path))}"
-            )
-            self.shell(scale_cmd, take_screenshot=False)
-            if not scaled_path.exists():
-                logger.error(f"Failed to scale screenshot: {result.error}")
-                raise ToolError(f"Failed to scale screenshot: {result.error}")
-            logger.info(f"scaled screenshot to {scaled_path} with dimensions {scaled_width}x{scaled_height}")
-
-            optimize_cmd = (
-                f"pngquant '{SCREENSHOT_COLOR_DEPTH}' "
-                f"--quality=0-85 --speed 1 --force "
-                f"--output {shlex.quote(str(final_path))} "
-                f"{shlex.quote(str(scaled_path))}"
-            )
-            optimize_result = self.shell(optimize_cmd, take_screenshot=False)
+                logger.error("Failed to take screenshot")
+                raise ToolError("Failed to take screenshot")
+            logger.info(f"took screenshot to {original_path}, dimensions {self.width}x{self.height}, size: {original_path.stat().st_size / 1024:.1f}kb")
             
-            if not final_path.exists():
-                logger.error(f"Failed to optimize screenshot: {optimize_result.error}")
-                raise ToolError(f"pngquant failed to process image: {optimize_result.error}")
-            logger.info(f"optimized screenshot to {final_path}, dimensions {scaled_width}x{scaled_height}")
+
+            with Image.open(original_path) as img:
+                img = img.resize((self.scaled_width, self.scaled_height), Image.Resampling.LANCZOS)
+                img.save(scaled_path)
+
+            if not scaled_path.exists():
+                logger.error("Failed to scale screenshot")
+                raise ToolError("Failed to scale screenshot")
+            logger.info(f"scaled screenshot to {scaled_path} with dimensions {self.scaled_width}x{self.scaled_height}, size: {scaled_path.stat().st_size / 1024:.1f}kb")
+
+            try:
+                optimize_cmd = (
+                    f"pngquant '{SCREENSHOT_COLOR_DEPTH}' "
+                    f"--quality=0-85 --speed 1 --force "
+                    f"--output {shlex.quote(str(final_path))} "
+                    f"{shlex.quote(str(scaled_path))}"
+                )
+                subprocess.run(optimize_cmd, shell=True, check=True, capture_output=True)
+                
+                if not final_path.exists():
+                    logger.warning("pngquant optimization failed, using scaled image")
+                    final_path = scaled_path
+                logger.info(f"optimized screenshot to {final_path}, size: {final_path.stat().st_size / 1024:.1f}kb")
+                
+            except (subprocess.SubprocessError, FileNotFoundError):
+                logger.warning("pngquant not available, using scaled image")
+                final_path = scaled_path
 
             processed_bytes = final_path.read_bytes()
-            return result.replace(
+            return ToolResult(
+                output=None,
+                error=None,
                 base64_image=base64.b64encode(processed_bytes).decode()
             )
 
@@ -263,26 +254,6 @@ class ComputerTool(BaseAnthropicTool):
                 for path in (original_path, scaled_path, final_path):
                     if path.exists():
                         path.unlink()
-
-    def shell(self, command: str, take_screenshot=True) -> ToolResult:
-        """Run a shell command and return the output, error, and optionally a screenshot."""
-        try:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            stdout = result.stdout
-            stderr = result.stderr
-            base64_image = None
-
-            if result.returncode != 0:
-                logger.error(f"Failed to execute command {command}: {stderr}")
-                raise ToolError(stderr)
-            return ToolResult(
-                output=stdout or None,
-                error=stderr or None,
-                base64_image=base64_image
-            )
-        except Exception as e:
-            logger.error(f"Failed to execute command {command}: {e}")
-            raise ToolError(str(e))
 
     def _handle_mouse_action(self, action: str, coordinate: tuple[int, int] | None = None) -> ToolResult:
         """Handle mouse-related actions."""
@@ -296,10 +267,11 @@ class ComputerTool(BaseAnthropicTool):
                 raise ToolError(f"{coordinate} must be a tuple of non-negative ints")
             
             x, y = self.scale_coordinates(ScalingSource.API, coordinate[0], coordinate[1])
-            logger.info(f"scaling mouse move to {x},{y} from {coordinate[0]},{coordinate[1]}")
-            command = f"cliclick m:{x},{y}"
-            logger.info(f"Executing command: {command}")
-            return self.shell(command)
+            logger.info(f"scaling back AI suggested mouse move to {x},{y} from {coordinate[0]},{coordinate[1]}")
+            pyautogui.moveTo(x, y)
+            return ToolResult(output=None, error=None)
+        
+        raise ToolError(f"Unsupported mouse action: {action}")
 
     def get_cursor_position(self, coordinate: tuple[int, int] | None = None, text: str | None = None) -> ToolResult:
         """Get the current cursor position."""
@@ -310,49 +282,7 @@ class ComputerTool(BaseAnthropicTool):
         if text is not None:
             raise ToolError("text is not accepted for cursor_position")
 
-        result = self.shell("cliclick p", take_screenshot=False)
-        
-        if result.output:
-            try:
-                x, y = map(int, result.output.strip().split(','))
-                scaled_x, scaled_y = self.scale_coordinates(ScalingSource.COMPUTER, x, y)
-                logger.info(f"scaled cursor position to {scaled_x},{scaled_y} from {x},{y}")
-                return result.replace(output=f"X={scaled_x},Y={scaled_y}")
-            except ValueError:
-                logger.error(f"Failed to parse cursor position from: {result.output}")
-                raise ToolError(f"Failed to parse cursor position from: {result.output}")
-        
-        logger.error("Failed to get cursor position")
-        raise ToolError("Failed to get cursor position")
-
-def get_screen_dimensions():
-    """Get the main display dimensions on macOS.
-    
-    Returns:
-        tuple[int, int]: Width and height in pixels, or (0, 0) if detection fails
-    """
-    logger.info("Getting screen dimensions")
-    try:
-        # Using system_profiler which is native to macOS
-        output = subprocess.check_output(
-            ['system_profiler', 'SPDisplaysDataType'], 
-            text=True
-        )
-        
-        # Look for the main display resolution
-        match = re.search(r'Resolution: (\d+) x (\d+)', output)
-        if match:
-            width = int(match.group(1))
-            height = int(match.group(2))
-            logger.info(f"Detected screen dimensions: {width}x{height}")
-            return width, height
-            
-        logger.warning("Could not parse screen dimensions from system_profiler output")
-        return 0, 0
-        
-    except subprocess.SubprocessError as e:
-        logger.error(f"Failed to execute system_profiler: {e}")
-        return 0, 0
-    except Exception as e:
-        logger.error(f"Unexpected error getting screen dimensions: {e}")
-        return 0, 0
+        x, y = pyautogui.position()
+        scaled_x, scaled_y = self.scale_coordinates(ScalingSource.COMPUTER, round(x), round(y))
+        logger.info(f"scaled cursor position to {scaled_x},{scaled_y} from {x},{y}")
+        return ToolResult(output=f"X={scaled_x},Y={scaled_y}", error=None)
