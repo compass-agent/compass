@@ -5,19 +5,13 @@ from flask_socketio import SocketIO, emit
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
-
-# Initialize logging first
 history_logger = HistoryLogger()
-
-# Create logger for this module
 import logging
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
 app = Flask(__name__)
 app.config.from_object('compass.config.config.Config')
 
-# Initialize SocketIO with logging disabled
 socketio = SocketIO(app, 
     cors_allowed_origins="*",
     async_mode='threading',
@@ -25,7 +19,6 @@ socketio = SocketIO(app,
     engineio_logger=False,
     debug=False)
 
-# Initialize services
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager, history_logger)
 

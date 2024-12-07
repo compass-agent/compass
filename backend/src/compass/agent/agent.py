@@ -143,7 +143,6 @@ class AgentService:
         """Get the appropriate system prompt based on current highlight mode"""
         system_prompts = get_system_prompt()
         mode = "highlight" if self.state_manager.highlight_mode else "tool"
-
         return BetaTextBlockParam(
             type="text",
             text=system_prompts[mode]
@@ -162,26 +161,21 @@ class AgentService:
         self._append_message({
             "role": "user",
             "content": [{"type": "text", "text": message}]
-        })
-        
+        })    
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
         
         if self.state_manager.auto_mode:
             self.processing_thread = threading.Thread(
-                target=self._process_message_loop,
-                args=(message,)
+                target=self._process_message_loop
             )
         else:
             self.processing_thread = threading.Thread(
-                target=self._process_message_single_mode,
-                args=(message,)
+                target=self._process_message_single_mode
             )
-
         self.processing_thread.start()
 
-    def _process_message_single_mode(self, message: Optional[str]) -> None:
-        logger.info(f"Starting to process message in single mode: {message}")
+    def _process_message_single_mode(self) -> None:
         try:
             response_params = self._next_step_proposal()
 
@@ -194,8 +188,6 @@ class AgentService:
             else:
                 logger.info(f"Storing {len(response_params) - 1} tool proposals in queue")
                 self._store_pending_tool_proposals(response_params)
-
-
         finally:
             logger.info("Setting status to IDLE, clearing stop event, and cleaning up thread")
             self.state_manager.set_status(AgentStatus.IDLE)
@@ -203,46 +195,83 @@ class AgentService:
             self.processing_thread = None
             logger.info("Single mode processing completed and cleaned up")
 
+    def _process_message_loop(self) -> None:
+        """Internal method to handle message processing loop"""
+        logger.info("Starting to process message in loop mode")
+        iteration = 1
+        try:
+            while (iteration <= MAX_ITERATIONS and 
+                   not self.stop_event.is_set() and 
+                   self.state_manager.status == AgentStatus.RUNNING.value):
+                logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
+                
+                response_params = self._next_step_proposal()
+                
+                tool_blocks = [block for block in response_params if block["type"] == "tool_use"]
+                if not tool_blocks:
+                    break
+
+                tool_result_content = self._execute_tools(tool_blocks)
+                if tool_result_content:
+                    self._append_message({"role": "user", "content": tool_result_content})
+                iteration += 1
+
+        finally:
+            self.state_manager.set_status(AgentStatus.IDLE)
+            self.stop_event.clear()
+            self.processing_thread = None
+            logger.info("Message processing loop completed and cleaned up")
+
     def _store_pending_tool_proposals(self, response_params):
         """Store tool proposals for later execution"""
         for block in response_params:
             if block["type"] == "tool_use":
                 logger.info(f"Tool action: {block['input']}")
                 self.pending_tool_queue.append(block)
-        
-        # Update pending tools count in state
         self.state_manager.set_pending_tools(len(self.pending_tool_queue))
 
+    def _execute_tools(self, tool_blocks: list[BetaToolUseBlockParam]) -> list[BetaToolResultBlockParam]:
+        """Common method to execute a list of tools and collect results"""
+        tool_result_content: list[BetaToolResultBlockParam] = []
+        
+        for content_block in tool_blocks:
+            self.state_manager.emit_response({
+                "type": "tool_use",
+                "parameters": content_block["input"]
+            })
+            
+            result = self.tool_collection.run(
+                name=content_block["name"],
+                tool_input=cast(dict[str, Any], content_block["input"]),
+            )
+            
+            tool_result = _make_api_tool_result(result, content_block["id"])
+            tool_result_content.append(tool_result)
+            
+            # Emit individual result
+            self.state_manager.emit_response({
+                "type": "tool_result",
+                "content": tool_result
+            })
+            
+        return tool_result_content
+
     def execute_next_pending_tool(self):
-        """Execute all pending tools in the queue"""
         if not self.pending_tool_queue:
             logger.info("No pending tools to execute")
             return
-
+            
         self.state_manager.set_status(AgentStatus.RUNNING)
-        
         try:
-            # Process all pending tools
-            while self.pending_tool_queue:
-                content_block = self.pending_tool_queue.pop(0)
-                logger.info(f"Executing tool action: {content_block['input']}")
-                # Execute the tool
-                result = self.tool_collection.run(
-                    name=content_block["name"],
-                    tool_input=cast(dict[str, Any], content_block["input"]),
-                )
-
-                tool_result_content = _make_api_tool_result(result, content_block["id"])
-                self._append_message({"role": "user", "content": [tool_result_content]})
-                self.state_manager.emit_response({
-                    "type": "tool_result",
-                    "content": tool_result_content,
-                })
-
+            tool_result_content = self._execute_tools(self.pending_tool_queue)
+            self.pending_tool_queue.clear()
+            
+            if tool_result_content:
+                self._append_message({"role": "user", "content": tool_result_content})
+                
         finally:
             self.state_manager.set_status(AgentStatus.IDLE)
-            # Update pending tools count
-            self.state_manager.set_pending_tools(len(self.pending_tool_queue))
+            self.state_manager.set_pending_tools(0)
 
     def process_next_action(self):
         """Generate the next action without executing tools"""
@@ -255,37 +284,12 @@ class AgentService:
         else:
             logger.info("Agent is already processing")
 
-    def _process_message_loop(self, message: str) -> None:
-        """Internal method to handle message processing loop"""
-        logger.info(f"Starting to process message in loop mode: {message}")
-        iteration = 1
-        try:
-            while (iteration <= MAX_ITERATIONS and 
-                   not self.stop_event.is_set() and 
-                   self.state_manager.status == AgentStatus.RUNNING.value):
-                logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
-                
-                response_params = self._next_step_proposal()
-                
-                tool_result_content = self._execute_tool(response_params)
-                if not tool_result_content:
-                    break
-                iteration += 1
-
-        finally:
-            self.state_manager.set_status(AgentStatus.IDLE)
-            # Clear the stop event and thread reference
-            self.stop_event.clear()
-            self.processing_thread = None
-            logger.info("Message processing loop completed and cleaned up")
-
 
     def _next_step_proposal(self):
         
         logger.info("Taking screenshot and cursor position before calling AI")
         self._take_screenshot()
-        # Get response from LLM and send to frontend
-        response_params = self._call_llm()  # Set to False for production
+        response_params = self._call_llm() 
         for content_block in response_params:
             if content_block["type"] == "text":
                 self.state_manager.emit_response({
@@ -300,6 +304,7 @@ class AgentService:
             }
         )
         return response_params
+
     def _inject_prompt_caching(self,
         messages: list[BetaMessageParam],
     ):
@@ -322,32 +327,6 @@ class AgentService:
                     content[-1].pop("cache_control", None)
                     # we'll only every have one extra turn per loop
                     break
-
-
-    def _execute_tool(self, response_params):
-        tool_result_content: list[BetaToolResultBlockParam] = []
-        for content_block in response_params:
-            if content_block["type"] == "tool_use":
-                self.state_manager.emit_response({
-                    "type": "tool_use",
-                    "parameters": content_block["input"]
-                })
-                
-                result = self.tool_collection.run(
-                    name=content_block["name"],
-                    tool_input=cast(dict[str, Any], content_block["input"]),
-                )
-                                        
-                tool_result_content.append(
-                    _make_api_tool_result(result, content_block["id"])
-                )
-
-        if not tool_result_content:
-            # Job is done
-            return
-        else:
-            self._append_message({"role": "user", "content": tool_result_content})
-            return tool_result_content
 
     def stop_processing(self) -> None:
         """Stop current processing loop"""
