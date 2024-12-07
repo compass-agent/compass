@@ -31,7 +31,7 @@ from compass.constants import (
     COMPUTER_USE_BETA_FLAG,
     PROMPT_CACHING_BETA_FLAG
 )
-from compass.utils.utility import HistoryLogger, TokenTracker
+from compass.utils.utility import HistoryLogger, TokenTracker, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus
 
 logger = logging.getLogger(__name__)
@@ -230,6 +230,7 @@ class AgentService:
                 self.pending_tool_queue.append(block)
         self.state_manager.set_pending_tools(len(self.pending_tool_queue))
 
+    @log_execution_time(logger)
     def _execute_tools(self, tool_blocks: list[BetaToolUseBlockParam]) -> list[BetaToolResultBlockParam]:
         """Common method to execute a list of tools and collect results"""
         tool_result_content: list[BetaToolResultBlockParam] = []
@@ -359,6 +360,7 @@ class AgentService:
             logger.info("No active processing thread to stop")
             self.state_manager.set_status(AgentStatus.IDLE)
 
+    @log_execution_time(logger)
     def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
         try:
@@ -421,7 +423,7 @@ class AgentService:
         except Exception as e:
             logger.error(f"Failed to take screenshot or get cursor position: {e}")
 
-    #@mock_llm_response
+    @log_execution_time(logger)
     def _call_llm(self) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
         """Call the LLM API
         
