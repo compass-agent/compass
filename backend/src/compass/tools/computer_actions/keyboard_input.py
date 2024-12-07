@@ -35,4 +35,4 @@ class KeyboardInputAction(BaseComputerAction):
                 pyautogui.write(chunk, interval=TYPING_DELAY_MS/1000)
                 if len(chunks) > 1:
                     time.sleep(TYPING_DELAY_MS / 1000)
-            return ToolResult(output=None, error=None) 
+            return ToolResult(output=None, error=None, base64_image=self.capture_and_process_screenshot()) 

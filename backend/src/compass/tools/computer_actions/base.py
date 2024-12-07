@@ -1,3 +1,7 @@
+import pyautogui
+from PIL import Image
+import io
+import base64
 from abc import ABC, abstractmethod
 from typing import Any
 from ..base import ToolResult, ScalingSource, ToolError
@@ -15,6 +19,34 @@ class BaseComputerAction(ABC):
         self.scaled_height = scaled_height
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
+
+    def capture_and_process_screenshot(self) -> str:
+        """Core method to capture and process screenshot, returning base64 string"""
+        # Step 1: Capture screenshot directly to memory
+        screenshot = pyautogui.screenshot()
+        
+        # Step 2: Scale image
+        scaled_screenshot = screenshot.resize(
+            (self.scaled_width, self.scaled_height),
+            resample=Image.Resampling.LANCZOS
+        )
+        
+        # Step 3: Reduce color depth (replacing pngquant)
+        optimized_screenshot = scaled_screenshot.quantize(
+            colors=256,  # 8-bit color depth
+            method=Image.FASTOCTREE  # type: ignore # Fast and efficient method
+        )
+        
+        # Step 4: Save to memory buffer and encode
+        buffer = io.BytesIO()
+        optimized_screenshot.save(
+            buffer,
+            format='PNG',
+            optimize=True  # Additional PNG optimization
+        )
+        
+        # Step 5: Convert to base64
+        return base64.b64encode(buffer.getvalue()).decode()
 
     def scale_coordinates(self, source: ScalingSource, x: int, y: int) -> tuple[int, int]:
         """Scale coordinates using pre-calculated scaling factors."""

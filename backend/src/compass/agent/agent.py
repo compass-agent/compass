@@ -165,6 +165,9 @@ class AgentService:
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
         
+        logger.info("Taking screenshot and cursor position before calling AI")
+        self._take_screenshot()
+
         if self.state_manager.auto_mode:
             self.processing_thread = threading.Thread(
                 target=self._process_message_loop
@@ -178,7 +181,6 @@ class AgentService:
     def _process_message_single_mode(self) -> None:
         try:
             response_params = self._next_step_proposal()
-
             if self.state_manager.highlight_mode:
                 response_params = [
                     block for block in response_params 
@@ -287,9 +289,6 @@ class AgentService:
 
 
     def _next_step_proposal(self):
-        
-        logger.info("Taking screenshot and cursor position before calling AI")
-        self._take_screenshot()
         response_params = self._call_llm() 
         for content_block in response_params:
             if content_block["type"] == "text":
@@ -326,7 +325,6 @@ class AgentService:
                     )
                 else:
                     content[-1].pop("cache_control", None)
-                    # we'll only every have one extra turn per loop
                     break
 
     def stop_processing(self) -> None:
@@ -337,9 +335,8 @@ class AgentService:
             self.stop_event.set()
             self.state_manager.set_status(AgentStatus.STOPPING)
             
-            # Try multiple times to join
             max_attempts = 3
-            attempt_timeout = 2.0  # seconds per attempt
+            attempt_timeout = 2.0
             
             for attempt in range(max_attempts):
                 logger.info(f"Attempt {attempt + 1}/{max_attempts} to stop thread")
