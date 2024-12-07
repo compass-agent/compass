@@ -202,28 +202,41 @@ class ComputerTool(BaseAnthropicTool):
 
     def screenshot(self):
         """Take and process a screenshot with proper scaling"""
+        start_time = time.time()
+        
         try:
             timestamp = datetime.now().strftime('%H_%M_%S')
             original_path = self.history_tracker.screenshots_dir / f"{timestamp}__1.png"
             scaled_path = self.history_tracker.screenshots_dir / f"{timestamp}__2.png"
             final_path = self.history_tracker.screenshots_dir / f"{timestamp}__3.png"
+            
+            # Step 1: Take screenshot
+            start_time = time.time()
             screenshot = pyautogui.screenshot()
+            logger.info(f"Screenshot capture took {(time.time() - start_time) * 1000:.2f}ms")
+            start_time = time.time()
             screenshot.save(str(original_path))
+            logger.info(f"Screenshot saving took {(time.time() - start_time) * 1000:.2f}ms")
+            
             if not original_path.exists():
                 logger.error("Failed to take screenshot")
                 raise ToolError("Failed to take screenshot")
             logger.info(f"took screenshot to {original_path}, dimensions {self.width}x{self.height}, size: {original_path.stat().st_size / 1024:.1f}kb")
             
-
+            # Step 2: Scale image
+            start_time = time.time()
             with Image.open(original_path) as img:
                 img = img.resize((self.scaled_width, self.scaled_height), Image.Resampling.LANCZOS)
                 img.save(scaled_path)
+            logger.info(f"Image scaling took {(time.time() - start_time) * 1000:.2f}ms")
 
             if not scaled_path.exists():
                 logger.error("Failed to scale screenshot")
                 raise ToolError("Failed to scale screenshot")
             logger.info(f"scaled screenshot to {scaled_path} with dimensions {self.scaled_width}x{self.scaled_height}, size: {scaled_path.stat().st_size / 1024:.1f}kb")
 
+            # Step 3: Optimize image
+            start_time = time.time()
             try:
                 optimize_cmd = (
                     f"pngquant '{SCREENSHOT_COLOR_DEPTH}' "
@@ -236,17 +249,22 @@ class ComputerTool(BaseAnthropicTool):
                 if not final_path.exists():
                     logger.warning("pngquant optimization failed, using scaled image")
                     final_path = scaled_path
-                logger.info(f"optimized screenshot to {final_path}, size: {final_path.stat().st_size / 1024:.1f}kb")
                 
             except (subprocess.SubprocessError, FileNotFoundError):
                 logger.warning("pngquant not available, using scaled image")
                 final_path = scaled_path
+            logger.info(f"Image optimization took {(time.time() - start_time) * 1000:.2f}ms")
+            
+            logger.info(f"optimized screenshot to {final_path}, size: {final_path.stat().st_size / 1024:.1f}kb")
 
+            # Step 4: Read and encode
             processed_bytes = final_path.read_bytes()
+            base64_image = base64.b64encode(processed_bytes).decode()
+            
             return ToolResult(
                 output=None,
                 error=None,
-                base64_image=base64.b64encode(processed_bytes).decode()
+                base64_image=base64_image
             )
 
         finally:

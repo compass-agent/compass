@@ -4,3 +4,4 @@ pillow
 anthropic
 flask
 flask_socketio
+pyautogui
