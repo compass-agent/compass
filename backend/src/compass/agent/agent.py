@@ -90,6 +90,29 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
         result_text = f"<system>{result.system}</system>\n{result_text}"
     return result_text
 
+def mock_llm_response(func):
+    """Decorator to mock LLM responses during development"""
+    def wrapper(self, *args, **kwargs):
+        if not hasattr(self, '_mock_enabled') or not self._mock_enabled:
+            return func(self, *args, **kwargs)
+            
+        # Mock response for development
+        return [
+            {
+                'type': 'text',
+                'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
+            },
+            {
+                'type': 'tool_use',
+                'name': 'computer',
+                'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
+                'input': {
+                    'action': 'mouse_move',
+                    'coordinate': [94, 462]
+                }
+            }
+        ]
+    return wrapper
 
 class AgentService:
     def __init__(self, state_manager: StateManager, history_logger: HistoryLogger):
@@ -114,6 +137,7 @@ class AgentService:
         logger.info(f"Tools params: {self.tools_params}")
         self.pending_tool_queue = []
         logger.info("Agent successfully initialized")
+        self._mock_enabled = False  # Add this line to control mocking
 
     def _get_current_system_prompt(self) -> BetaTextBlockParam:
         """Get the appropriate system prompt based on current highlight mode"""
@@ -418,36 +442,13 @@ class AgentService:
         except Exception as e:
             logger.error(f"Failed to take screenshot or get cursor position: {e}")
 
+    #@mock_llm_response
     def _call_llm(self) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
         """Call the LLM API
         
         Returns:
             list of content blocks (text or tool use blocks)
         """
-        
-
-        # logger.debug("Simulating LLM API call delay...")
-        # time.sleep(1)
-        
-        #Mock response for development
-        # return [
-        #     {
-        #         'type': 'text',
-        #         'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
-        #     },
-        #     {
-        #         'type': 'tool_use',
-        #         'name': 'computer',
-        #         'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
-        #         'input': {
-        #             'action': 'mouse_move',
-        #             'coordinate': [94, 462]  # You'll need to add the actual coordinates here
-        #         }
-        #     }
-        # ]
-        # self.lst_call_idx += 1
-        
-        # Real API call implementation below
         try:
             system = self._get_current_system_prompt()
             if PROMPT_CACHING:
