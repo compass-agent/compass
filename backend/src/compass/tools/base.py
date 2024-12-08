@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, fields, replace
 from typing import Any
+from enum import StrEnum
 
 from anthropic.types.beta import BetaToolUnionParam
 
@@ -67,3 +68,8 @@ class ToolError(Exception):
 
     def __init__(self, message):
         self.message = message
+
+
+class ScalingSource(StrEnum):
+    COMPUTER = "computer"
+    API = "api"
