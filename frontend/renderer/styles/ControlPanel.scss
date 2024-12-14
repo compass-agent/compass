@@ -68,5 +68,30 @@
       transform: translateY(0);
       box-shadow: 0 2px 4px rgba(255, 153, 51, 0.1);
     }
+
+    &.loading {
+      pointer-events: none;
+  
+      .spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin-top: -10px;
+        margin-left: -10px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+}
+
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

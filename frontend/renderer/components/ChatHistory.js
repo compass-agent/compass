@@ -3,6 +3,7 @@ import { useAppState } from '../context/AppContext';
 import '../styles/ChatHistory.scss';
 import { MESSAGE_TYPES } from '../constants';
 import { faSpinner  } from '@fortawesome/free-solid-svg-icons';
+import { AgentStatus } from '../constants';
 
 const TOOL_ACTION_MAPPING = {
   screenshot: { icon: '📸', text: 'Taking screenshot...' },
@@ -57,7 +58,7 @@ function ChatHistory() {
           <div className="message user-message">
             {/* <span className="message-icon">👤</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content" title={ agenStatus.autoMode ? msg.text : ''}>
+            <div className="message-content copyable-text" title={ (agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE) ? msg.text : ''}>
               {msg.text}
             </div>
           </div>
@@ -72,7 +73,7 @@ function ChatHistory() {
           <div className="message">
             {/* <span className="message-icon">🤖</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content" title={ agenStatus.autoMode ? msg.content : ''}>
+            <div className="message-content copyable-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE ? msg.content : ''}>
               {msg.content}
             </div>
           </div>
@@ -89,9 +90,9 @@ function ChatHistory() {
           <div className="message">
             {/* <span className="message-icon">{mapping.icon}</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content">
+            <div className="message-content copyable-text">
               {/* why tool-text? */}
-              <span className="tool-text" title={ agenStatus.autoMode ? mapping.text : ''}>{mapping.text}</span>
+              <span className="tool-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE ? mapping.text : ''}>{mapping.text}</span>
             </div>
           </div>
         );
@@ -105,12 +106,12 @@ function ChatHistory() {
           <div className="message">
             {/* <span className="message-icon">📊</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content">
+            <div className="message-content copyable-text">
               {msg.error ? (
-                <div className="tool-error" title={ agenStatus.autoMode ? msg.error : ''}>{msg.error}</div>
+                <div className="tool-error" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE ? msg.error : ''}>{msg.error}</div>
               ) : (
                 <>
-                  {msg.output && <div className="tool-output" title={ agenStatus.autoMode ? msg.output : ''}>{msg.output}</div>}
+                  {msg.output && <div className="tool-output" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE ? msg.output : ''}>{msg.output}</div>}
                   {msg.has_image && <div className="tool-image-placeholder">[Image]</div>}
                 </>
               )}
@@ -120,7 +121,7 @@ function ChatHistory() {
       
       default:
         return (
-          <div className="message-content" title={ agenStatus.autoMode ? msg.text : ''}>
+          <div className=" message-content copyable-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.IDLE ? msg.text : ''}>
             {msg.text}
           </div>
         );

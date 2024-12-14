@@ -12,6 +12,7 @@ import {
   faLightbulb,
   faInfo,
   faGear,
+  faStop,
   faMagicWandSparkles,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -19,6 +20,7 @@ function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
   const [lastClickTime, setLastClickTime] = useState(0);
+  const [isWindowMoved, setIsWindowMoved] = useState(false);
 
   useEffect(() => {
     console.log("ControlPanel - Agent state updated:", {
@@ -43,9 +45,10 @@ function ControlPanel() {
   };
 
   const handleSingleClick = () => {
-    if (agentState.status !== AgentStatus.IDLE) return;
-
-    if (agentState.pendingTools > 0) {
+    console.log("ControlPanel -handleSingleClick: agentState", agentState);
+    if (agentState.status !== AgentStatus.IDLE) {
+      handleStop();
+    } else if (agentState.pendingTools > 0) {
       // Execute next pending tool
       WebSocketService.executeNextTool();
     } else if (chat.currentInput?.trim()) {
@@ -67,12 +70,32 @@ function ControlPanel() {
   };
 
   const handleDoubleClick = () => {
-    if (agentState.status !== AgentStatus.IDLE) return;
-    WebSocketService.executeNextTool();
-    WebSocketService.generateNextAction();
+    if (agentState.status !== AgentStatus.IDLE) {
+      handleStop();
+    } else {
+      WebSocketService.executeNextTool();
+      WebSocketService.generateNextAction();
+    }
+  };
+
+  const handleStop = () => {
+    console.log("ControlPanel handleStop");
+    if (agentState.status === AgentStatus.IDLE) return;
+    dispatch({
+      type: "STOP_PROCESSING",
+      payload: "",
+    });
+    WebSocketService.updateControlState({
+      status: AgentStatus.IDLE,
+      playing: false,
+    });
   };
 
   const handleAutoModeToggle = () => {
+    console.log(
+      "ControlPanel: handleAutoModeToggle: - Agent state: ",
+      agentState
+    );
     const newAutoMode = !agentState.autoMode;
     WebSocketService.updateControlState({
       autoMode: newAutoMode,
@@ -87,16 +110,44 @@ function ControlPanel() {
   };
 
   const hanldeFullscrenToggle = (autoMode) => {
+    setIsWindowMoved(false);
+    const handleMoveToBottomRightDone = () => {
+      console.log("Window moved to bottom-right corner");
+      setIsWindowMoved(true);
+      // Remove the event listener after handling the event
+      window.electron.ipcRenderer.removeListener(
+        "move-to-bottom-right-done",
+        handleMoveToBottomRightDone
+      );
+    };
+
     if (autoMode && agentState.status !== AgentStatus.IDLE) {
       // Exit fullscreen when switching to auto mode
       window.electron.ipcRenderer.send("toggle-fullscreen", false);
 
       // Move window to bottom right corner
       window.electron.ipcRenderer.send("move-to-bottom-right");
+      // Add the event listener
+      window.electron.ipcRenderer.on(
+        "move-to-bottom-right-done",
+        handleMoveToBottomRightDone
+      );
     } else if (agentState.status !== AgentStatus.IDLE) {
       // Enter fullscreen when switching to manual mode
       window.electron.ipcRenderer.send("toggle-fullscreen", true);
     }
+
+    if (
+      autoMode &&
+      isWindowMoved &&
+      agentState.status === AgentStatus.IDLE &&
+      agentState.pendingTools === 0
+    ) {
+      // Auto mode tasks have been done
+      console.log("ControlPanel: AutoMode Done, then restore window");
+      window.electron.ipcRenderer.send("toggle-fullscreen", true);
+    }
+
   };
 
   const handleHighlightToggle = () => {
@@ -124,7 +175,7 @@ function ControlPanel() {
   const getPlayButtonIcon = () => {
     console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState);
     if (agentState.status !== AgentStatus.IDLE) {
-      return { icon: faRotateRight, shouldSpin: true }; // Processing
+      return { icon: faStop, loading: true }; // Processing // faRotateRight shouldSpin: true
     } else if (agentState.pendingTools > 0) {
       return { icon: faWrench }; // Pending tools
     } else {
@@ -165,13 +216,11 @@ function ControlPanel() {
         <button
           className={`button ${agentState.playing ? "active" : ""}`}
           onClick={handlePlayClick}
-          disabled={agentState.status !== AgentStatus.IDLE}
+          // disabled={agentState.status !== AgentStatus.IDLE}
           title={getPlayButtonTitle()}
         >
-          <FontAwesomeIcon
-            icon={playButtonIcon.icon}
-            spin={playButtonIcon.spin}
-          />
+          <FontAwesomeIcon icon={playButtonIcon.icon} />
+          {playButtonIcon.loading && <div className="spinner"></div>}
         </button>
       </div>
     </div>

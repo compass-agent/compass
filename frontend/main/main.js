@@ -103,6 +103,7 @@ ipcMain.on("move-to-bottom-right", () => {
     x: width - mainWindow.getBounds().width,
     y: height - mainWindow.getBounds().height,
   });
+  mainWindow.webContents.send("move-to-bottom-right-done");
 });
 
 ipcMain.on("close-window", () => {

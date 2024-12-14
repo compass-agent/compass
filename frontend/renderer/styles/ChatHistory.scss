@@ -7,6 +7,10 @@
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
+  -webkit-user-select: text;
+  user-select: text; /* Allow text selection */
+  pointer-events: auto;
+  cursor: text;
 
   .message {
     margin-bottom: 15px;
@@ -17,6 +21,10 @@
     min-height: 20px;
     margin: 2px 0;
     padding: 20px 0 0 0;
+    -webkit-user-select: text;
+    user-select: text; /* Allow text selection */
+    pointer-events: auto;
+    cursor: text;
 
     &-icon {
       font-size: 1.2em;
@@ -30,6 +38,14 @@
       word-break: break-word;
       white-space: normal;
       word-wrap: break-word;
+      padding-bottom: 8px;
+    }
+
+    .copyable-text {
+      -webkit-user-select: text; // Enable text selection for Safari
+      user-select: text; // Enable text selection
+      pointer-events: auto;
+      cursor: text;
     }
 
     &.user-message {

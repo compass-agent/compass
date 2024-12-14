@@ -8,7 +8,7 @@ import {
   faArrowUp,
   faStop,
 } from "@fortawesome/free-solid-svg-icons";
-import { AgentStatus } from '../constants'; 
+import { AgentStatus, ActionTypes } from '../constants'; 
 
 const PlayState = {
   STOPPED: "stopped",
@@ -19,7 +19,7 @@ const PlayState = {
 function MessageInput() {
   const { state, dispatch } = useAppState();
   const { agent, chat } = state;
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(chat.currentInput);
   const textareaRef = useRef(null); // To dynamically measure the textarea height
 
   // Add logging for initial render and state changes
@@ -27,6 +27,7 @@ function MessageInput() {
     console.log("MessageInput - Component mounted or updated");
     console.log("Current agent state:", agent);
     console.log("Current chat state:", chat);
+    setMessage(chat.currentInput);
   }, [agent, chat]);
 
   // Add effect to clear input when processing completes
@@ -40,16 +41,16 @@ function MessageInput() {
   const resetAgentState = () => {
     setMessage("");
     dispatch({
-      type: "SET_CHAT_INPUT",
+      type: ActionTypes.SET_CHAT_INPUT,
       payload: "",
     });
    }
 
   const handleChange = (e) => {
     const newMessage = e.target.value;
-    setMessage(newMessage); // Update local state
+    setMessage(newMessage);
     dispatch({
-      type: "SET_CHAT_INPUT",
+      type: ActionTypes.SET_CHAT_INPUT,
       payload: newMessage,
     });
 
@@ -99,7 +100,7 @@ function MessageInput() {
       console.log("MessageInput - Dispatching user message");
 
       dispatch({
-        type: "ADD_CHAT_MESSAGE",
+        type: ActionTypes.ADD_CHAT_MESSAGE,
         payload: {
           type: "user",
           text: message.trim(),
@@ -113,7 +114,7 @@ function MessageInput() {
       WebSocketService.sendMessage(message);
       setMessage("");
       dispatch({
-        type: "SET_CHAT_INPUT",
+        type: ActionTypes.SET_CHAT_INPUT,
         payload: "",
       });
        // Reset the height of the textarea
@@ -168,7 +169,7 @@ function MessageInput() {
         rows="1"
         disabled={!isInputEnabled}
       />
-      <div className="message-buttons">
+      {/* <div className="message-buttons">
         <button
           className="button right-button"
           title="Send Message"
@@ -179,7 +180,7 @@ function MessageInput() {
             <FontAwesomeIcon icon={getPlayState() !== PlayState.STOPPED ? faStop : faArrowUp} />
           )}
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
