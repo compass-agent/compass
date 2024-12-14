@@ -18,18 +18,6 @@ function Header() {
   const { compassWindow} = state;
   const [isFullscreen, setIsFullscreen] = useState(true);
 
-  useEffect(() => {
-    console.log(`Header: screenshot actionType ${ compassWindow.actionType}`);
-    if (!compassWindow.actionType) {
-      return;
-    }
-    if (compassWindow.actionType === 'minimize') {
-      handleMinimize();
-    } else if (compassWindow.actionType === 'restore') {
-      window.electron.restoreWindow();
-    }
-  }, [compassWindow.actionType]);
-
   let isMac = window.electron.platform === "darwin";
   //isMac = true;
   const isWindows = window.electron.platform === "win32";

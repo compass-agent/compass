@@ -112,6 +112,10 @@
       box-sizing: border-box;
       width: 100%;
       transition: height 0.3s ease;
+
+      @media (max-height: $min-window-height) {
+        display: none; // Hide when window height is less than or equal to 178px
+      }
     }
   }
 }

@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
   ipcRenderer: {
     send: (channel, ...args) => {
-      const validChannels = ["toggle-fullscreen", "close-window", "minimize-window", "maximize-window"];
+      const validChannels = ["toggle-fullscreen", "close-window", "minimize-window", "maximize-window", "move-to-bottom-right"];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, ...args);
       }

@@ -96,6 +96,15 @@ ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
   }
 });
 
+ipcMain.on("move-to-bottom-right", () => {
+  if (!mainWindow) return;
+  const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
+  mainWindow.setBounds({
+    x: width - mainWindow.getBounds().width,
+    y: height - mainWindow.getBounds().height,
+  });
+});
+
 ipcMain.on("close-window", () => {
   if (mainWindow) mainWindow.close();
 });

@@ -8,11 +8,12 @@ import { AppProvider, useAppState } from "./context/AppContext";
 import Header from "./components/Header";
 import useUpdateContainerHeight from "./hooks/useUpdateContainerHeight";
 import useScrollToBottom from "./hooks/useScrollToBottom";
+import { AgentStatus } from "./constants";
 
 // Separate component for the main app content to use the context
 function AppContent() {
   const { state } = useAppState();
-  const { connection, chat, agent: agentState } = state;
+  const { connection, chat, agent } = state;
   const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
 
   // Use custom hooks
@@ -36,7 +37,7 @@ function AppContent() {
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper" style={{ display: agentState.autoMode ? 'none' : 'block' }}>
+        <div className="input-box-wrapper" style={{ display: (agent.autoMode && agent.status !== AgentStatus.IDLE  ) ? 'none' : '' }}> 
           <MessageInput />
         </div>
       </div>

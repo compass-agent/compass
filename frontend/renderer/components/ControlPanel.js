@@ -2,9 +2,18 @@ import React, { useEffect, useState } from "react";
 import WebSocketService from "../services/websocket";
 import { useAppState } from "../context/AppContext";
 import "../styles/ControlPanel.scss";
-import { AgentStatus } from "../constants";
+import { AgentStatus, ActionTypes } from "../constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRotateRight, faWrench, faPlay, faForward, faLightbulb, faInfo, faGear, faMagicWandSparkles  } from "@fortawesome/free-solid-svg-icons";
+import {
+  faRotateRight,
+  faWrench,
+  faPlay,
+  faForward,
+  faLightbulb,
+  faInfo,
+  faGear,
+  faMagicWandSparkles,
+} from "@fortawesome/free-solid-svg-icons";
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
@@ -17,6 +26,7 @@ function ControlPanel() {
       playing: agentState.playing,
       currentInput: chat.currentInput,
     });
+    hanldeFullscrenToggle(agentState.autoMode);
   }, [agentState.status, agentState.playing, chat.currentInput]); // playing boolean
 
   const handlePlayClick = () => {
@@ -41,7 +51,7 @@ function ControlPanel() {
     } else if (chat.currentInput?.trim()) {
       // Process new message
       dispatch({
-        type: "ADD_CHAT_MESSAGE",
+        type: ActionTypes.ADD_CHAT_MESSAGE,
         payload: {
           type: "user",
           text: chat.currentInput.trim(),
@@ -49,7 +59,7 @@ function ControlPanel() {
         },
       });
       WebSocketService.sendMessage(chat.currentInput);
-      dispatch({ type: "SET_CHAT_INPUT", payload: "" });
+      dispatch({ type: ActionTypes.SET_CHAT_INPUT, payload: "" });
     } else {
       // Generate next action
       WebSocketService.generateNextAction();
@@ -63,13 +73,27 @@ function ControlPanel() {
   };
 
   const handleAutoModeToggle = () => {
+    const newAutoMode = !agentState.autoMode;
     WebSocketService.updateControlState({
-      autoMode: !agentState.autoMode,
+      autoMode: newAutoMode,
     });
-    if (!agentState.autoMode) {
+    // Optimistically update the front-end state
+    dispatch({
+      type: ActionTypes.SET_AGENT_STATE,
+      payload: { autoMode: newAutoMode },
+    });
+
+    hanldeFullscrenToggle(newAutoMode);
+  };
+
+  const hanldeFullscrenToggle = (autoMode) => {
+    if (autoMode && agentState.status !== AgentStatus.IDLE) {
       // Exit fullscreen when switching to auto mode
       window.electron.ipcRenderer.send("toggle-fullscreen", false);
-    } else {
+
+      // Move window to bottom right corner
+      window.electron.ipcRenderer.send("move-to-bottom-right");
+    } else if (agentState.status !== AgentStatus.IDLE) {
       // Enter fullscreen when switching to manual mode
       window.electron.ipcRenderer.send("toggle-fullscreen", true);
     }
@@ -98,13 +122,13 @@ function ControlPanel() {
   };
 
   const getPlayButtonIcon = () => {
-    console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState)
+    console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState);
     if (agentState.status !== AgentStatus.IDLE) {
-      return {icon: faRotateRight, shouldSpin: true}; // Processing
+      return { icon: faRotateRight, shouldSpin: true }; // Processing
     } else if (agentState.pendingTools > 0) {
-      return {icon: faWrench }; // Pending tools
+      return { icon: faWrench }; // Pending tools
     } else {
-      return {icon: faPlay};  // Ready to generate next action
+      return { icon: faPlay }; // Ready to generate next action
     }
   };
   const playButtonIcon = getPlayButtonIcon();
@@ -122,9 +146,7 @@ function ControlPanel() {
         </button>
 
         <button
-          className={`button ${
-            agentState.highlightMode ? "active" : ""
-          }`}
+          className={`button ${agentState.highlightMode ? "active" : ""}`}
           onClick={handleHighlightToggle}
           disabled={agentState.autoMode}
           title={
@@ -133,7 +155,9 @@ function ControlPanel() {
               : "Highlight Mode (Off)"
           }
         >
-          <FontAwesomeIcon icon={agentState.highlightMode ? faLightbulb : faInfo } />
+          <FontAwesomeIcon
+            icon={agentState.highlightMode ? faLightbulb : faInfo}
+          />
         </button>
       </div>
 
@@ -144,7 +168,10 @@ function ControlPanel() {
           disabled={agentState.status !== AgentStatus.IDLE}
           title={getPlayButtonTitle()}
         >
-          <FontAwesomeIcon icon={playButtonIcon.icon} spin={playButtonIcon.spin} />
+          <FontAwesomeIcon
+            icon={playButtonIcon.icon}
+            spin={playButtonIcon.spin}
+          />
         </button>
       </div>
     </div>
