@@ -9,8 +9,6 @@ import asyncio
 from dataclasses import dataclass
 
 from ..base import ToolResult, ScalingSource, ToolError
-from compass.utils.utility import log_execution_time
-from flask_socketio import SocketIO, emit # type: ignore
 from compass.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
@@ -51,7 +49,7 @@ class BaseComputerAction(ABC):
             logger.info(f"Reducing color depth from 256 to 8-bit")
             optimized_screenshot = scaled_screenshot.quantize(
                 colors=256,  # 8-bit color depth
-                method=Image.FASTOCTREE  # Fast and efficient method
+                method=Image.FASTOCTREE  # type: ignore
             )
             
             has_changed = None

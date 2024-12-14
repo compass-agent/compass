@@ -1,8 +1,7 @@
-import pyautogui
 import logging
 from typing import Optional, Tuple
 
-from ..base import ToolResult, ToolError, ScalingSource
+from ..base import ToolResult, ToolError
 from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
