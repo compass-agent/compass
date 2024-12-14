@@ -28,7 +28,7 @@ function createWindow() {
     },
     alwaysOnTop: true,
     frame: false, // Turned into true as had conflict with maximize button restore
-    transparent: false, // Turned into true as had conflict with maximize button restore
+    transparent: true, // Turned into true as had conflict with maximize button restore
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
     hasShadow: true,
     resizable: true,
