@@ -121,9 +121,9 @@ class HistoryLogger:
         """Get the base path for this session's logs"""
         return self.log_dir
 
-    def save_messages(self, messages: list) -> None:
+    def save_messages(self, messages: list, iteration: int) -> None:
         """Save messages to a JSON file in the session directory"""
-        messages_file = self.log_dir / 'messages.json'
+        messages_file = self.log_dir / f'messages_{iteration}.json'
         try:
             with open(messages_file, 'w') as f:
                 json.dump(messages, f, indent=4)

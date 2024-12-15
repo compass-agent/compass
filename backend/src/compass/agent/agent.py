@@ -76,13 +76,15 @@ class AgentService:
         self.llm = LLM(self.tool_collection.to_params())
 
         self.pending_tool_queue = []
-
+        self.recording_iteration = 0
         logger.info("Agent successfully initialized")
 
     def _append_message(self, message: BetaMessageParam) -> None:
         """Helper method to append message and save messages state"""
         self.messages.append(message)
-        self.history_tracker.save_messages(self.messages)
+        self.history_tracker.save_messages(self.messages, self.recording_iteration)
+        logger.info(f"Saved messages for iteration {self.recording_iteration} as a json file")
+        self.recording_iteration += 1
 
     async def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
@@ -97,7 +99,7 @@ class AgentService:
         self.stop_event.clear()
         
         logger.info("Taking screenshot and cursor position before calling AI")
-        #await self._take_screenshot()
+        await self._take_screenshot()
 
         if self.state_manager.auto_mode:
             self.processing_task = asyncio.create_task(
@@ -148,9 +150,11 @@ class AgentService:
                 if tool_result_content:
                     self._append_message({"role": "user", "content": tool_result_content})
                 iteration += 1
+        except asyncio.CancelledError:
+            logger.info("Message processing loop was cancelled")
+            raise
         except Exception as e:
             logger.error(f"Error in message processing loop: {e}")
-
         finally:
             self.state_manager.set_status(AgentStatus.IDLE)
             self.stop_event.clear()
