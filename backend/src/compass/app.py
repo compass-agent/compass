@@ -5,7 +5,6 @@ from flask_socketio import SocketIO, emit
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
-history_logger = HistoryLogger()
 import logging
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ socketio = SocketIO(app,
     debug=False)
 
 state_manager = StateManager(socketio)
-agent_service = AgentService(state_manager, history_logger)
+agent_service = AgentService(state_manager)
 
 def signal_handler(sig, frame):
     logger.info('Shutting down gracefully...')
@@ -41,7 +40,6 @@ def handle_disconnect():
 
 @socketio.on('message')
 def handle_message(data):
-    logger.info(f'Received message: {data}')
     try:
         agent_service.process_message(data.get('text', ''))
     except Exception as e:

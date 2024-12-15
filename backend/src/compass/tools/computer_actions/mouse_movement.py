@@ -14,7 +14,6 @@ class MouseMovementAction(BaseComputerAction):
                 action: Literal["mouse_move", "left_click_drag"] = "mouse_move",
                 coordinate: Optional[Tuple[int, int]] = None) -> ToolResult:
         """Handle mouse movement or drag to specified coordinates."""
-        logger.info(f"Executing {action} action")
         
         if coordinate is None:
             logger.error(f"coordinate is required for {action} action")
@@ -25,13 +24,13 @@ class MouseMovementAction(BaseComputerAction):
             raise ToolError(f"{coordinate} must be a tuple of non-negative ints for {action} action")
         
         x, y = self.scale_coordinates(ScalingSource.API, coordinate[0], coordinate[1])
-        logger.info(f"scaling back AI suggested coordinates to {x},{y} from {coordinate[0]},{coordinate[1]}")
-        
+        logger.info(f"Executing {action} action, with coordinate {coordinate[0]}, {coordinate[1]} scaled to {x},{y}")
+
         if action == "left_click_drag":
             pyautogui.mouseDown(button='left')
             pyautogui.moveTo(x, y)
             pyautogui.mouseUp(button='left')
         else:
             pyautogui.moveTo(x, y)
-        
-        return ToolResult(output=None, error=None, base64_image=self.capture_and_process_screenshot()) 
+        #   we don't return a screenshot here because user is only moving the mouse.
+        return ToolResult(output=None, error=None)

@@ -1,53 +1,23 @@
 import logging
 import threading
-from typing import Any, Dict, Optional
-from enum import StrEnum, Enum
 from typing import Any, cast
-from anthropic import (
-    Anthropic,
-    APIResponseValidationError,
-    APIStatusError,
-)
+
 from anthropic.types.beta import (
-    BetaCacheControlEphemeralParam,
     BetaImageBlockParam,
-    BetaMessage,
     BetaMessageParam,
-    BetaTextBlock,
     BetaTextBlockParam,
     BetaToolResultBlockParam,
     BetaToolUseBlockParam,
 )
-import time
 
 from compass.tools import ComputerTool, ToolCollection, ToolResult
-from compass.key import ANTHROPIC_API_KEY
-from compass.agent.prompt import get_system_prompt
 from compass.constants import (
-    MODEL_NAME,
-    MAX_TOKENS,
-    PROMPT_CACHING,
-    MAX_ITERATIONS,
-    COMPUTER_USE_BETA_FLAG,
-    PROMPT_CACHING_BETA_FLAG
+    MAX_ITERATIONS
 )
-from compass.utils.utility import HistoryLogger, TokenTracker, log_execution_time
+from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus
-
+from compass.agent.llm import LLM
 logger = logging.getLogger(__name__)
-
-
-def _response_to_params(
-    response: BetaMessage,
-) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
-    res: list[BetaTextBlockParam | BetaToolUseBlockParam] = []
-    for block in response.content:
-        if isinstance(block, BetaTextBlock):
-            res.append({"type": "text", "text": block.text})
-        else:
-            res.append(cast(BetaToolUseBlockParam, block.model_dump()))
-    return res
-
 
 
 def _make_api_tool_result(
@@ -85,68 +55,32 @@ def _make_api_tool_result(
         "is_error": is_error,
     }
 
+
 def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
     if result.system:
         result_text = f"<system>{result.system}</system>\n{result_text}"
     return result_text
 
-def mock_llm_response(func):
-    """Decorator to mock LLM responses during development"""
-    def wrapper(self, *args, **kwargs):
-        if not hasattr(self, '_mock_enabled') or not self._mock_enabled:
-            return func(self, *args, **kwargs)
-            
-        # Mock response for development
-        return [
-            {
-                'type': 'text',
-                'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
-            },
-            {
-                'type': 'tool_use',
-                'name': 'computer',
-                'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
-                'input': {
-                    'action': 'mouse_move',
-                    'coordinate': [94, 462]
-                }
-            }
-        ]
-    return wrapper
 
 class AgentService:
-    def __init__(self, state_manager: StateManager, history_logger: HistoryLogger):
+    def __init__(self, state_manager: StateManager):
         logger.info("Initializing Agent")
         self.state_manager = state_manager
+
         self.processing_thread = None
         self.stop_event = threading.Event()
         self.messages: list[BetaMessageParam] = []
         
-        # Initialize beta flags and client
-        self.betas = [COMPUTER_USE_BETA_FLAG, PROMPT_CACHING_BETA_FLAG]
-        self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
-        # Use provided history_logger
-        self.history_tracker = history_logger
+        self.history_tracker = HistoryLogger()
         
-        # Initialize token tracker
-        self.token_tracker = TokenTracker()
-        
-        # Pass history tracker to ComputerTool
-        self.tool_collection = ToolCollection(ComputerTool(history_tracker=self.history_tracker))
-        self.tools_params = self.tool_collection.to_params()
-        logger.info(f"Tools params: {self.tools_params}")
-        self.pending_tool_queue = []
-        logger.info("Agent successfully initialized")
-        self._mock_enabled = False  # Add this line to control mocking
+        self.tool_collection = ToolCollection(ComputerTool())
+        self.llm = LLM(self.tool_collection.to_params())
 
-    def _get_current_system_prompt(self) -> BetaTextBlockParam:
-        """Get the appropriate system prompt based on current highlight mode"""
-        system_prompts = get_system_prompt()
-        mode = "highlight" if self.state_manager.highlight_mode else "tool"
-        return BetaTextBlockParam(
-            type="text",
-            text=system_prompts[mode]
-        )
+        self.pending_tool_queue = []
+
+        logger.info("Agent successfully initialized")
+        self._mock_enabled = False
+
 
     def _append_message(self, message: BetaMessageParam) -> None:
         """Helper method to append message and save messages state"""
@@ -208,6 +142,7 @@ class AgentService:
                 logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
                 
                 response_params = self._next_step_proposal()
+                self._append_message({"role": "assistant", "content": response_params})
                 
                 tool_blocks = [block for block in response_params if block["type"] == "tool_use"]
                 if not tool_blocks:
@@ -287,45 +222,16 @@ class AgentService:
         else:
             logger.info("Agent is already processing")
 
-
     def _next_step_proposal(self):
-        response_params = self._call_llm() 
+        response_params = self.llm.call(self.messages, self.state_manager.highlight_mode) 
         for content_block in response_params:
             if content_block["type"] == "text":
                 self.state_manager.emit_response({
                     "type": "ai_response",
                     "content": content_block["text"]
                 })
-        
-        self._append_message(
-            {
-                "role": "assistant",
-                "content": response_params,
-            }
-        )
         return response_params
 
-    def _inject_prompt_caching(self,
-        messages: list[BetaMessageParam],
-    ):
-        """
-        Set cache breakpoints for the 3 most recent turns
-        one cache breakpoint is left for tools/system prompt, to be shared across sessions
-        """
-
-        breakpoints_remaining = 3
-        for message in reversed(messages):
-            if message["role"] == "user" and isinstance(
-                content := message["content"], list
-            ):
-                if breakpoints_remaining:
-                    breakpoints_remaining -= 1
-                    content[-1]["cache_control"] = BetaCacheControlEphemeralParam(
-                        {"type": "ephemeral"}
-                    )
-                else:
-                    content[-1].pop("cache_control", None)
-                    break
 
     def stop_processing(self) -> None:
         """Stop current processing loop"""
@@ -361,34 +267,6 @@ class AgentService:
     def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
         try:
-            # Replace direct appends with helper method
-            self._append_message({
-                "role": "assistant",
-                "content": [
-                    {
-                        "type": "tool_use",
-                        "name": "computer",
-                        "id": f"tool_cursor_{len(self.messages)}",
-                        "input": {"action": "cursor_position"}
-                    }
-                ]
-            })
-            
-            cursor_result = self.tool_collection.run(
-                name="computer",
-                tool_input={"action": "cursor_position"}
-            )
-            
-            self._append_message({
-                "role": "user",
-                "content": [
-                    _make_api_tool_result(
-                        result=cursor_result,
-                        tool_use_id=f"tool_cursor_{len(self.messages)-1}"
-                    )
-                ]
-            })
-
             self._append_message({
                 "role": "assistant",
                 "content": [
@@ -416,41 +294,6 @@ class AgentService:
                 ]
             })
             
-            logger.info("Screenshot and cursor position captured and added to message history")
+            logger.info("Screenshot with cursor position captured and added to message history")
         except Exception as e:
-            logger.error(f"Failed to take screenshot or get cursor position: {e}")
-
-    @log_execution_time(logger)
-    def _call_llm(self) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
-        """Call the LLM API
-        
-        Returns:
-            list of content blocks (text or tool use blocks)
-        """
-        try:
-            system = self._get_current_system_prompt()
-            if PROMPT_CACHING:
-                self._inject_prompt_caching(self.messages)
-                system["cache_control"] = {"type": "ephemeral"}
-                
-            raw_response = self.client.beta.messages.with_raw_response.create(
-                max_tokens=MAX_TOKENS,
-                messages=self.messages,
-                model=MODEL_NAME,
-                system=[system],
-                tools=self.tools_params,
-                betas=self.betas,
-            )
-            response = raw_response.parse()
-            
-            # Track token usage
-            self.token_tracker.track_usage(
-                response.usage.input_tokens,
-                response.usage.output_tokens
-            )
-            
-            return _response_to_params(response)
-            
-        except (APIStatusError, APIResponseValidationError) as e:
-            logger.error(f"LLM API call failed: {e}")
-            raise
+            logger.error(f"Failed to take initial screenshot due to the following error, skipping this step: {e}")

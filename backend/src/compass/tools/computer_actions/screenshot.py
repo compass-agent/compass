@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from ..base import ToolResult, ToolError
 from .base import BaseComputerAction
@@ -13,8 +12,10 @@ class ScreenshotAction(BaseComputerAction):
         """Take and process a screenshot with proper scaling and optimization in memory"""
         try:
             base64_image = self.capture_and_process_screenshot()
+            cursor_position_x, cursor_position_y = self.get_cursor_position()
+
             return ToolResult(
-                output=None,
+                output=f"The cursor position when the screenshot was taken was X={cursor_position_x},Y={cursor_position_y}",
                 error=None,
                 base64_image=base64_image
             )

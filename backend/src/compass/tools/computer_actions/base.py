@@ -3,9 +3,12 @@ from PIL import Image
 import io
 import base64
 from abc import ABC, abstractmethod
-from typing import Any
-from ..base import ToolResult, ScalingSource, ToolError
+from typing import Tuple
 import logging
+
+from ..base import ToolResult, ScalingSource, ToolError
+from compass.utils.utility import log_execution_time
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +23,7 @@ class BaseComputerAction(ABC):
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
 
+    @log_execution_time(logger)
     def capture_and_process_screenshot(self) -> str:
         """Core method to capture and process screenshot, returning base64 string"""
         # Step 1: Capture screenshot directly to memory
@@ -47,6 +51,13 @@ class BaseComputerAction(ABC):
         
         # Step 5: Convert to base64
         return base64.b64encode(buffer.getvalue()).decode()
+
+    def get_cursor_position(self) -> Tuple[int, int]:
+        """Get the current cursor position and scale it."""
+        x, y = pyautogui.position()
+        scaled_x, scaled_y = self.scale_coordinates(ScalingSource.COMPUTER, round(x), round(y))
+        logger.info(f"scaled cursor position to {scaled_x},{scaled_y} from {x},{y}")
+        return scaled_x, scaled_y
 
     def scale_coordinates(self, source: ScalingSource, x: int, y: int) -> tuple[int, int]:
         """Scale coordinates using pre-calculated scaling factors."""
