@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electron', {
       }
     },
   },
+  restoreWindow: () => ipcRenderer.send('restore-window'),
   closeWindow: () => ipcRenderer.send('close-window'),
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   toggleMaximizeWindow: () => ipcRenderer.send('maximize-window'), // Expose toggle function

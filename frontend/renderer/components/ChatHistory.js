@@ -14,6 +14,7 @@ const TOOL_ACTION_MAPPING = {
 function ChatHistory() {
   const { state } = useAppState();
   const { messages } = state.chat;
+  const { agent: agenStatus } = state;
   const chatRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
@@ -43,29 +44,35 @@ function ChatHistory() {
     return messages.slice(-(lastAiIndex + 1));
   };
 
-  const renderMessage = (msg) => {
-    console.log('Rendering message:', msg,);
+  const renderMessage = (msg, agenStatus) => {
+    console.log('Rendering message:', msg, agenStatus.autoMode);
     console.log('Rendering type:', MESSAGE_TYPES.USER, MESSAGE_TYPES.USER === msg.type);
     switch (msg.type) {
       case MESSAGE_TYPES.USER:
+        if (!msg.text) {
+          return null;
+      }
         return (
           // user-message
           <div className="message user-message">
             {/* <span className="message-icon">👤</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content">
+            <div className="message-content" title={ agenStatus.autoMode ? msg.text : ''}>
               {msg.text}
             </div>
           </div>
         );
 
       case MESSAGE_TYPES.AI_RESPONSE:
+        if (!msg.content) {
+          return null;
+      }
         return (
           //ai-response
           <div className="message">
             {/* <span className="message-icon">🤖</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content">
+            <div className="message-content" title={ agenStatus.autoMode ? msg.content : ''}>
               {msg.content}
             </div>
           </div>
@@ -73,7 +80,10 @@ function ChatHistory() {
       
       case MESSAGE_TYPES.TOOL_USE:
         const action = msg.parameters?.action;
-        const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action' };
+        const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action ...' };
+        if (!mapping.text) {
+          return null;
+      }
         return (
           //tool-use
           <div className="message">
@@ -81,12 +91,15 @@ function ChatHistory() {
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
               {/* why tool-text? */}
-              <span className="tool-text">{mapping.text}</span>
+              <span className="tool-text" title={ agenStatus.autoMode ? mapping.text : ''}>{mapping.text}</span>
             </div>
           </div>
         );
       
       case MESSAGE_TYPES.TOOL_RESULT:
+        if (!msg.error && !msg.output) {
+          return null;
+      }
         return (
           //tool-result
           <div className="message">
@@ -94,10 +107,10 @@ function ChatHistory() {
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
               {msg.error ? (
-                <div className="tool-error">{msg.error}</div>
+                <div className="tool-error" title={ agenStatus.autoMode ? msg.error : ''}>{msg.error}</div>
               ) : (
                 <>
-                  {msg.output && <div className="tool-output">{msg.output}</div>}
+                  {msg.output && <div className="tool-output" title={ agenStatus.autoMode ? msg.output : ''}>{msg.output}</div>}
                   {msg.has_image && <div className="tool-image-placeholder">[Image]</div>}
                 </>
               )}
@@ -107,7 +120,7 @@ function ChatHistory() {
       
       default:
         return (
-          <div className="message-content">
+          <div className="message-content" title={ agenStatus.autoMode ? msg.text : ''}>
             {msg.text}
           </div>
         );
@@ -143,7 +156,7 @@ function ChatHistory() {
       >
         {(isCollapsed ? getRecentMessages() : messages).map((msg, index) => (
           <React.Fragment key={index}>
-          {renderMessage(msg)}
+          {renderMessage(msg, agenStatus)}
         </React.Fragment>
         ))}
       </div>

@@ -69,15 +69,16 @@ class AgentService:
         self.processing_task = None
         self.stop_event = asyncio.Event()
         self.messages: list[BetaMessageParam] = []
-        
+
         self.history_tracker = HistoryLogger()
-        
-        self.tool_collection = ToolCollection(ComputerTool())
+
+        self.tool_collection = ToolCollection(ComputerTool(state_manager))
         self.llm = LLM(self.tool_collection.to_params())
 
         self.pending_tool_queue = []
         self.recording_iteration = 0
         logger.info("Agent successfully initialized")
+        # self._mock_enabled = False
 
     def _append_message(self, message: BetaMessageParam) -> None:
         """Helper method to append message and save messages state"""
@@ -91,15 +92,14 @@ class AgentService:
         logger.info(f"New message received: {message}")
         await self.stop_processing()
 
-        self._append_message({
-            "role": "user",
-            "content": [{"type": "text", "text": message}]
-        })    
+        self._append_message(
+            {"role": "user", "content": [{"type": "text", "text": message}]}
+        )
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
-        
-        logger.info("Taking screenshot and cursor position before calling AI")
-        await self._take_screenshot()
+
+        #logger.info("Taking screenshot and cursor position before calling AI")
+        #await self._take_screenshot()
 
         if self.state_manager.auto_mode:
             self.processing_task = asyncio.create_task(
@@ -115,12 +115,13 @@ class AgentService:
             response_params = await self._next_step_proposal()
             if self.state_manager.highlight_mode:
                 response_params = [
-                    block for block in response_params 
-                    if block["type"] == "text"
+                    block for block in response_params if block["type"] == "text"
                 ]
                 logger.info(f"Skipping tool proposals since in highlight mode")
             else:
-                logger.info(f"Storing {len(response_params) - 1} tool proposals in queue")
+                logger.info(
+                    f"Storing {len(response_params) - 1} tool proposals in queue"
+                )
                 self._store_pending_tool_proposals(response_params)
         finally:
             logger.info("Setting status to IDLE, clearing stop event, and cleaning up task")
@@ -134,21 +135,27 @@ class AgentService:
         logger.info("Starting to process message in loop mode")
         iteration = 1
         try:
-            while (iteration <= MAX_ITERATIONS and 
-                   not self.stop_event.is_set() and 
-                   self.state_manager.status == AgentStatus.RUNNING.value):
+            while (
+                iteration <= MAX_ITERATIONS
+                and not self.stop_event.is_set()
+                and self.state_manager.status == AgentStatus.RUNNING.value
+            ):
                 logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
                 
                 response_params = await self._next_step_proposal()
                 self._append_message({"role": "assistant", "content": response_params})
-                
-                tool_blocks = [block for block in response_params if block["type"] == "tool_use"]
+
+                tool_blocks = [
+                    block for block in response_params if block["type"] == "tool_use"
+                ]
                 if not tool_blocks:
                     break
 
                 tool_result_content = await self._execute_tools(tool_blocks)
                 if tool_result_content:
-                    self._append_message({"role": "user", "content": tool_result_content})
+                    self._append_message(
+                        {"role": "user", "content": tool_result_content}
+                    )
                 iteration += 1
         except asyncio.CancelledError:
             logger.info("Message processing loop was cancelled")
@@ -187,31 +194,30 @@ class AgentService:
                 name=content_block["name"],
                 tool_input=cast(dict[str, Any], content_block["input"]),
             )
-            
+
             tool_result = _make_api_tool_result(result, content_block["id"])
             tool_result_content.append(tool_result)
-            
+
             # Emit individual result
-            self.state_manager.emit_response({
-                "type": "tool_result",
-                "content": tool_result
-            })
-            
+            self.state_manager.emit_response(
+                {"type": "tool_result", "content": tool_result}
+            )
+
         return tool_result_content
 
     async def execute_next_pending_tool(self):
         if not self.pending_tool_queue:
             logger.info("No pending tools to execute")
             return
-            
+
         self.state_manager.set_status(AgentStatus.RUNNING)
         try:
             tool_result_content = await self._execute_tools(self.pending_tool_queue)
             self.pending_tool_queue.clear()
-            
+
             if tool_result_content:
                 self._append_message({"role": "user", "content": tool_result_content})
-                
+
         finally:
             self.state_manager.set_status(AgentStatus.IDLE)
             self.state_manager.set_pending_tools(0)
@@ -229,10 +235,9 @@ class AgentService:
         response_params = await self.llm.call(self.messages, self.state_manager.highlight_mode) 
         for content_block in response_params:
             if content_block["type"] == "text":
-                self.state_manager.emit_response({
-                    "type": "ai_response",
-                    "content": content_block["text"]
-                })
+                self.state_manager.emit_response(
+                    {"type": "ai_response", "content": content_block["text"]}
+                )
         return response_params
 
     async def stop_processing(self) -> None:
@@ -274,7 +279,7 @@ class AgentService:
                 name="computer",
                 tool_input={"action": "screenshot"}
             )
-            
+
             self._append_message({
                 "role": "user",
                 "content": [
@@ -287,4 +292,6 @@ class AgentService:
             
             logger.info("Screenshot with cursor position captured and added to message history")
         except Exception as e:
-            logger.error(f"Failed to take initial screenshot due to the following error, skipping this step: {e}")
+            logger.error(
+                f"Failed to take initial screenshot due to the following error, skipping this step: {e}"
+            )

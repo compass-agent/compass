@@ -11,7 +11,7 @@ const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
   MIN_WIDTH: 500,
-  MIN_HEIGHT: 200,
+  MIN_HEIGHT: 120,
 };
 
 let mainWindow;
@@ -28,7 +28,7 @@ function createWindow() {
     },
     alwaysOnTop: true,
     frame: false, // Turned into true as had conflict with maximize button restore
-    transparent: true, // Turned into true as had conflict with maximize button restore
+    transparent: false, // Turned into true as had conflict with maximize button restore
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
     hasShadow: true,
     resizable: true,
@@ -102,6 +102,12 @@ ipcMain.on("close-window", () => {
 
 ipcMain.on("minimize-window", () => {
   if (mainWindow) mainWindow.minimize();
+});
+
+ipcMain.on('restore-window', (event) => {
+  if (mainWindow) {
+    mainWindow.restore();
+  }
 });
 
 ipcMain.on("maximize-window", () => {

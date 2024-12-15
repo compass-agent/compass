@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAppState } from '../context/AppContext';
 import "../styles/Header.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +14,22 @@ import {
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 
 function Header() {
+  const { state } = useAppState();
+  const { compassWindow} = state;
+  const [isFullscreen, setIsFullscreen] = useState(true);
+
+  useEffect(() => {
+    console.log(`Header: screenshot actionType ${ compassWindow.actionType}`);
+    if (!compassWindow.actionType) {
+      return;
+    }
+    if (compassWindow.actionType === 'minimize') {
+      handleMinimize();
+    } else if (compassWindow.actionType === 'restore') {
+      window.electron.restoreWindow();
+    }
+  }, [compassWindow.actionType]);
+
   let isMac = window.electron.platform === "darwin";
   //isMac = true;
   const isWindows = window.electron.platform === "win32";
@@ -40,12 +57,9 @@ function Header() {
     }
   };
 
-  const [isFullscreen, setIsFullscreen] = useState(true);
-
   const handleToggleFullscreen = () => {
     setIsFullscreen((prev) => {
       const isNowFullscreen = !prev;
-      console.info("handleToggleFullscreen: isNowFullscreen", isNowFullscreen);
       const { ipcRenderer } = window.electron;
       if (ipcRenderer) {
         window.electron.ipcRenderer.send("toggle-fullscreen", isNowFullscreen);

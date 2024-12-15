@@ -12,7 +12,7 @@ import useScrollToBottom from "./hooks/useScrollToBottom";
 // Separate component for the main app content to use the context
 function AppContent() {
   const { state } = useAppState();
-  const { connection, chat } = state;
+  const { connection, chat, agent: agentState } = state;
   const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
 
   // Use custom hooks
@@ -36,7 +36,7 @@ function AppContent() {
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper">
+        <div className="input-box-wrapper" style={{ display: agentState.autoMode ? 'none' : 'block' }}>
           <MessageInput />
         </div>
       </div>

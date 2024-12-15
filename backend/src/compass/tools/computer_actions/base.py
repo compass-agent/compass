@@ -1,5 +1,5 @@
 import pyautogui
-from PIL import Image
+from PIL import Image # type: ignore
 import io
 import base64
 from abc import ABC, abstractmethod
@@ -9,20 +9,22 @@ import asyncio
 
 from ..base import ToolResult, ScalingSource, ToolError
 from compass.utils.utility import log_execution_time
-
+from flask_socketio import SocketIO, emit # type: ignore
+from compass.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
 class BaseComputerAction(ABC):
     """Base class for all computer actions."""
     
-    def __init__(self, width: int, height: int, scaled_width: int, scaled_height: int):
+    def __init__(self, width: int, height: int, scaled_width: int, scaled_height: int, state_manager: StateManager):
         self.width = width
         self.height = height
         self.scaled_width = scaled_width
         self.scaled_height = scaled_height
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
+        self.state_manager = state_manager
 
     # @log_execution_time(logger)
     async def capture_and_process_screenshot(self) -> str:

@@ -24,6 +24,10 @@ const initialState = {
     error: null,
     currentInput: "",
   },
+
+  compassWindow: {
+    actionType: null,
+  }
 };
 
 // Action types
@@ -36,6 +40,7 @@ const ActionTypes = {
   START_PROCESSING: "START_PROCESSING",
   STOP_PROCESSING: "STOP_PROCESSING",
   UPDATE_PENDING_TOOLS: "UPDATE_PENDING_TOOLS",
+  SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
 };
 
 // Reducer
@@ -115,6 +120,14 @@ function appReducer(state, action) {
         },
       };
 
+    case ActionTypes.SET_COMPASS_WINDOW_STATE:
+      return {
+        ...state,
+        compassWindow: {
+          actionType: action.payload,
+        },
+      };
+
     default:
       return state;
   }
@@ -153,6 +166,14 @@ export function AppProvider({ children }) {
         dispatch({
           type: ActionTypes.SET_AGENT_STATE,
           payload: data,
+        });
+      },
+
+      onCompassWindowState: (actionString) => {
+        console.log("Received Compass window state:", actionString);
+        dispatch({
+          type: ActionTypes.SET_COMPASS_WINDOW_STATE,
+          payload: actionString,
         });
       },
 

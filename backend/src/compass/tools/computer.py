@@ -3,7 +3,7 @@ from typing import Literal, TypedDict
 import logging
 from enum import StrEnum
 import ctypes
-
+from compass.services.state_manager import StateManager
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
 from .base import BaseAnthropicTool, ToolError
@@ -79,11 +79,10 @@ class ComputerTool(BaseAnthropicTool):
     def to_params(self) -> BetaToolComputerUse20241022Param:
         return {"name": self.name, "type": self.api_type, **self.options}
 
-    def __init__(self):
+    def __init__(self, state_manager: StateManager):
         super().__init__()
         logger.info("Initializing ComputerTool")
         self._initialize_screen_dimensions()
-        
         logger.info("Finding best target dimension, XGA, WXGA, FWXGA...")
         self._find_best_standard_dimension()
         
@@ -95,7 +94,8 @@ class ComputerTool(BaseAnthropicTool):
             "width": self.width,
             "height": self.height,
             "scaled_width": self.scaled_width,
-            "scaled_height": self.scaled_height
+            "scaled_height": self.scaled_height,
+            "state_manager": state_manager,
         }
         
         # Initialize all actions with common parameters

@@ -66,6 +66,13 @@ function ControlPanel() {
     WebSocketService.updateControlState({
       autoMode: !agentState.autoMode,
     });
+    if (!agentState.autoMode) {
+      // Exit fullscreen when switching to auto mode
+      window.electron.ipcRenderer.send("toggle-fullscreen", false);
+    } else {
+      // Enter fullscreen when switching to manual mode
+      window.electron.ipcRenderer.send("toggle-fullscreen", true);
+    }
   };
 
   const handleHighlightToggle = () => {
@@ -74,7 +81,7 @@ function ControlPanel() {
     });
   };
 
-  const getAutoModeIcon = () => {
+  const autoManualModeIconToggel = () => {
     return agentState.autoMode ? faMagicWandSparkles : faGear;
   };
 
@@ -111,7 +118,7 @@ function ControlPanel() {
             agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"
           }
         >
-          <FontAwesomeIcon icon={getAutoModeIcon()} />
+          <FontAwesomeIcon icon={autoManualModeIconToggel()} />
         </button>
 
         <button

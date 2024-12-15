@@ -61,6 +61,14 @@ class StateManager:
     def emit_response(self, response: Dict[str, Any]) -> None:
         """Emit agent response"""
         self._socketio.emit('response', response)
+        
+    def emit_window_minimize(self, action: str) -> None:
+        """Minimize Compass app window"""
+        self._socketio.emit('minimize-window','minimize')
+            
+    def emit_window_restore(self, action: str) -> None:
+        """Restore Compass app window"""
+        self._socketio.emit('restore-window','restore')
 
     @property
     def auto_mode(self) -> bool:
