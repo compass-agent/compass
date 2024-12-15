@@ -84,9 +84,9 @@ function ControlPanel() {
       type: "STOP_PROCESSING",
       payload: "",
     });
-    // WebSocketService.updateControlState({
-    //   status: AgentStatus.STOPPED,
-    // });
+    WebSocketService.updateControlState({
+      status: AgentStatus.STOPPED,
+    });
     WebSocketService.sendStopProcessing();
   };
 

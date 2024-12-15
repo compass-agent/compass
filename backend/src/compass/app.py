@@ -102,7 +102,7 @@ def handle_control_update(data):
 def handle_stop_processing():
     logger.info('Stop processing request received')
     try:
-        asyncio.run(agent_service.stop_processing('event'))
+        run_async(agent_service.stop_processing())
     except Exception as e:
         logger.error(f"Error in handle_stop_processing: {e}", exc_info=True)
         emit('error', {'message': str(e)})

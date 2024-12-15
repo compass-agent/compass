@@ -143,6 +143,7 @@ class AgentService:
                 and self.state_manager.status == AgentStatus.RUNNING.value
             ):
                 logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
+                logger.info(f"Processing iteration {iteration} status {self.state_manager.status}")
                 response_params = await self._next_step_proposal()
                 self._append_message({"role": "assistant", "content": response_params})
 
