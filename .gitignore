@@ -82,3 +82,4 @@ backend/env/
 
 
 backend/src/compass/key.py
+!config/

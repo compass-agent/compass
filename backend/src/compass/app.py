@@ -1,43 +1,16 @@
-import logging
-import os
-import sys
-
-# Add the src directory to the system path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-# Configure logging BEFORE other imports
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    force=True
-)
-
-# Disable engineio logging completely
-engineio_logger = logging.getLogger('engineio.server')
-engineio_logger.setLevel(logging.WARNING)  # Only show warnings and errors
-
-# Disable werkzeug logging (Flask's default logger)
-werkzeug_logger = logging.getLogger('werkzeug')
-werkzeug_logger.setLevel(logging.WARNING)
-
-# Now import other modules
-import json
 import signal
 import sys
 from flask import Flask
 from flask_socketio import SocketIO, emit # type: ignore
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
-
-# Create logger for this module
+from compass.utils.utility import HistoryLogger
+import logging
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
+app.config.from_object('compass.config.config.Config')
 
-# Initialize SocketIO with logging disabled
 socketio = SocketIO(app, 
     cors_allowed_origins="*",
     async_mode='threading',
@@ -45,7 +18,6 @@ socketio = SocketIO(app,
     engineio_logger=False,
     debug=False)
 
-# Initialize services
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
 
@@ -68,7 +40,6 @@ def handle_disconnect():
 
 @socketio.on('message')
 def handle_message(data):
-    logger.info(f'Received message: {data}')
     try:
         agent_service.process_message(data.get('text', ''))
     except Exception as e:
