@@ -2,18 +2,16 @@ import pyautogui
 from typing import Literal, TypedDict
 import logging
 from enum import StrEnum
-import ctypes
 from compass.services.state_manager import StateManager
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
-from .base import BaseAnthropicTool, ToolError
+from ..base import BaseAnthropicTool, ToolError
 from compass.constants import SCREENSHOT_SCALE_FACTOR
-from compass.utils.utility import HistoryLogger
-from .computer_actions.screenshot import ScreenshotAction
-from .computer_actions.cursor_position import CursorPositionAction
-from .computer_actions.mouse_movement import MouseMovementAction
-from .computer_actions.mouse_click import MouseClickAction
-from .computer_actions.keyboard_input import KeyboardInputAction
+from .screenshot import ScreenshotAction
+from .cursor_position import CursorPositionAction
+from .mouse_movement import MouseMovementAction
+from .mouse_click import MouseClickAction
+from .keyboard_input import KeyboardInputAction
 
 logger = logging.getLogger(__name__)
 
