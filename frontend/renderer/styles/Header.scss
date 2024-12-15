@@ -58,6 +58,7 @@
         position: relative;
         width: 18px;
         height: 18px;
+        font-size: 10px;
         border-radius: 50%;
         border: none;
         display: flex;
@@ -66,6 +67,18 @@
         background: none;
         border: none;
         cursor: pointer;
+
+        /* Initially hide the icon */
+        svg {
+          opacity: 0; /* Hide the icon */
+          transition: opacity 0.3s ease; /* Smooth transition */
+          color: #ffffff;
+        }
+
+        /* Show the icon when hovered */
+        &:hover svg {
+          opacity: 1;
+        }
       }
 
       &.win {
@@ -88,7 +101,7 @@
           background-color: #e0a39f; 
         }
        }
-      &.min {
+      &.max {
         background-color: #27c93f;
         margin-right: 10px;
 
@@ -96,7 +109,7 @@
           background-color:  #9fc9a5; 
         }
        }
-      &.max {
+      &.min {
         background-color: #ffbd2e;
         margin-right: 10px;
 

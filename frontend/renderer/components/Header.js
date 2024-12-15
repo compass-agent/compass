@@ -10,6 +10,8 @@ import {
   faEllipsisVertical,
   faExpand,
   faCompress,
+  faUpRightAndDownLeftFromCenter,
+  faMinus
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 
@@ -19,7 +21,6 @@ function Header() {
   const [isFullscreen, setIsFullscreen] = useState(true);
 
   let isMac = window.electron.platform === "darwin";
-  //isMac = true;
   const isWindows = window.electron.platform === "win32";
   console.log(`Header: start:  isMac ${isMac} isWindows ${isWindows}`);
 
@@ -85,21 +86,21 @@ function Header() {
             onClick={handleClose}
             title="Close"
           >
-            {/* <FontAwesomeIcon icon={faXmark} /> */}
-          </button>
-          <button
-            className="window-control macos max"
-            onClick={handleToggleMaximizeWindow}
-            title="Maximize"
-          >
-            {/* <FontAwesomeIcon icon={faSquare} /> */}
+            <FontAwesomeIcon icon={faXmark} />
           </button>
           <button
             className="window-control macos min"
             onClick={handleMinimize}
             title="Minimize"
           >
-            {/* <FontAwesomeIcon icon={faWindowMinimize} /> */}
+            <FontAwesomeIcon icon={faMinus} />
+          </button>
+          <button
+            className="window-control macos max"
+            onClick={handleToggleMaximizeWindow}
+            title="Maximize"
+          >
+            <FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} />
           </button>
         </div>
       ) : (
