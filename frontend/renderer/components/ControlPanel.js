@@ -25,11 +25,10 @@ function ControlPanel() {
   useEffect(() => {
     console.log("ControlPanel - Agent state updated:", {
       status: agentState.status,
-      playing: agentState.playing,
       currentInput: chat.currentInput,
     });
     hanldeFullscrenToggle(agentState.autoMode);
-  }, [agentState.status, agentState.playing, chat.currentInput]); // playing boolean
+  }, [agentState.status, chat.currentInput]);
 
   const handlePlayClick = () => {
     const currentTime = new Date().getTime();
@@ -46,7 +45,7 @@ function ControlPanel() {
 
   const handleSingleClick = () => {
     console.log("ControlPanel -handleSingleClick: agentState", agentState);
-    if (agentState.status !== AgentStatus.IDLE) {
+    if (agentState.status !== AgentStatus.STOPPED) {
       handleStop();
     } else if (agentState.pendingTools > 0) {
       // Execute next pending tool
@@ -70,7 +69,7 @@ function ControlPanel() {
   };
 
   const handleDoubleClick = () => {
-    if (agentState.status !== AgentStatus.IDLE) {
+    if (agentState.status !== AgentStatus.STOPPED) {
       handleStop();
     } else {
       WebSocketService.executeNextTool();
@@ -80,15 +79,15 @@ function ControlPanel() {
 
   const handleStop = () => {
     console.log("ControlPanel handleStop");
-    if (agentState.status === AgentStatus.IDLE) return;
+    if (agentState.status === AgentStatus.STOPPED) return;
     dispatch({
       type: "STOP_PROCESSING",
       payload: "",
     });
-    WebSocketService.updateControlState({
-      status: AgentStatus.IDLE,
-      playing: false,
-    });
+    // WebSocketService.updateControlState({
+    //   status: AgentStatus.STOPPED,
+    // });
+    WebSocketService.sendStopProcessing();
   };
 
   const handleAutoModeToggle = () => {
@@ -121,7 +120,7 @@ function ControlPanel() {
       );
     };
 
-    if (autoMode && agentState.status !== AgentStatus.IDLE) {
+    if (autoMode && agentState.status !== AgentStatus.STOPPED) {
       // Exit fullscreen when switching to auto mode
       window.electron.ipcRenderer.send("toggle-fullscreen", false);
 
@@ -132,7 +131,7 @@ function ControlPanel() {
         "move-to-bottom-right-done",
         handleMoveToBottomRightDone
       );
-    } else if (agentState.status !== AgentStatus.IDLE) {
+    } else if (agentState.status !== AgentStatus.STOPPED) {
       // Enter fullscreen when switching to manual mode
       window.electron.ipcRenderer.send("toggle-fullscreen", true);
     }
@@ -140,7 +139,7 @@ function ControlPanel() {
     if (
       autoMode &&
       isWindowMoved &&
-      agentState.status === AgentStatus.IDLE &&
+      agentState.status === AgentStatus.STOPPED &&
       agentState.pendingTools === 0
     ) {
       // Auto mode tasks have been done
@@ -161,7 +160,7 @@ function ControlPanel() {
   };
 
   const getPlayButtonTitle = () => {
-    if (agentState.status !== AgentStatus.IDLE) {
+    if (agentState.status !== AgentStatus.STOPPED) {
       return "Processing...";
     } else if (agentState.pendingTools > 0) {
       return "Execute Next Tool";
@@ -174,7 +173,7 @@ function ControlPanel() {
 
   const getPlayButtonIcon = () => {
     console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState);
-    if (agentState.status !== AgentStatus.IDLE) {
+    if (agentState.status !== AgentStatus.STOPPED) {
       return { icon: faStop, loading: true }; // Processing // faRotateRight shouldSpin: true
     } else if (agentState.pendingTools > 0) {
       return { icon: faWrench }; // Pending tools
@@ -214,9 +213,9 @@ function ControlPanel() {
 
       <div className="right-controls">
         <button
-          className={`button ${agentState.playing ? "active" : ""}`}
+          className={`button ${agentState.status !== AgentStatus.STOPPED ? "active" : ""}`}
           onClick={handlePlayClick}
-          // disabled={agentState.status !== AgentStatus.IDLE}
+          // disabled={agentState.status !== AgentStatus.STOPPED}
           title={getPlayButtonTitle()}
         >
           <FontAwesomeIcon icon={playButtonIcon.icon} />

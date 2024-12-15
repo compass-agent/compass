@@ -71,7 +71,6 @@ class AgentService:
         self.messages: list[BetaMessageParam] = []
 
         self.history_tracker = HistoryLogger()
-
         self.tool_collection = ToolCollection(
             ComputerTool(state_manager),
             SleepAction()
@@ -127,8 +126,8 @@ class AgentService:
                 )
                 self._store_pending_tool_proposals(response_params)
         finally:
-            logger.info("Setting status to IDLE, clearing stop event, and cleaning up task")
-            self.state_manager.set_status(AgentStatus.IDLE)
+            logger.info("Setting status to STOPPED, clearing stop event, and cleaning up task")
+            self.state_manager.set_status(AgentStatus.STOPPED)
             self.stop_event.clear()
             self.processing_task = None
             logger.info("Single mode processing completed and cleaned up")
@@ -144,7 +143,6 @@ class AgentService:
                 and self.state_manager.status == AgentStatus.RUNNING.value
             ):
                 logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
-                
                 response_params = await self._next_step_proposal()
                 self._append_message({"role": "assistant", "content": response_params})
 
@@ -166,7 +164,7 @@ class AgentService:
         except Exception as e:
             logger.error(f"Error in message processing loop: {e}")
         finally:
-            self.state_manager.set_status(AgentStatus.IDLE)
+            self.state_manager.set_status(AgentStatus.STOPPED)
             self.stop_event.clear()
             self.processing_task = None
             logger.info("Message processing loop completed and cleaned up")
@@ -222,7 +220,7 @@ class AgentService:
                 self._append_message({"role": "user", "content": tool_result_content})
 
         finally:
-            self.state_manager.set_status(AgentStatus.IDLE)
+            self.state_manager.set_status(AgentStatus.STOPPED)
             self.state_manager.set_pending_tools(0)
 
     async def process_next_action(self):
@@ -257,11 +255,11 @@ class AgentService:
             except asyncio.TimeoutError:
                 logger.error("Failed to stop task within timeout")
             
-            self.state_manager.set_status(AgentStatus.IDLE)
+            self.state_manager.set_status(AgentStatus.STOPPED)
         else:
             logger.info("No active processing task to stop")
-            self.state_manager.set_status(AgentStatus.IDLE)
-
+            self.state_manager.set_status(AgentStatus.STOPPED)
+            
     @log_execution_time(logger)
     async def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""

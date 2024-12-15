@@ -10,12 +10,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, ActionTypes } from '../constants'; 
 
-const PlayState = {
-  STOPPED: "stopped",
-  RUNNING: "running",
-  STOPPING: "stopping",
-};
-
 function MessageInput() {
   const { state, dispatch } = useAppState();
   const { agent, chat } = state;
@@ -25,18 +19,19 @@ function MessageInput() {
   // Add logging for initial render and state changes
   useEffect(() => {
     console.log("MessageInput - Component mounted or updated");
-    console.log("Current agent state:", agent);
+    console.log("Current agentState:", agent.status);
     console.log("Current chat state:", chat);
     setMessage(chat.currentInput);
   }, [agent, chat]);
 
   // Add effect to clear input when processing completes
-  useEffect(() => {
-    if (!agent.processing && !agent.playing) {
-      console.log("MessageInput - Clearing input after processing completed");
-      resetAgentState();
-    }
-  }, [agent.processing, agent.playing]);
+  //SPZ TODO: it is commented. If working fine, remove it
+  // useEffect(() => {
+  //   if (agent.status === AgentStatus.STOPPED) {
+  //     console.log("MessageInput - Clearing input after processing completed");
+  //     resetAgentState();
+  //   }
+  // }, [agent.processing, agent.playing]);
 
   const resetAgentState = () => {
     setMessage("");
@@ -69,28 +64,28 @@ function MessageInput() {
     }
   };
 
-  const getPlayState = () => {
-    const playState =
-      !agent.processing && !agent.playing
-        ? PlayState.STOPPED
-        : agent.processing && agent.playing
-        ? PlayState.RUNNING
-        : PlayState.STOPPING;
-    console.log("MessageInput - getPlayState:", playState, "agent:", agent);
-    return playState;
-  };
+  // const getPlayState = () => {
+  //   const playState =
+  //     !agent.processing && !agent.playing
+  //       ? AgentStatus.STOPPED
+  //       : agent.processing && agent.playing
+  //       ? AgentStatus.RUNNING
+  //       : AgentStatus.STOPPING;
+  //   console.log("MessageInput - getPlayState:", playState, "agent:", agent);
+  //   return playState;
+  // };
 
   const handleSubmit = async (e) => {
     // Add logging at the start of submission
     console.log("MessageInput - Starting submission with message:", message);
 
     e?.preventDefault();
-    const playState = getPlayState();
+    //const playState = getPlayState();
 
-    if (!message.trim() || playState !== PlayState.STOPPED) {
+    if (!message.trim() || agent.status !== AgentStatus.STOPPED) {
       console.log("MessageInput - handleSubmit cancelled:", {
         hasMessage: !!message.trim(),
-        playState,
+        agentStatus: agent.status,
       });
       return;
     }
@@ -109,7 +104,7 @@ function MessageInput() {
       });
 
       // Add logging after dispatch
-      console.log("MessageInput - Message dispatched, sending to WebSocket");
+      //console.log("MessageInput - Message dispatched, sending to WebSocket");
 
       WebSocketService.sendMessage(message);
       setMessage("");
@@ -127,7 +122,7 @@ function MessageInput() {
   };
 
   const handleStop = () => {
-    console.log("MessageInput - Stopping the agent");
+    //console.log("MessageInput - Stopping the agent");
     dispatch({
       type: "STOP_PROCESSING",
       payload: "",
@@ -138,20 +133,20 @@ function MessageInput() {
   
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      console.log("MessageInput - Enter key pressed");
+      //console.log("MessageInput - Enter key pressed");
       e.preventDefault();
       handleSubmit();
     }
   };
 
-  const playState = getPlayState();
-  console.log("MessageInput - Render:", {
-    playState,
-    message,
-    isDisabled: playState !== PlayState.STOPPED,
-  });
+  // const playState = getPlayState();
+  // console.log("MessageInput - Render:", {
+  //   playState,
+  //   message,
+  //   isDisabled: agent.status !== AgentStatus.STOPPED,
+  // });
 
-  const isInputEnabled = agent.status === AgentStatus.IDLE;
+  const isInputEnabled = agent.status === AgentStatus.STOPPED;
 
   return (
     <div className="message-input-container">
@@ -159,7 +154,7 @@ function MessageInput() {
         ref={textareaRef} // Reference to dynamically adjust height
         className="message-input"
         placeholder={
-          agent.status === AgentStatus.IDLE
+          agent.status === AgentStatus.STOPPED
             ? "Ask Compass ..."
             : "Processing..."
         }
@@ -173,11 +168,11 @@ function MessageInput() {
         <button
           className="button right-button"
           title="Send Message"
-          onClick={ getPlayState() !== PlayState.STOPPED ? handleStop : handleSubmit}
+          onClick={ getPlayState() !== AgentStatus.STOPPED ? handleStop : handleSubmit}
           disabled={!isInputEnabled}
         >
           {(
-            <FontAwesomeIcon icon={getPlayState() !== PlayState.STOPPED ? faStop : faArrowUp} />
+            <FontAwesomeIcon icon={getPlayState() !== AgentStatus.STOPPED ? faStop : faArrowUp} />
           )}
         </button>
       </div> */}

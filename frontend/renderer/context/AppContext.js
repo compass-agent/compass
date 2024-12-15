@@ -14,8 +14,8 @@ const initialState = {
   agent: {
     autoMode: false,
     highlightMode: false,
-    playing: false,
-    status: AgentStatus.IDLE,
+    // playing: false,
+    status: AgentStatus.STOPPED,
     currentTask: null,
     pendingTools: 0,
   },
@@ -84,7 +84,7 @@ function appReducer(state, action) {
         agent: {
           ...state.agent,
           status: AgentStatus.RUNNING,
-          playing: true,
+          // playing: true,
         },
       };
 
@@ -93,8 +93,8 @@ function appReducer(state, action) {
         ...state,
         agent: {
           ...state.agent,
-          status: AgentStatus.IDLE,
-          playing: false,
+          status: AgentStatus.STOPPED,
+          // playing: false,
         },
       };
 

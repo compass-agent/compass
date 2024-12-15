@@ -7,7 +7,7 @@ const MESSAGE_TYPES = {
 
 // States
 const AgentStatus = {
-  IDLE: "IDLE",
+  STOPPED: "STOPPED",
   RUNNING: "RUNNING",
   STOPPING: "STOPPING",
 };

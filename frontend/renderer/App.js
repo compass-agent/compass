@@ -37,7 +37,7 @@ function AppContent() {
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper" style={{ display: (agent.autoMode && agent.status !== AgentStatus.IDLE  ) ? 'none' : '' }}> 
+        <div className="input-box-wrapper" style={{ display: (agent.autoMode && agent.status !== AgentStatus.STOPPED  ) ? 'none' : '' }}> 
           <MessageInput />
         </div>
       </div>

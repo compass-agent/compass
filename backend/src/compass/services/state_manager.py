@@ -14,7 +14,7 @@ pending_tools: int (Only agent can set this)
   This is the number of tools that are pending to be executed.
 
 agent_status: str (Only agent can set this)
-  STOPPED: If agent is idle
+  STOPPED: If agent is STOPPED
   RUNNING: If agent is running
   STOPPING: If agent is stopping
 
@@ -22,17 +22,17 @@ agent_status: str (Only agent can set this)
 ## Events
 
 tools_execution:   (FE send this event)
-    Active: If agent is 'Idle' and automode is False, and pending_tools > 0
+    Active: If agent is 'STOPPED' and automode is False, and pending_tools > 0
     Inactive: O.W.
 
 tools_execution_and_next_step_proposal: (agent send this event)
 
 play: (FE send this event)
     Active: 
-      Pause ---> Play: If agent.status is 'Idle' and automode is False
+      Pause ---> Play: If agent.status is 'STOPPED' and automode is False
          agent.status (in backend) changes to RUNNING
       Play ---> Pause: If agent.status is "Running" 
-        agent.status (in backend) changes to STOPPING and then to IDLE
+        agent.status (in backend) changes to STOPPING and then to STOPPED
     Deactive: If agent.status is "STOPPING"
 
 """
@@ -45,7 +45,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AgentStatus(Enum):
-    IDLE = "IDLE"
+    STOPPED = "STOPPED"
     RUNNING = "RUNNING"
     STOPPING = "STOPPING"
 
@@ -53,8 +53,8 @@ class AgentStatus(Enum):
 class AgentState:
     auto_mode: bool = False
     highlight_mode: bool = False
-    playing: bool = False
-    status: str = AgentStatus.IDLE.value
+    # playing: bool = False
+    status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
     pending_tools: int = 0
 
@@ -68,7 +68,7 @@ class StateManager:
         return {
             'autoMode': self._state.auto_mode,
             'highlightMode': self._state.highlight_mode,
-            'playing': self._state.playing,
+            # 'playing': self._state.playing,
             'status': self._state.status,
             'currentTask': self._state.current_task,
             'pendingTools': self._state.pending_tools
@@ -80,9 +80,9 @@ class StateManager:
             self._state.auto_mode = state_update['autoMode']
         if 'highlightMode' in state_update:
             self._state.highlight_mode = state_update['highlightMode']
-        if 'playing' in state_update:
-            self._state.playing = state_update['playing']
-            
+        # if 'playing' in state_update:
+        #     self._state.playing = state_update['playing']
+        # QUST?? there is any reason to send state where we have just received it?
         self._emit_state_update()
         return self.get_state()
 
