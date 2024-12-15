@@ -98,8 +98,8 @@ class AgentService:
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
 
-        #logger.info("Taking screenshot and cursor position before calling AI")
-        #await self._take_screenshot()
+        logger.info("Taking screenshot and cursor position before calling AI")
+        await self._take_screenshot()
 
         if self.state_manager.auto_mode:
             self.processing_task = asyncio.create_task(

@@ -35,9 +35,10 @@ class MouseClickAction(BaseComputerAction):
 
             # Take screenshot
             base64_image = await self.capture_and_process_screenshot()
+            output_message = f"Carefuly review the updated screenshot content for {action} to see if your desired screen change has been made. If not, please try again."
             logger.info(f"Screenshot captured and processed: for {action} to be added to its response")
             return ToolResult(
-                output=None, 
+                output=output_message, 
                 error=None, 
                 base64_image=base64_image
             ) 
