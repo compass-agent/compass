@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import WebSocketService from '../services/websocket';
-import { useAppState, AgentStatus } from '../context/AppContext';
-import '../styles/ControlPanel.scss';
+import React, { useEffect, useState } from "react";
+import WebSocketService from "../services/websocket";
+import { useAppState } from "../context/AppContext";
+import "../styles/ControlPanel.scss";
+import { AgentStatus } from "../constants";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRotateRight, faWrench, faPlay, faForward, faLightbulb, faInfo, faGear, faMagicWandSparkles  } from "@fortawesome/free-solid-svg-icons";
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
@@ -9,18 +12,19 @@ function ControlPanel() {
   const [lastClickTime, setLastClickTime] = useState(0);
 
   useEffect(() => {
-    console.log('ControlPanel - Agent state updated:', {
+    console.log("ControlPanel - Agent state updated:", {
       status: agentState.status,
       playing: agentState.playing,
-      currentInput: chat.currentInput
+      currentInput: chat.currentInput,
     });
-  }, [agentState.status, agentState.playing, chat.currentInput]);
+  }, [agentState.status, agentState.playing, chat.currentInput]); // playing boolean
 
   const handlePlayClick = () => {
     const currentTime = new Date().getTime();
     const timeDiff = currentTime - lastClickTime;
-    
-    if (timeDiff < 300) { // Double click detected
+
+    if (timeDiff < 300) {
+      // Double click detected
       handleDoubleClick();
     } else {
       handleSingleClick();
@@ -37,15 +41,15 @@ function ControlPanel() {
     } else if (chat.currentInput?.trim()) {
       // Process new message
       dispatch({
-        type: 'ADD_CHAT_MESSAGE',
+        type: "ADD_CHAT_MESSAGE",
         payload: {
-          type: 'user',
+          type: "user",
           text: chat.currentInput.trim(),
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
       WebSocketService.sendMessage(chat.currentInput);
-      dispatch({ type: 'SET_CHAT_INPUT', payload: '' });
+      dispatch({ type: "SET_CHAT_INPUT", payload: "" });
     } else {
       // Generate next action
       WebSocketService.generateNextAction();
@@ -60,75 +64,84 @@ function ControlPanel() {
 
   const handleAutoModeToggle = () => {
     WebSocketService.updateControlState({
-      autoMode: !agentState.autoMode
+      autoMode: !agentState.autoMode,
     });
   };
 
   const handleHighlightToggle = () => {
     WebSocketService.updateControlState({
-      highlightMode: !agentState.highlightMode
+      highlightMode: !agentState.highlightMode,
     });
   };
 
-  const getPlayButtonIcon = () => {
-    if (agentState.status !== AgentStatus.IDLE) {
-      return '⏳'; // Processing
-    } else if (agentState.pendingTools > 0) {
-      return '🔨'; // Pending tools
-    } else {
-      return '▶️'; // Ready to generate next action
-    }
-  };
-
   const getAutoModeIcon = () => {
-    return agentState.autoMode ? '⚡️⚡️' : '⚡️';
+    return agentState.autoMode ? faMagicWandSparkles : faGear;
   };
 
   const getPlayButtonTitle = () => {
     if (agentState.status !== AgentStatus.IDLE) {
-      return 'Processing...';
+      return "Processing...";
     } else if (agentState.pendingTools > 0) {
-      return 'Execute Next Tool';
+      return "Execute Next Tool";
     } else if (chat.currentInput?.trim()) {
-      return 'Process Message';
+      return "Process Message";
     } else {
-      return 'Generate Next Action';
+      return "Generate Next Action";
     }
   };
 
+  const getPlayButtonIcon = () => {
+    console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState)
+    if (agentState.status !== AgentStatus.IDLE) {
+      return {icon: faRotateRight, shouldSpin: true}; // Processing
+    } else if (agentState.pendingTools > 0) {
+      return {icon: faWrench }; // Pending tools
+    } else {
+      return {icon: faPlay};  // Ready to generate next action
+    }
+  };
+  const playButtonIcon = getPlayButtonIcon();
   return (
     <div className="control-panel">
       <div className="left-controls">
-        <button 
-          className={`control-button ${agentState.autoMode ? 'active' : ''}`}
+        <button
+          className={`button ${agentState.autoMode ? "active" : ""}`}
           onClick={handleAutoModeToggle}
-          title={agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"}
+          title={
+            agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"
+          }
         >
-          <i className="icon-auto">{getAutoModeIcon()}</i>
+          <FontAwesomeIcon icon={getAutoModeIcon()} />
         </button>
-        
-        <button 
-          className={`control-button ${agentState.highlightMode ? 'active' : ''}`}
+
+        <button
+          className={`button ${
+            agentState.highlightMode ? "active" : ""
+          }`}
           onClick={handleHighlightToggle}
           disabled={agentState.autoMode}
-          title={agentState.highlightMode ? "Highlight Mode (On)" : "Highlight Mode (Off)"}
+          title={
+            agentState.highlightMode
+              ? "Highlight Mode (On)"
+              : "Highlight Mode (Off)"
+          }
         >
-          <i className="icon-highlight">
-            {agentState.highlightMode ? '💡' : 'ℹ️'}
-          </i>
+          <FontAwesomeIcon icon={agentState.highlightMode ? faLightbulb : faInfo } />
         </button>
       </div>
-      
-      <button 
-        className={`control-button ${agentState.playing ? 'active' : ''}`}
-        onClick={handlePlayClick}
-        disabled={agentState.status !== AgentStatus.IDLE}
-        title={getPlayButtonTitle()}
-      >
-        <i className="icon-play">{getPlayButtonIcon()}</i>
-      </button>
+
+      <div className="right-controls">
+        <button
+          className={`button ${agentState.playing ? "active" : ""}`}
+          onClick={handlePlayClick}
+          disabled={agentState.status !== AgentStatus.IDLE}
+          title={getPlayButtonTitle()}
+        >
+          <FontAwesomeIcon icon={playButtonIcon.icon} spin={playButtonIcon.spin} />
+        </button>
+      </div>
     </div>
   );
 }
 
-export default ControlPanel; 
+export default ControlPanel;

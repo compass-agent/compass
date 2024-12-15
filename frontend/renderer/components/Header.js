@@ -1,12 +1,28 @@
-import React from 'react';
-import '../styles/Header.scss';
+import React, { useState } from "react";
+import "../styles/Header.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faXmark,
+  faWindowMinimize,
+  faMinimize,
+  faMaximize,
+  faEllipsisVertical,
+  faExpand,
+  faCompress,
+} from "@fortawesome/free-solid-svg-icons";
+import { faSquare } from "@fortawesome/free-regular-svg-icons";
 
 function Header() {
+  let isMac = window.electron.platform === "darwin";
+  //isMac = true;
+  const isWindows = window.electron.platform === "win32";
+  console.log(`Header: start:  isMac ${isMac} isWindows ${isWindows}`);
+
   const handleClose = () => {
     if (window.electron && window.electron.closeWindow) {
-      window.electron.closeWindow(); // Call the exposed method
+      window.electron.closeWindow();
     } else {
-      console.error('window.electron.closeWindow is not defined');
+      console.error("window.electron.closeWindow is not defined");
     }
   };
 
@@ -16,48 +32,166 @@ function Header() {
 
   const handleToggleMaximizeWindow = () => {
     if (window.electron?.toggleMaximizeWindow) {
-      window.electron.toggleMaximizeWindow(); // Use the toggle function
+      window.electron.toggleMaximizeWindow();
     } else {
-      console.error('Renderer: window.electron.toggleMaximizeWindow is not defined');
+      console.error(
+        "Renderer: window.electron.toggleMaximizeWindow is not defined"
+      );
     }
+  };
+
+  const [isFullscreen, setIsFullscreen] = useState(true);
+
+  const handleToggleFullscreen = () => {
+    setIsFullscreen((prev) => {
+      const isNowFullscreen = !prev;
+      console.info("handleToggleFullscreen: isNowFullscreen", isNowFullscreen);
+      const { ipcRenderer } = window.electron;
+      if (ipcRenderer) {
+        window.electron.ipcRenderer.send("toggle-fullscreen", isNowFullscreen);
+      } else {
+        console.error("ipcRenderer is not available");
+      }
+
+      return isNowFullscreen;
+    });
   };
 
   const handleNewChat = () => {
     // TODO: Implement new chat functionality
-    console.log('New chat clicked');
+    console.log("New chat clicked");
   };
 
   const handleShowSessions = () => {
     // TODO: Implement show sessions functionality
-    console.log('Show sessions clicked');
+    console.log("Show sessions clicked");
   };
 
   const handleSettings = () => {
     // TODO: Implement settings functionality
-    console.log('Settings clicked');
+    console.log("Settings clicked");
   };
 
   return (
-    <div className="header">
-      <div className="window-controls">
-        <button className="window-control close" onClick={handleClose}>✕</button>
-        <button className="window-control minimize" onClick={handleMinimize}>−</button>
-        <button className="window-control maximize" onClick={handleToggleMaximizeWindow}>⬜</button>
+    <div className={`header ${isMac ? "macos" : "windows"}`}>
+      {/* Window Controls: Positioned on Left for MacOS and Right for Windows */}
+      {isMac ? (
+        <div className="window-controls left macos">
+          {/* MacOS: Controls on the left */}
+          <button
+            className="window-control macos close"
+            onClick={handleClose}
+            title="Close"
+          >
+            {/* <FontAwesomeIcon icon={faXmark} /> */}
+          </button>
+          <button
+            className="window-control macos max"
+            onClick={handleToggleMaximizeWindow}
+            title="Maximize"
+          >
+            {/* <FontAwesomeIcon icon={faSquare} /> */}
+          </button>
+          <button
+            className="window-control macos min"
+            onClick={handleMinimize}
+            title="Minimize"
+          >
+            {/* <FontAwesomeIcon icon={faWindowMinimize} /> */}
+          </button>
+        </div>
+      ) : (
+        <div className="window-controls right ">
+          {/* Windows: Menu on left, Close, Maximize, Minimize on right */}
+          <button
+            className="window-control minimize win"
+            onClick={handleMinimize}
+            title="Minimize"
+          >
+            <FontAwesomeIcon icon={faWindowMinimize} />
+          </button>
+          <button
+            className="window-control win"
+            onClick={handleToggleMaximizeWindow}
+            title="Maximize"
+          >
+            <FontAwesomeIcon icon={faSquare} />
+          </button>
+          <button
+            className="window-control win"
+            onClick={handleClose}
+            title="Close"
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        </div>
+      )}
+
+      {/* Application Title and Icon: Always Centered */}
+      <div className="title">
+        {/* <img src="/path/to/icon.png" alt="App Icon" className="app-icon" /> */}
+        {/* Compass */}
       </div>
-      <span className="title">Compass</span>
-      <div className="header-controls">
-        <button className="header-button" onClick={handleSettings} title="Settings">
-          ⚙️
-        </button>
-        <button className="header-button" onClick={handleShowSessions} title="Chat Sessions">
-          💬
-        </button>
-        <button className="header-button new-chat" onClick={handleNewChat} title="New Chat">
-          ✨
-        </button>
-      </div>
+
+      {/* Header Controls: Positioned on Right for MacOS and Left for Windows */}
+      {isMac ? (
+        <div className="header-controls right">
+          {isFullscreen ? (
+            <button
+              className="header-button fullscreen"
+              onClick={handleToggleFullscreen}
+              title="Exit Fullscreen"
+            >
+              <FontAwesomeIcon icon={faCompress} />
+            </button>
+          ) : (
+            <button
+              className="header-button fullscreen"
+              onClick={handleToggleFullscreen}
+              title="Expand to Fullscreen"
+            >
+              <FontAwesomeIcon icon={faExpand} />
+            </button>
+          )}
+
+          <button
+            className="header-button settings"
+            onClick={handleSettings}
+            title="Settings"
+          >
+            <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
+        </div>
+      ) : (
+        <div className="header-controls left">
+          <button
+            className="header-button settings"
+            onClick={handleSettings}
+            title="Settings"
+          >
+            <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
+          {isFullscreen ? (
+            <button
+              className="header-button fullscreen"
+              onClick={handleToggleFullscreen}
+              title="Exit Fullscreen"
+            >
+              <FontAwesomeIcon icon={faCompress} />
+            </button>
+          ) : (
+            <button
+              className="header-button fullscreen"
+              onClick={handleToggleFullscreen}
+              title="Expand to Fullscreen"
+            >
+              <FontAwesomeIcon icon={faExpand} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-export default Header; 
+export default Header;

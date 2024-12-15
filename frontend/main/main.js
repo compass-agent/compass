@@ -1,8 +1,18 @@
 const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const path = require("path");
-const { WINDOW_CONFIG } = require("./constants");
+const {
+  default: installExtension,
+  REACT_DEVELOPER_TOOLS,
+} = require("electron-devtools-installer");
+
 require("dotenv").config();
 
+const WINDOW_CONFIG = {
+  WIDTH: 500,
+  HEIGHT: 553,
+  MIN_WIDTH: 500,
+  MIN_HEIGHT: 200,
+};
 
 let mainWindow;
 function createWindow() {
@@ -11,21 +21,20 @@ function createWindow() {
     height: WINDOW_CONFIG.HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"), // Specify the preload script
-      // contextIsolation: true, // Ensures that contextBridge works securely
-      // enableRemoteModule: false, // Disable deprecated remote module
-      // nodeIntegration: false, // Disable direct Node.js access in the renderer
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: false,
+      enableHardwareAcceleration: true,
     },
     alwaysOnTop: true,
-    frame: true, // Turned into true as had conflict with maximize button
-    transparent: false, // Turned into true as had conflict with maximize button
+    frame: false, // Turned into true as had conflict with maximize button restore
+    transparent: true, // Turned into true as had conflict with maximize button restore
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
     hasShadow: true,
     resizable: true,
     minWidth: WINDOW_CONFIG.MIN_WIDTH,
     minHeight: WINDOW_CONFIG.MIN_HEIGHT,
+    //backgroundColor: "#00000000", // Ensure a transparent background
   });
 
   mainWindow.setResizable(true);
@@ -37,7 +46,12 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
+    // Install React DevTools
+    // ISSUE: The React tab does not apprear!
+    installExtension(REACT_DEVELOPER_TOOLS)
+      .then((name) => console.log(`Added Extension: ${name}`))
+      .catch((err) => console.error("Failed to install React DevTools:", err));
   }
 }
 
@@ -56,6 +70,32 @@ app.on("activate", () => {
 });
 
 // Handle window actions from the renderer process
+
+let previousBounds = null; // To store the previous window bounds
+
+ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
+  if (!mainWindow) return;
+  if (isFullscreen) {
+    // Restore to the previous bounds or default size
+    if (previousBounds) {
+      mainWindow.setBounds(previousBounds); // Restore the previous window size
+    } else {
+      mainWindow.setBounds({
+        y: mainWindow.getBounds().y,
+        height: WINDOW_CONFIG.HEIGHT, // Default height
+      });
+    }
+    previousBounds = null; // Clear previous bounds
+  } else {
+    // Save the current bounds and minimize height
+    previousBounds = mainWindow.getBounds();
+    mainWindow.setBounds({
+      y: mainWindow.getBounds().y,
+      height: WINDOW_CONFIG.MIN_HEIGHT,
+    });
+  }
+});
+
 ipcMain.on("close-window", () => {
   if (mainWindow) mainWindow.close();
 });

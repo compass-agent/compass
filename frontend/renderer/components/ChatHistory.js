@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useAppState } from '../context/AppContext';
 import '../styles/ChatHistory.scss';
+import { MESSAGE_TYPES } from '../constants';
+import { faSpinner  } from '@fortawesome/free-solid-svg-icons';
 
 const TOOL_ACTION_MAPPING = {
   screenshot: { icon: '📸', text: 'Taking screenshot...' },
@@ -14,10 +16,11 @@ function ChatHistory() {
   const { messages } = state.chat;
   const chatRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+  // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
+  // it should be defined in the context or common parent component (AppContent)
   console.log('ChatHistory - Current messages:', messages);
 
-  // Add scroll to bottom effect
+  // Add scroll to bottom effect: as the new chat is added
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -29,7 +32,7 @@ function ChatHistory() {
     if (!messages.length) return [];
     
     // Find the index of the most recent AI response
-    const lastAiIndex = [...messages].reverse().findIndex(msg => msg.type === 'ai_response');
+    const lastAiIndex = [...messages].reverse().findIndex(msg => msg.type === MESSAGE_TYPES.AI_RESPONSE);
     
     if (lastAiIndex === -1) {
       // If no AI response found, return just the last message
@@ -41,45 +44,54 @@ function ChatHistory() {
   };
 
   const renderMessage = (msg) => {
-    console.log('Rendering message:', msg);
-    
+    console.log('Rendering message:', msg,);
+    console.log('Rendering type:', MESSAGE_TYPES.USER, MESSAGE_TYPES.USER === msg.type);
     switch (msg.type) {
-      case 'user':
+      case MESSAGE_TYPES.USER:
         return (
-          <div className="user-message">
-            <span className="message-icon">👤</span>
+          // user-message
+          <div className="message user-message">
+            {/* <span className="message-icon">👤</span> */}
+            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
               {msg.text}
             </div>
           </div>
         );
 
-      case 'ai_response':
+      case MESSAGE_TYPES.AI_RESPONSE:
         return (
-          <div className="ai-response">
-            <span className="message-icon">🤖</span>
+          //ai-response
+          <div className="message">
+            {/* <span className="message-icon">🤖</span> */}
+            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
               {msg.content}
             </div>
           </div>
         );
       
-      case 'tool_use':
+      case MESSAGE_TYPES.TOOL_USE:
         const action = msg.parameters?.action;
         const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action' };
         return (
-          <div className="tool-use">
-            <span className="message-icon">{mapping.icon}</span>
+          //tool-use
+          <div className="message">
+            {/* <span className="message-icon">{mapping.icon}</span> */}
+            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
+              {/* why tool-text? */}
               <span className="tool-text">{mapping.text}</span>
             </div>
           </div>
         );
       
-      case 'tool_result':
+      case MESSAGE_TYPES.TOOL_RESULT:
         return (
-          <div className="tool-result">
-            <span className="message-icon">📊</span>
+          //tool-result
+          <div className="message">
+            {/* <span className="message-icon">📊</span> */}
+            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content">
               {msg.error ? (
                 <div className="tool-error">{msg.error}</div>
@@ -101,7 +113,7 @@ function ChatHistory() {
         );
     }
   };
-
+//TODO KAZEM => Is there any Usage?
   const renderToolAction = (parameters) => {
     const action = parameters.action;
     const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action' };
@@ -115,23 +127,24 @@ function ChatHistory() {
   };
 
   return (
-    <div className={`chat-history-container ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="chat-header">
+    //isCollapsed is not applied yet
+    <div className='chat-history-container'>
+      {/* <div className="chat-header">
         <button 
           className="collapse-toggle"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? '▼' : '▲'}
         </button>
-      </div>
+      </div> */}
       <div 
         ref={chatRef}
         className="chat-history"
       >
         {(isCollapsed ? getRecentMessages() : messages).map((msg, index) => (
-          <div key={index} className={`message ${msg.type}`}>
-            {renderMessage(msg)}
-          </div>
+          <React.Fragment key={index}>
+          {renderMessage(msg)}
+        </React.Fragment>
         ))}
       </div>
     </div>

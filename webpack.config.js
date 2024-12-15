@@ -1,5 +1,4 @@
 const path = require("path");
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: "development",
@@ -49,19 +48,6 @@ module.exports = {
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js", ".jsx"],
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'frontend/renderer/index.html'), // Use the `index.html` from `renderer`
-      filename: 'index.html', // Output it to the `build` directory
-    }),
-  ],
-  devServer: {
-    static: path.join(__dirname, 'frontend/renderer/build'),
-    compress: true,
-    port: 9000,
-    hot: true,
-    historyApiFallback: true, // This serves index.html for all routes // React SPA support
   },
   devtool: "source-map",
 };

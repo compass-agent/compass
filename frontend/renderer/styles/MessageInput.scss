@@ -1,71 +1,91 @@
+@use 'variables' as *;
+
 .message-input-container {
-  position: relative;
-  transition: all 0.3s ease;
-  padding: 10px 20px;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(45, 45, 45, 0.85);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 10px 15px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .message-input {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #333;
-  border-radius: 8px;
-  outline: none;
+  resize: none;
+  padding: 8px 10px;
   font-size: 14px;
-  background-color: rgba(40, 40, 40, 0.8);
-  color: #e0e0e0;
+  font-family: inherit;
+  line-height: 1.5;
+  border: none;
+  outline: none;
+  color:  #e0e0e0;
+  background-color: transparent;
   box-sizing: border-box;
+  overflow-y: hidden; 
+  min-height: 44px; 
+  max-height: calc(1.5em * 4 + 16px); /* Allow up to 4 lines */
+
+  &::placeholder {
+    color: #888;
+  }
+
+  &:disabled {
+    background-color: transparent;
+    color: #666;
+  }
+
+  /* Show scrollbar after exceeding 4 rows */
+  &.overflow {
+    overflow-y: auto;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #888;
+  }
 }
 
-.message-input::placeholder {
-  color: #888;
-}
-
-.message-input:disabled {
-  background-color: rgba(30, 30, 30, 0.5);
-  color: #666;
-}
-
-.message-input-container.collapsed {
-  height: 40px;
-  overflow: hidden;
-}
-
-.collapse-toggle {
-  position: absolute;
-  right: 10px;
-  top: -20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  font-size: 12px;
-  color: #666;
-}
-
-.tool-action {
+.message-buttons {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background-color: rgba(45, 45, 45, 0.8);
-  border-radius: 4px;
-}
+  width: 100%;
+  margin: 0px 5px;
 
-.tool-icon {
-  font-size: 1.2em;
-}
+  .button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    background-color: #fcfbfb;
+    transition: background-color 0.3s, color 0.3s;
+    cursor: pointer;
 
-.tool-text {
-  font-size: 0.9em;
-  color: #e0e0e0;
-}
+    &.right-button {
+      margin-left: auto;
+    }
 
-.send-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #888;
-} 
+    &:hover {
+        background-color: #cccccc;
+    }
+
+    &:disabled {
+      background-color: $disabled-bg-color;
+      cursor: default;
+    }
+  }
+
+}

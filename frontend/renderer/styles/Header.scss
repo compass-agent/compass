@@ -1,116 +1,161 @@
-.header {
-  height: 30px;
-  width: 100%;
-  background-color: rgba(30, 30, 30, 0.9);
-  display: flex;
-  align-items: center;
-  padding: 0 15px;
-  -webkit-app-region: drag;
-  position: relative;
-  border-bottom: 1px solid #333;
-  flex-shrink: 0;
-  z-index: 1000;
-}
-
-.title {
-  flex: 1;
-  text-align: center;
-  color: #e0e0e0;
-  font-size: 14px;
-  user-select: none;
-  margin: 0 160px;
-}
-
-.window-controls {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 8px;
-  -webkit-app-region: no-drag;
-  z-index: 1001;
-}
-
-.window-control {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: #333;
-  cursor: pointer;
-  padding: 0;
-  -webkit-app-region: no-drag;
-}
-
-.window-control.close {
-  background-color: #ff5f56;
-}
-
 .window-control.minimize {
-  background-color: #ffbd2e;
+  position: relative;
 }
 
-.window-control:hover {
-  filter: brightness(0.9);
-}
-
-.header-controls {
+.window-control.minimize svg {
   position: absolute;
-  right: 45px;
   top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  gap: 5px;
-  -webkit-app-region: no-drag;
-  z-index: 1001;
+  left: 50%;
+  transform: translate(-50%, -79%);
 }
 
-.header-button {
-  background: none;
-  border: none;
-  color: #e0e0e0;
-  cursor: pointer;
-  padding: 2px;
-  font-size: 11px;
+.header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  -webkit-app-region: no-drag;
-  transition: all 0.2s ease;
-  min-width: 20px;
-}
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+  position: relative;
+  z-index: 1000;
 
-.header-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
 
-.header-button.new-chat {
-  color: #ff9933;
-}
+  .window-controls {
+    position: absolute;
+    top: 50%;
+    height: 100%;
+    transform: translateY(-50%);
+    display: flex;
+    background-color: transparent;
+    -webkit-app-region: no-drag;
 
-.header-button.new-chat:hover {
-  background-color: rgba(255, 153, 51, 0.1);
-}
+    &.left {
+      left: 0px; // MacOS
 
-.header-button.settings {
-  color: #e0e0e0;
-}
+      &.macos {
+        transform: translate(12%, -25%);
+      }
+    }
 
-.header-button.settings:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
+    &.right {
+      right: 0px; // Windows
+    }
 
-.header-button.show-sessions {
-  color: #e0e0e0;
-}
+    .window-control {
+      width: 38px;
+      height: 100%;
+      padding: 0px 6px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 0;
+      background-color: transparent;
+      color: #e0e0e0;
 
-.header-button.show-sessions:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+      &.macos {
+        position: relative;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      &.win {
+
+        &:hover {
+        background-color: rgba(218, 218, 218, 0.397);
+      }
+
+      }
+
+      &:hover {
+        background-color: rgba(218, 218, 218, 0.397);
+      }
+
+      &.close { 
+        background-color: #ff5f56;
+        margin-right: 10px;
+
+        &:hover {
+          background-color: #e0a39f; 
+        }
+       }
+      &.min {
+        background-color: #27c93f;
+        margin-right: 10px;
+
+        &:hover {
+          background-color:  #9fc9a5; 
+        }
+       }
+      &.max {
+        background-color: #ffbd2e;
+        margin-right: 10px;
+
+        &:hover {
+          background-color: #fae5b9;
+        }
+       }
+    }
+  }
+
+  .title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    color: #e0e0e0;
+    font-size: 14px;
+    -webkit-user-select: none;
+    user-select: none;
+
+    .app-icon {
+      margin-right: 10px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .header-controls {
+    position: absolute;
+    top: 50%;
+    height: 100%;
+    transform: translateY(-50%);
+    display: flex;
+    background-color: transparent;
+    -webkit-app-region: no-drag;
+    
+    &.left {
+      left: 0px; // Windows
+    }
+
+    &.right {
+      right: 0px; // MacOS
+    }
+
+    .header-button {
+      width: 38px;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: #e0e0e0;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0px 6px;
+
+      &:hover {
+        background-color: rgba(218, 218, 218, 0.397); 
+      }
+    }
+  }
 }
- 

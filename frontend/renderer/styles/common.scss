@@ -10,3 +10,23 @@ body {
   border-radius: 4px;
   text-align: center;
 } 
+
+// Need to be use
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #888;
+  }
+}
+
+@mixin button-hover($hover-color) {
+  &:hover {
+    background-color: $hover-color;
+  }
+}
