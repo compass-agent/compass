@@ -1,6 +1,6 @@
 MODEL_NAME  =  "claude-3-5-sonnet-latest" # claude-3-5-sonnet-latest or claude-3-5-haiku-latest 
 MAX_ITERATIONS = 10
-MAX_TOKENS = 256
+MAX_TOKENS = 512
 PROMPT_CACHING = True
 COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"

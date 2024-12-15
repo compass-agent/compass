@@ -8,13 +8,13 @@ from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
 
-TYPING_DELAY_MS = 12
+TYPING_DELAY_MS = 1
 TYPING_GROUP_SIZE = 50
 
 class KeyboardInputAction(BaseComputerAction):
     """Handles keyboard input actions."""
 
-    def execute(self,
+    async def execute(self,
                 action: Literal["key", "type"],
                 text: Optional[str] = None) -> ToolResult:
         """Handle keyboard input actions."""
@@ -32,7 +32,11 @@ class KeyboardInputAction(BaseComputerAction):
                      for i in range(0, len(text), TYPING_GROUP_SIZE)]
             
             for chunk in chunks:
-                pyautogui.write(chunk, interval=TYPING_DELAY_MS/1000)
+                pyautogui.write(chunk, TYPING_DELAY_MS/1000)
                 if len(chunks) > 1:
                     time.sleep(TYPING_DELAY_MS / 1000)
-            return ToolResult(output=None, error=None, base64_image=self.capture_and_process_screenshot()) 
+            return ToolResult(
+                output=None, 
+                error=None, 
+                base64_image=await self.capture_and_process_screenshot()
+            ) 

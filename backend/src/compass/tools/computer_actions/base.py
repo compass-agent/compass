@@ -5,6 +5,7 @@ import base64
 from abc import ABC, abstractmethod
 from typing import Tuple
 import logging
+import asyncio
 
 from ..base import ToolResult, ScalingSource, ToolError
 from compass.utils.utility import log_execution_time
@@ -23,38 +24,47 @@ class BaseComputerAction(ABC):
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
 
-    @log_execution_time(logger)
-    def capture_and_process_screenshot(self) -> str:
+    # @log_execution_time(logger)
+    async def capture_and_process_screenshot(self) -> str:
         """Core method to capture and process screenshot, returning base64 string"""
-        # Step 1: Capture screenshot directly to memory
-        screenshot = pyautogui.screenshot()
-        
-        # Step 2: Scale image
-        scaled_screenshot = screenshot.resize(
-            (self.scaled_width, self.scaled_height),
-            resample=Image.Resampling.LANCZOS
-        )
-        
-        # Step 3: Reduce color depth (replacing pngquant)
-        optimized_screenshot = scaled_screenshot.quantize(
-            colors=256,  # 8-bit color depth
-            method=Image.FASTOCTREE  # type: ignore # Fast and efficient method
-        )
-        
-        # Step 4: Save to memory buffer and encode
-        buffer = io.BytesIO()
-        optimized_screenshot.save(
-            buffer,
-            format='PNG',
-            optimize=True  # Additional PNG optimization
-        )
-        
-        # Step 5: Convert to base64
-        return base64.b64encode(buffer.getvalue()).decode()
+        try:
+            logger.info("Capturing and processing screenshot")
+            # Take screenshot synchronously
+            screenshot = pyautogui.screenshot()
+            
+            logger.info(f"Scaling screenshot from {self.width}x{self.height} to {self.scaled_width}x{self.scaled_height}")
+            # Do image processing synchronously
+            scaled_screenshot = screenshot.resize(
+                (self.scaled_width, self.scaled_height),
+                resample=Image.Resampling.LANCZOS
+            )
+            
+            # Reduce color depth synchronously
+            logger.info(f"Reducing color depth from 256 to 8-bit")
+            optimized_screenshot = scaled_screenshot.quantize(
+                colors=256,  # 8-bit color depth
+                method=Image.FASTOCTREE  # Fast and efficient method
+            )
+            
+            # Save to memory buffer synchronously
+            logger.info(f"Saving to memory buffer and encoding to base64")
+            buffer = io.BytesIO()
+            optimized_screenshot.save(
+                buffer,
+                format='PNG',
+                optimize=True  # Additional PNG optimization
+            )
+            
+            # Convert to base64
+            logger.info(f"Converting to base64")
+            return base64.b64encode(buffer.getvalue()).decode()
+        except Exception as e:
+            logger.error(f"Error in capture_and_process_screenshot: {e}", exc_info=True)
+            return ""
 
-    def get_cursor_position(self) -> Tuple[int, int]:
+    async def get_cursor_position(self) -> Tuple[int, int]:
         """Get the current cursor position and scale it."""
-        x, y = pyautogui.position()
+        x, y = await asyncio.to_thread(pyautogui.position)
         scaled_x, scaled_y = self.scale_coordinates(ScalingSource.COMPUTER, round(x), round(y))
         logger.info(f"scaled cursor position to {scaled_x},{scaled_y} from {x},{y}")
         return scaled_x, scaled_y
@@ -71,6 +81,6 @@ class BaseComputerAction(ABC):
             return round(x * self._x_scaling_factor), round(y * self._y_scaling_factor)
 
     @abstractmethod
-    def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, **kwargs) -> ToolResult:
         """Execute the computer action."""
         pass 

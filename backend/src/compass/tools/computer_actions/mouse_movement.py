@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class MouseMovementAction(BaseComputerAction):
     """Handles mouse movement and drag actions."""
 
-    def execute(self, 
+    async def execute(self, 
                 action: Literal["mouse_move", "left_click_drag"] = "mouse_move",
                 coordinate: Optional[Tuple[int, int]] = None) -> ToolResult:
         """Handle mouse movement or drag to specified coordinates."""
@@ -28,9 +28,9 @@ class MouseMovementAction(BaseComputerAction):
 
         if action == "left_click_drag":
             pyautogui.mouseDown(button='left')
-            pyautogui.moveTo(x, y)
+            pyautogui.moveTo(x, y, duration=0)
             pyautogui.mouseUp(button='left')
         else:
-            pyautogui.moveTo(x, y)
-        #   we don't return a screenshot here because user is only moving the mouse.
+            pyautogui.moveTo(x, y, duration=0)
+
         return ToolResult(output=None, error=None)

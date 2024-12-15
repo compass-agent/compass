@@ -6,6 +6,9 @@ from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
 import logging
+import asyncio
+from functools import partial
+
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -29,6 +32,14 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
+def run_async(coro):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
 @socketio.on('connect')
 def handle_connect():
     logger.info('Client connected')
@@ -41,7 +52,7 @@ def handle_disconnect():
 @socketio.on('message')
 def handle_message(data):
     try:
-        agent_service.process_message(data.get('text', ''))
+        asyncio.run(agent_service.process_message(data.get('text', '')))
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -59,7 +70,7 @@ def handle_control_update(data):
 def handle_execute_next_tool():
     logger.info('Received execute_next_tool request')
     try:
-        agent_service.execute_next_pending_tool()
+        asyncio.run(agent_service.execute_next_pending_tool())
     except Exception as e:
         logger.error(f"Error executing tool: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -68,7 +79,7 @@ def handle_execute_next_tool():
 def handle_generate_next_action():
     logger.info('Received generate_next_action request')
     try:
-        agent_service.process_next_action()
+        asyncio.run(agent_service.process_next_action())
     except Exception as e:
         logger.error(f"Error generating next action: {e}", exc_info=True)
         emit('error', {'message': str(e)})

@@ -8,32 +8,58 @@ import logging
 from typing import Optional
 from functools import wraps
 from time import time
+import asyncio  # Import asyncio to check for coroutine functions
 
 logger = logging.getLogger(__name__)
 
 def log_execution_time(logger):
     def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            start_time = time()
-            start_datetime = datetime.now()
-            
-            result = func(*args, **kwargs)
-            
-            end_time = time()
-            end_datetime = datetime.now()
-            
-            execution_time_ms = (end_time - start_time) * 1000
-            start_formatted = start_datetime.strftime('%M:%S.%f')[:-3]
-            end_formatted = end_datetime.strftime('%M:%S.%f')[:-3]
-            
-            logger.info(
-                f"Method {func.__name__} took {execution_time_ms:.2f}ms "
-                f"between times {start_formatted} to {end_formatted}"
-            )
-            
-            return result
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            # Async wrapper
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                start_time = time()
+                start_datetime = datetime.now()
+                
+                result = await func(*args, **kwargs)  # Await the async function
+                
+                end_time = time()
+                end_datetime = datetime.now()
+                
+                execution_time_ms = (end_time - start_time) * 1000
+                start_formatted = start_datetime.strftime('%M:%S.%f')[:-3]
+                end_formatted = end_datetime.strftime('%M:%S.%f')[:-3]
+                
+                logger.info(
+                    f"Method {func.__name__} took {execution_time_ms:.2f}ms "
+                    f"between times {start_formatted} to {end_formatted}"
+                )
+                
+                return result
+            return wrapper
+        else:
+            # Sync wrapper
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                start_time = time()
+                start_datetime = datetime.now()
+                
+                result = func(*args, **kwargs)
+                
+                end_time = time()
+                end_datetime = datetime.now()
+                
+                execution_time_ms = (end_time - start_time) * 1000
+                start_formatted = start_datetime.strftime('%M:%S.%f')[:-3]
+                end_formatted = end_datetime.strftime('%M:%S.%f')[:-3]
+                
+                logger.info(
+                    f"Method {func.__name__} took {execution_time_ms:.2f}ms "
+                    f"between times {start_formatted} to {end_formatted}"
+                )
+                
+                return result
+            return wrapper
     return decorator
 
 class HistoryLogger:

@@ -143,7 +143,7 @@ class ComputerTool(BaseAnthropicTool):
         self.scaled_height = round(self.height * self._y_scaling_factor)
         logger.info(f"scaled dimensions: {self.scaled_width}, {self.scaled_height}")
 
-    def __call__(
+    async def __call__(
         self,
         *,
         action: Action,
@@ -152,14 +152,14 @@ class ComputerTool(BaseAnthropicTool):
         **kwargs,
     ):
         if action == "screenshot":
-            return self.screenshot_action.execute()
+            return await self.screenshot_action.execute()
         elif action in ("left_click", "right_click", "middle_click", "double_click"):
-            return self.mouse_click_action.execute(action=action, coordinate=coordinate)
+            return await self.mouse_click_action.execute(action=action, coordinate=coordinate)
         elif action in ("key", "type"):
-            return self.keyboard_input_action.execute(action=action, text=text)
+            return await self.keyboard_input_action.execute(action=action, text=text)
         elif action == "mouse_move":
-            return self.mouse_movement_action.execute(coordinate=coordinate)
+            return await self.mouse_movement_action.execute(coordinate=coordinate)
         elif action == "cursor_position":
-            return self.cursor_position_action.execute(coordinate=coordinate, text=text)
+            return await self.cursor_position_action.execute(coordinate=coordinate, text=text)
         else:
             raise ToolError(f"Action '{action}' is not implemented yet.")

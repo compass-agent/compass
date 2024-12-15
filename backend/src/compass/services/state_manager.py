@@ -78,4 +78,8 @@ class StateManager:
         """Update pending tools count"""
         self._state.pending_tools = count
         self._emit_state_update()
+
+    async def transition_status(self, status: AgentStatus, current_task: Optional[str] = None) -> None:
+        """Async version of set_status for use in async contexts"""
+        self.set_status(status, current_task)
   

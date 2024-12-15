@@ -10,7 +10,7 @@ class BaseAnthropicTool(metaclass=ABCMeta):
     """Abstract base class for Anthropic-defined tools."""
 
     @abstractmethod
-    def __call__(self, **kwargs) -> Any:
+    async def __call__(self, **kwargs) -> Any:
         """Executes the tool with the given arguments."""
         ...
 

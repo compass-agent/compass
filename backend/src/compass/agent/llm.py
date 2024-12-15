@@ -26,13 +26,12 @@ from compass.constants import (
     PROMPT_CACHING_BETA_FLAG
 )
 from compass.utils.utility import log_execution_time
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 SCREENSHOT_KEEP_COUNT = 1
 
-
-def _response_to_params(
+async def _response_to_params(
     response: BetaMessage,
 ) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
     res: list[BetaTextBlockParam | BetaToolUseBlockParam] = []
@@ -43,31 +42,6 @@ def _response_to_params(
             res.append(cast(BetaToolUseBlockParam, block.model_dump()))
     return res
 
-
-def mock_llm_response(func):
-    """Decorator to mock LLM responses during development"""
-    def wrapper(self, *args, **kwargs):
-        if not hasattr(self, '_mock_enabled') or not self._mock_enabled:
-            return func(self, *args, **kwargs)
-            
-        return [
-            {
-                'type': 'text',
-                'text': "I see Slack is already open. I'll help you send a message to Sina. Let me click on Sina's name in the Direct messages section first."
-            },
-            {
-                'type': 'tool_use',
-                'name': 'computer',
-                'id': 'toolu_01XXGSseiucNjr9VDUvw9mTD',
-                'input': {
-                    'action': 'mouse_move',
-                    'coordinate': [94, 462]
-                }
-            }
-        ]
-    return wrapper
-
-
 def _get_current_system_prompt(highlight_mode: bool):
     """Get the appropriate system prompt based on current highlight mode"""
     system_prompts = get_system_prompt()
@@ -75,9 +49,8 @@ def _get_current_system_prompt(highlight_mode: bool):
     return {
         "type": "text",
         "text": system_prompts[mode],
-        "cache_control":  {"type": "ephemeral"}
+        "cache_control": {"type": "ephemeral"} if PROMPT_CACHING else None
     }
-
 
 def _remove_old_screenshots(
     messages: list[BetaMessageParam],
@@ -110,7 +83,6 @@ def _remove_old_screenshots(
         message["content"] = list(reversed(new_content))
     return messages
 
-
 class LLM:
     def __init__(self, tools_params):
         self.token_tracker = TokenTracker()
@@ -119,11 +91,13 @@ class LLM:
         self.betas = [COMPUTER_USE_BETA_FLAG] + ([PROMPT_CACHING_BETA_FLAG] if PROMPT_CACHING else [])
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
 
-
-
-    @log_execution_time(logger)
-    def call(self, messages: list[BetaMessageParam], highlight_mode: bool) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
-        """Call the LLM API
+    #@log_execution_time(logger)
+    async def call(
+        self, 
+        messages: list[BetaMessageParam], 
+        highlight_mode: bool
+    ) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
+        """Call the LLM API asynchronously
         
         Returns:
             list of content blocks (text or tool use blocks)
@@ -135,6 +109,8 @@ class LLM:
                 messages,
                 SCREENSHOT_KEEP_COUNT,
             )
+
+            # Using with_raw_response for better error handling
             raw_response = self.client.beta.messages.with_raw_response.create(
                 max_tokens=MAX_TOKENS,
                 messages=messages,
@@ -143,6 +119,7 @@ class LLM:
                 tools=self.tools_params,
                 betas=self.betas,
             )
+            
             response = raw_response.parse()
             
             # Track token usage
@@ -151,7 +128,7 @@ class LLM:
                 response.usage.output_tokens
             )
             
-            return _response_to_params(response)
+            return await _response_to_params(response)
             
         except (APIStatusError, APIResponseValidationError) as e:
             logger.error(f"LLM API call failed: {e}")
