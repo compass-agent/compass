@@ -7,6 +7,8 @@ from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
 
+COMPARE_WITH_PREVIOUS = True
+
 class MouseClickAction(BaseComputerAction):
     """Handles mouse click actions."""
 
@@ -34,6 +36,7 @@ class MouseClickAction(BaseComputerAction):
             logger.info(f"Click action completed: {action}")
 
             # Take screenshot with comparison
+<<<<<<< HEAD
             screenshot_result = await self.capture_and_process_screenshot(compare_with_previous=True)
             
             # Customize message based on whether screen changed
@@ -42,6 +45,14 @@ class MouseClickAction(BaseComputerAction):
                 output_message = f"Important: The screen did not change after executing this {action} action. Was that the desired outcome? If NOT, please run this action again, before continuing."
             
             
+=======
+            screenshot_result = await self.capture_and_process_screenshot(compare_with_previous=COMPARE_WITH_PREVIOUS)
+            
+            output_message = ""
+            if screenshot_result.has_changed is False:
+                output_message = f"Important: The screen did not change after executing this {action} action. Was that the desired outcome? If NOT, please run this action again, before continuing."
+            
+>>>>>>> 7c1bbc4 (SCRUM-46 Return if the Action actually made change)
             return ToolResult(
                 output=output_message, 
                 error=None, 
