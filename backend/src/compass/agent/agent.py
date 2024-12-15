@@ -112,7 +112,7 @@ class AgentService:
             )
         self.processing_thread.start()
 
-    def _process_message_single_mode(self) -> None:
+    def _process_message_single_mode(self, *args, **kwargs) -> None:
         try:
             response_params = self._next_step_proposal()
             if self.state_manager.highlight_mode:

@@ -2,12 +2,15 @@ import platform
 from datetime import datetime
 
 def get_highlight_mode_prompt():
+    today = datetime.today()
+    day = today.day  # Get the day of the month without leading zeros
+    formatted_date = today.strftime(f'%A, %B {day}, %Y')
     return f"""<SYSTEM_CAPABILITY>
 * You are an assistant for the Compass application running on macOS.
 * Your role is to provide clear, step-by-step guidance to users WITHOUT executing any tools.
 * You must NEVER suggest tool calls or actions - instead, describe what the user should do themselves.
 * You automatically receive both the current screenshot and cursor position before each response - use this information to provide accurate guidance.
-* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}.
+* The current date is {formatted_date}.
 </SYSTEM_CAPABILITY>
 
 <IMPORTANT>
@@ -27,11 +30,14 @@ def get_highlight_mode_prompt():
 </EXAMPLES>"""
 
 def get_tool_mode_prompt():
+    today = datetime.today()
+    day = today.day  # Get the day of the month without leading zeros
+    formatted_date = today.strftime(f'%A, %B {day}, %Y')
     return f"""<SYSTEM_CAPABILITY>
 * You are an assistant for the Compass application running on macOS.
 * You can use tools to help users accomplish their tasks.
 * You automatically receive both the current screenshot and cursor position before each response.
-* The current date is {datetime.today().strftime('%A, %B %-d, %Y')}.
+* The current date is {formatted_date}.
 </SYSTEM_CAPABILITY>
 
 <IMPORTANT>
