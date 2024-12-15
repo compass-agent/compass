@@ -28,13 +28,13 @@ function createWindow() {
     },
     alwaysOnTop: true,
     frame: false, // Turned into true as had conflict with maximize button restore
-    transparent: true, // Turned into true as had conflict with maximize button restore
+    // transparent: true, // Turned into true as had conflict with maximize button restore
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
     hasShadow: true,
     resizable: true,
     minWidth: WINDOW_CONFIG.MIN_WIDTH,
     minHeight: WINDOW_CONFIG.MIN_HEIGHT,
-    //backgroundColor: "#00000000", // Ensure a transparent background
+    backgroundColor: "#00000000", // Ensure a transparent background
   });
 
   mainWindow.setResizable(true);
@@ -95,6 +95,7 @@ ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
     });
   }
 });
+
 
 ipcMain.on("move-to-bottom-right", () => {
   if (!mainWindow) return;
