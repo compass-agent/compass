@@ -64,7 +64,7 @@ class BaseComputerAction(ABC):
 
     async def get_cursor_position(self) -> Tuple[int, int]:
         """Get the current cursor position and scale it."""
-        x, y = await asyncio.to_thread(pyautogui.position)
+        x, y = pyautogui.position()
         scaled_x, scaled_y = self.scale_coordinates(ScalingSource.COMPUTER, round(x), round(y))
         logger.info(f"scaled cursor position to {scaled_x},{scaled_y} from {x},{y}")
         return scaled_x, scaled_y
