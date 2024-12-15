@@ -38,5 +38,5 @@ class KeyboardInputAction(BaseComputerAction):
             return ToolResult(
                 output=None, 
                 error=None, 
-                base64_image=await self.capture_and_process_screenshot()
+                base64_image=(await self.capture_and_process_screenshot()).base64_image
             ) 

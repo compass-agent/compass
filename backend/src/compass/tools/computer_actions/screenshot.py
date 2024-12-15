@@ -11,13 +11,13 @@ class ScreenshotAction(BaseComputerAction):
     async def execute(self, **kwargs) -> ToolResult:
         """Take and process a screenshot with proper scaling and optimization in memory"""
         try:
-            base64_image = await self.capture_and_process_screenshot()
+            screenshot_result = await self.capture_and_process_screenshot()
             cursor_position_x, cursor_position_y = await self.get_cursor_position()
 
             return ToolResult(
                 output=f"The cursor position when the screenshot was taken was X={cursor_position_x},Y={cursor_position_y}",
                 error=None,
-                base64_image=base64_image
+                base64_image=screenshot_result.base64_image
             )
         except Exception as e:
             logger.error(f"Screenshot failed: {str(e)}")

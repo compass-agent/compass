@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 import logging
 import asyncio
+from dataclasses import dataclass
 
 from ..base import ToolResult, ScalingSource, ToolError
 from compass.utils.utility import log_execution_time
@@ -13,6 +14,13 @@ from flask_socketio import SocketIO, emit # type: ignore
 from compass.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class ScreenshotResult:
+    """Data class to hold screenshot capture results."""
+    base64_image: str
+    has_changed: bool | None = None  # None when comparison wasn't requested
+    error: str | None = None  # To capture any errors that occurred
 
 class BaseComputerAction(ABC):
     """Base class for all computer actions."""
@@ -25,30 +33,34 @@ class BaseComputerAction(ABC):
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
         self.state_manager = state_manager
+        self._last_screenshot = None
 
     # @log_execution_time(logger)
-    async def capture_and_process_screenshot(self) -> str:
-        """Core method to capture and process screenshot, returning base64 string"""
+    async def capture_and_process_screenshot(self, compare_with_previous: bool = False) -> ScreenshotResult:
+        """Core method to capture and process screenshot, returning a ScreenshotResult object"""
         try:
             logger.info("Capturing and processing screenshot")
-            # Take screenshot synchronously
             screenshot = pyautogui.screenshot()
             
             logger.info(f"Scaling screenshot from {self.width}x{self.height} to {self.scaled_width}x{self.scaled_height}")
-            # Do image processing synchronously
             scaled_screenshot = screenshot.resize(
                 (self.scaled_width, self.scaled_height),
                 resample=Image.Resampling.LANCZOS
             )
             
-            # Reduce color depth synchronously
             logger.info(f"Reducing color depth from 256 to 8-bit")
             optimized_screenshot = scaled_screenshot.quantize(
                 colors=256,  # 8-bit color depth
                 method=Image.FASTOCTREE  # Fast and efficient method
             )
             
-            # Save to memory buffer synchronously
+            has_changed = None
+            if compare_with_previous and self._last_screenshot is not None:
+                has_changed = optimized_screenshot.tobytes() != self._last_screenshot.tobytes()
+                logger.info(f"Screenshot comparison result: changed={has_changed}")
+            
+            self._last_screenshot = optimized_screenshot
+            
             logger.info(f"Saving to memory buffer and encoding to base64")
             buffer = io.BytesIO()
             optimized_screenshot.save(
@@ -57,12 +69,22 @@ class BaseComputerAction(ABC):
                 optimize=True  # Additional PNG optimization
             )
             
-            # Convert to base64
             logger.info(f"Converting to base64")
-            return base64.b64encode(buffer.getvalue()).decode()
+            base64_result = base64.b64encode(buffer.getvalue()).decode()
+            
+            return ScreenshotResult(
+                base64_image=base64_result,
+                has_changed=has_changed
+            )
+
         except Exception as e:
-            logger.error(f"Error in capture_and_process_screenshot: {e}", exc_info=True)
-            return ""
+            error_msg = f"Error in capture_and_process_screenshot: {e}"
+            logger.error(error_msg, exc_info=True)
+            return ScreenshotResult(
+                base64_image="",
+                has_changed=None,
+                error=error_msg
+            )
 
     async def get_cursor_position(self) -> Tuple[int, int]:
         """Get the current cursor position and scale it."""

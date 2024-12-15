@@ -20,7 +20,7 @@ class MouseClickAction(BaseComputerAction):
             if coordinate is not None:
                 raise ToolError(f"coordinate is not accepted for {action}")
             
-            # Execute click actions synchronously since they're quick operations
+            # Execute click actions
             if action == "double_click":
                 pyautogui.doubleClick()
             else:
@@ -33,14 +33,19 @@ class MouseClickAction(BaseComputerAction):
                 
             logger.info(f"Click action completed: {action}")
 
-            # Take screenshot
-            base64_image = await self.capture_and_process_screenshot()
-            output_message = f"Carefuly review the updated screenshot content for {action} to see if your desired screen change has been made. If not, please try again."
-            logger.info(f"Screenshot captured and processed: for {action} to be added to its response")
+            # Take screenshot with comparison
+            screenshot_result = await self.capture_and_process_screenshot(compare_with_previous=True)
+            
+            # Customize message based on whether screen changed
+            output_message = ""
+            if not screenshot_result.has_changed:
+                output_message = f"Important: The screen did not change after executing this {action} action. Was that the desired outcome? If NOT, please run this action again, before continuing."
+            
+            
             return ToolResult(
                 output=output_message, 
                 error=None, 
-                base64_image=base64_image
+                base64_image=screenshot_result.base64_image
             ) 
         except Exception as e:
             logger.error(f"Error in MouseClickAction.execute: {e}", exc_info=True)
