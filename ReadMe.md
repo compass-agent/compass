@@ -42,6 +42,10 @@ To start the development environment:
    source venv/bin/activate  # This works on MacOS/Linux
    venv\Scripts\activate     # This works on Windows
    python src/compass/app.py
+   If Python can not locate the modules, run the following commands:
+   $env:PYTHONPATH = "src"; python src/compass/app.py  # For Windows PowerShell (including VS Code terminal)
+   PYTHONPATH=src python src/compass/app.py  # For macOS/Linux
+   set PYTHONPATH=src && python src/compass/app.py  # For Windows Command Prompt
    ```
 
 2. In a new terminal, start the frontend:
