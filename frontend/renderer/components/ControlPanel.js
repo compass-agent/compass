@@ -85,9 +85,8 @@ function ControlPanel() {
       payload: "",
     });
     WebSocketService.updateControlState({
-      status: AgentStatus.STOPPED,
+      status: AgentStatus.STOPPING,
     });
-    WebSocketService.sendStopProcessing();
   };
 
   const handleAutoModeToggle = () => {

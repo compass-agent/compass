@@ -84,13 +84,6 @@ class WebSocketService {
     }
   }
 
-  sendStopProcessing() {
-    if (this.socket?.connected) {
-      console.log("WebSocket sending stop_processing");
-      this.socket.emit("stop_processing");
-    }
-  }
-
   executeNextTool() {
     if (this.socket?.connected) {
       console.log("WebSocket sending execute_next_tool");

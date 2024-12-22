@@ -76,12 +76,13 @@ class StateManager:
 
     def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
         """Update state from external sources (frontend)"""
+        logger.info(f'Update_state state_update: {state_update}')
         if 'autoMode' in state_update:
             self._state.auto_mode = state_update['autoMode']
         if 'highlightMode' in state_update:
             self._state.highlight_mode = state_update['highlightMode']
-        # if 'playing' in state_update:
-        #     self._state.playing = state_update['playing']
+        if 'status' in state_update:
+            self._state.status = state_update['status']
         # QUST?? there is any reason to send state where we have just received it?
         self._emit_state_update()
         return self.get_state()

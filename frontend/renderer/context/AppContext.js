@@ -93,8 +93,7 @@ function appReducer(state, action) {
         ...state,
         agent: {
           ...state.agent,
-          status: AgentStatus.STOPPED,
-          // playing: false,
+          status: AgentStatus.STOPPING,
         },
       };
 

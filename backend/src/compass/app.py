@@ -98,15 +98,6 @@ def handle_control_update(data):
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
         emit('error', {'message': str(e)})
         
-@socketio.on('stop_processing')
-def handle_stop_processing():
-    logger.info('Stop processing request received')
-    try:
-        run_async(agent_service.stop_processing())
-    except Exception as e:
-        logger.error(f"Error in handle_stop_processing: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
 @socketio.on('execute_next_tool')
 def handle_execute_next_tool():
     logger.info('Received execute_next_tool request')
