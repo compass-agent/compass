@@ -14,12 +14,13 @@ import {
   faGear,
   faStop,
   faMagicWandSparkles,
+  faScrewdriverWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
-  const [lastClickTime, setLastClickTime] = useState(0);
+  // const [lastClickTime, setLastClickTime] = useState(0);
   const [isWindowMoved, setIsWindowMoved] = useState(false);
 
   useEffect(() => {
@@ -30,28 +31,31 @@ function ControlPanel() {
     hanldeFullscrenToggle(agentState.autoMode);
   }, [agentState.status, chat.currentInput]);
 
-  const handlePlayClick = () => {
-    const currentTime = new Date().getTime();
-    const timeDiff = currentTime - lastClickTime;
+  // const handlePlayClick = () => {
+  //   const currentTime = new Date().getTime();
+  //   const timeDiff = currentTime - lastClickTime;
 
-    if (timeDiff < 300) {
-      // Double click detected
-      handleDoubleClick();
-    } else {
-      handleSingleClick();
-      setLastClickTime(currentTime);
-    }
+  //   if (timeDiff < 300) {
+  //     // Double click detected
+  //     // handleDoubleClick();
+  //   } else {
+  //     handleSingleClick();
+  //     setLastClickTime(currentTime);
+  //   }
+  // };
+
+  const handleToolsClick = () => {
+    WebSocketService.executeNextTool();
   };
 
-  const handleSingleClick = () => {
-    console.log("ControlPanel -handleSingleClick: agentState", agentState);
-    if (agentState.status !== AgentStatus.STOPPED) {
-      handleStop();
-    } else if (agentState.pendingTools > 0) {
-      // Execute next pending tool
-      WebSocketService.executeNextTool();
-    } else if (chat.currentInput?.trim()) {
-      // Process new message
+  const handleToolsAndNextActionClick = () => {
+
+    WebSocketService.executeNextTool();
+    WebSocketService.generateNextAction();
+  };
+
+  const handlePlayClick = () => {
+    console.log("ControlPanel -handlePlayClick: agentState", agentState);
       dispatch({
         type: ActionTypes.ADD_CHAT_MESSAGE,
         payload: {
@@ -62,24 +66,11 @@ function ControlPanel() {
       });
       WebSocketService.sendMessage(chat.currentInput);
       dispatch({ type: ActionTypes.SET_CHAT_INPUT, payload: "" });
-    } else {
-      // Generate next action
-      WebSocketService.generateNextAction();
-    }
-  };
-
-  const handleDoubleClick = () => {
-    if (agentState.status !== AgentStatus.STOPPED) {
-      handleStop();
-    } else {
-      WebSocketService.executeNextTool();
-      WebSocketService.generateNextAction();
-    }
+      //TODO:Process Message & Update Tools: update backend and pending tools based on LLM response
   };
 
   const handleStop = () => {
     console.log("ControlPanel handleStop");
-    if (agentState.status === AgentStatus.STOPPED) return;
     dispatch({
       type: "STOP_PROCESSING",
       payload: "",
@@ -158,29 +149,37 @@ function ControlPanel() {
     return agentState.autoMode ? faMagicWandSparkles : faGear;
   };
 
-  const getPlayButtonTitle = () => {
+  const getToolsButtonTitle = () => {
+    console.log("ControlPanel: getToolsButtonTitle: - Agent state: ", agentState);
     if (agentState.status !== AgentStatus.STOPPED) {
       return "Processing...";
     } else if (agentState.pendingTools > 0) {
       return "Execute Next Tool";
-    } else if (chat.currentInput?.trim()) {
-      return "Process Message";
     } else {
       return "Generate Next Action";
     }
   };
 
-  const getPlayButtonIcon = () => {
-    console.log("ControlPanel: getPlayButtonIcon: - Agent state: ", agentState);
-    if (agentState.status !== AgentStatus.STOPPED) {
-      return { icon: faStop, loading: true }; // Processing // faRotateRight shouldSpin: true
-    } else if (agentState.pendingTools > 0) {
-      return { icon: faWrench }; // Pending tools
+  const isAgentStatePlaying = agentState.status !== AgentStatus.STOPPED;
+
+  const getButtonConfig = () => {
+    console.log("ControlPanel: getButtonConfig: - Agent state: ", agentState);
+    if (isAgentStatePlaying) {
+      return { icon: faStop, loading: true, title: 'Processing...', action: handleStop };
+    } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
+      return { icon: faScrewdriverWrench, title: 'Execute Pending Tools & Generate Next Action', action: handleToolsAndNextActionClick };
+    } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
+      return { icon: faPlay, title: 'Process Message & Update Tools', action: handlePlayClick }; // LLM Response: new tools
+    } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
+      return { icon: faPlay, title: 'Process Message', action: handlePlayClick }; // message
     } else {
-      return { icon: faPlay }; // Ready to generate next action
+      console.log("ControlPanel: getButtonConfig else: PT0 & Msg0")
+      return { icon: faPlay, title: '', action: handlePlayClick, disable: true }; // Default case
     }
   };
-  const playButtonIcon = getPlayButtonIcon();
+
+  const playButtonConfig = getButtonConfig();
+
   return (
     <div className="control-panel">
       <div className="left-controls">
@@ -211,14 +210,25 @@ function ControlPanel() {
       </div>
 
       <div className="right-controls">
+        {!agentState.autoMode && agentState.pendingTools > 0 && (
+          <button
+            className={`button ${isAgentStatePlaying ? "active" : ""}`}
+            onClick={handleToolsClick}
+            // disabled={agentStatePlaying}
+            title={getToolsButtonTitle()}
+          >
+            <FontAwesomeIcon icon={faWrench} />
+          </button>
+        )}
         <button
-          className={`button ${agentState.status !== AgentStatus.STOPPED ? "active" : ""}`}
-          onClick={handlePlayClick}
-          // disabled={agentState.status !== AgentStatus.STOPPED}
-          title={getPlayButtonTitle()}
+          className={`button ${isAgentStatePlaying ? "active" : ""}`}
+          onClick={playButtonConfig.action}
+          disabled={agentState.status === AgentStatus.STOPPING || playButtonConfig.disable}
+          //TODO: Should play button be disabled when agent is stopping ?
+          title={playButtonConfig.title}
         >
-          <FontAwesomeIcon icon={playButtonIcon.icon} />
-          {playButtonIcon.loading && <div className="spinner"></div>}
+          <FontAwesomeIcon icon={playButtonConfig.icon} />
+          {/* {agentStatePlaying && <div className="spinner"></div>} */}
         </button>
       </div>
     </div>
