@@ -20,6 +20,8 @@ from compass.agent.prompt import get_system_prompt
 from compass.utils.utility import TokenTracker
 from compass.constants import (
     MODEL_NAME,
+    MODEL_NAME_MANUAL,
+    MODEL_NAME_AUTO,
     MAX_TOKENS,
     PROMPT_CACHING,
     COMPUTER_USE_BETA_FLAG,
@@ -95,7 +97,8 @@ class LLM:
     async def call(
         self, 
         messages: list[BetaMessageParam], 
-        highlight_mode: bool
+        highlight_mode: bool,
+        manual_mode: bool
     ) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
         """Call the LLM API asynchronously
         
@@ -104,7 +107,7 @@ class LLM:
         """
         try:
             system = _get_current_system_prompt(highlight_mode)
-
+            logger.info(f"LLM model name: {MODEL_NAME_MANUAL if manual_mode else MODEL_NAME_AUTO}")
             messages = _remove_old_screenshots(
                 messages,
                 SCREENSHOT_KEEP_COUNT,
@@ -114,7 +117,7 @@ class LLM:
             raw_response = self.client.beta.messages.with_raw_response.create(
                 max_tokens=MAX_TOKENS,
                 messages=messages,
-                model=MODEL_NAME,
+                model= MODEL_NAME_MANUAL if manual_mode else MODEL_NAME_AUTO,
                 system=[system],
                 tools=self.tools_params,
                 betas=self.betas,

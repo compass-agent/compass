@@ -1,4 +1,6 @@
-MODEL_NAME  =  "claude-3-5-sonnet-latest" # claude-3-5-sonnet-latest or claude-3-5-haiku-latest 
+MODEL_NAME  =  "claude-3-5-sonnet-latest" # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
+MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
+MODEL_NAME_AUTO  =  "claude-3-5-sonnet-latest"
 MAX_ITERATIONS = 20
 MAX_TOKENS = 512
 PROMPT_CACHING = True

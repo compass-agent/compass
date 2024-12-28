@@ -15,13 +15,21 @@ import {
   faStop,
   faMagicWandSparkles,
   faScrewdriverWrench,
+  faWandMagic
 } from "@fortawesome/free-solid-svg-icons";
+
+const MODES = {
+  MANUAL: {mode: "Manual", title: "Manual Mode"},
+  SEMI_AUTO: {mode: "SemiAuto", title: "Semi-Automatic Mode"},
+  AUTO: {mode: "Auto", title: "Automatic Mode"},
+  HIGHLIGHT: {mode: "HighLight", title: "Highlight Mode" }
+};
 
 function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
-  // const [lastClickTime, setLastClickTime] = useState(0);
   const [isWindowMoved, setIsWindowMoved] = useState(false);
+  const [mode, setMode] = useState(MODES.MANUAL.mode);
 
   useEffect(() => {
     console.log("ControlPanel - Agent state updated:", {
@@ -30,19 +38,6 @@ function ControlPanel() {
     });
     hanldeFullscrenToggle(agentState.autoMode);
   }, [agentState.status, chat.currentInput]);
-
-  // const handlePlayClick = () => {
-  //   const currentTime = new Date().getTime();
-  //   const timeDiff = currentTime - lastClickTime;
-
-  //   if (timeDiff < 300) {
-  //     // Double click detected
-  //     // handleDoubleClick();
-  //   } else {
-  //     handleSingleClick();
-  //     setLastClickTime(currentTime);
-  //   }
-  // };
 
   const handleToolsClick = () => {
     WebSocketService.executeNextTool();
@@ -80,23 +75,6 @@ function ControlPanel() {
     });
   };
 
-  const handleAutoModeToggle = () => {
-    console.log(
-      "ControlPanel: handleAutoModeToggle: - Agent state: ",
-      agentState
-    );
-    const newAutoMode = !agentState.autoMode;
-    WebSocketService.updateControlState({
-      autoMode: newAutoMode,
-    });
-    // Optimistically update the front-end state
-    dispatch({
-      type: ActionTypes.SET_AGENT_STATE,
-      payload: { autoMode: newAutoMode },
-    });
-
-    hanldeFullscrenToggle(newAutoMode);
-  };
 
   const hanldeFullscrenToggle = (autoMode) => {
     setIsWindowMoved(false);
@@ -145,8 +123,14 @@ function ControlPanel() {
     });
   };
 
-  const autoManualModeIconToggel = () => {
-    return agentState.autoMode ? faMagicWandSparkles : faGear;
+  const getModeIcon = () => {
+    if (mode === MODES.MANUAL.mode) {
+      return faGear;
+    } else if (mode === MODES.SEMI_AUTO.mode) {
+      return faWandMagic;
+    } else if (mode === MODES.AUTO.mode) {
+      return faMagicWandSparkles;
+    }
   };
 
   const getToolsButtonTitle = () => {
@@ -180,23 +164,65 @@ function ControlPanel() {
 
   const playButtonConfig = getButtonConfig();
 
+  const handleMode = () => {
+    console.log(
+      `ControlPanel: handleMode: current mode ${mode} - Agent state: ${JSON.stringify(agentState)}`);
+    if (mode === MODES.MANUAL.mode) {
+      setMode(MODES.SEMI_AUTO.mode);
+      setManualMode(false);
+    } else if (mode === MODES.SEMI_AUTO.mode) {
+      setMode(MODES.AUTO.mode);
+      setAutoMode(true);
+      hanldeFullscrenToggle(true);
+    } else if (MODES.AUTO.mode) {
+      setMode(MODES.MANUAL.mode)
+      setAutoMode(false);
+      setManualMode(true);
+      hanldeFullscrenToggle(false);
+    }
+    console.log(
+      "ControlPanel: handleMode: - mode: ",
+      mode
+    );
+  };
+
+  const setManualMode = (isManual) => {
+    WebSocketService.updateControlState({
+      manualMode: isManual,
+    });
+    // Optimistically update the front-end state
+    dispatch({
+      type: ActionTypes.SET_AGENT_STATE,
+      payload: { manualMode: isManual },
+    });
+  }
+
+  const setAutoMode = (isAuto) => {
+    WebSocketService.updateControlState({
+      autoMode: isAuto,
+    });
+    // Optimistically update the front-end state
+    dispatch({
+      type: ActionTypes.SET_AGENT_STATE,
+      payload: { autoMode: isAuto },
+    });
+  }
+
   return (
     <div className="control-panel">
       <div className="left-controls">
         <button
-          className={`button ${agentState.autoMode ? "active" : ""}`}
-          onClick={handleAutoModeToggle}
+          className={`button ${mode === MODES.AUTO.mode || mode === MODES.SEMI_AUTO.mode ? "active" : ""}`}
+          onClick={handleMode}
           title={
-            agentState.autoMode ? "Automatic Mode (On)" : "Manual Mode (On)"
-          }
+            mode === MODES.AUTO.mode ? MODES.AUTO.title : mode === MODES.SEMI_AUTO.mode ? MODES.SEMI_AUTO.title : MODES.MANUAL.title }
         >
-          <FontAwesomeIcon icon={autoManualModeIconToggel()} />
+          <FontAwesomeIcon icon={getModeIcon()} />
         </button>
 
-        <button
+       { mode === MODES.MANUAL.mode && ( <button
           className={`button ${agentState.highlightMode ? "active" : ""}`}
           onClick={handleHighlightToggle}
-          disabled={agentState.autoMode}
           title={
             agentState.highlightMode
               ? "Highlight Mode (On)"
@@ -204,9 +230,9 @@ function ControlPanel() {
           }
         >
           <FontAwesomeIcon
-            icon={agentState.highlightMode ? faLightbulb : faInfo}
+            icon={faLightbulb }
           />
-        </button>
+        </button>)}
       </div>
 
       <div className="right-controls">

@@ -114,7 +114,7 @@ class AgentService:
     async def _process_message_single_mode(self, *args, **kwargs) -> None:
         try:
             response_params = await self._next_step_proposal()
-            if self.state_manager.highlight_mode:
+            if self.state_manager.manual_mode:
                 response_params = [
                     block for block in response_params if block["type"] == "text"
                 ]
@@ -253,7 +253,7 @@ class AgentService:
 
     async def _next_step_proposal(self):
         response_params = await self.llm.call(
-            self.messages, self.state_manager.highlight_mode
+            self.messages, self.state_manager.highlight_mode, self.state_manager.manual_mode
         )
         for content_block in response_params:
             if content_block["type"] == "text":

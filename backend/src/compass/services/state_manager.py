@@ -52,8 +52,8 @@ class AgentStatus(Enum):
 @dataclass
 class AgentState:
     auto_mode: bool = False
+    manual_mode: bool = True
     highlight_mode: bool = False
-    # playing: bool = False
     status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
     pending_tools: int = 0
@@ -67,8 +67,8 @@ class StateManager:
         """Get current state as dictionary"""
         return {
             'autoMode': self._state.auto_mode,
+            'manualMode': self._state.manual_mode,
             'highlightMode': self._state.highlight_mode,
-            # 'playing': self._state.playing,
             'status': self._state.status,
             'currentTask': self._state.current_task,
             'pendingTools': self._state.pending_tools
@@ -83,6 +83,8 @@ class StateManager:
             self._state.highlight_mode = state_update['highlightMode']
         if 'status' in state_update:
             self._state.status = state_update['status']
+        if 'manualMode' in state_update:
+            self._state.manual_mode = state_update['manualMode']
         # QUST?? there is any reason to send state where we have just received it?
         self._emit_state_update()
         return self.get_state()
@@ -117,6 +119,10 @@ class StateManager:
     @property
     def highlight_mode(self) -> bool:
         return self._state.highlight_mode
+    
+    @property
+    def manual_mode(self) -> bool:
+        return self._state.manual_mode
 
     @property
     def status(self) -> str:

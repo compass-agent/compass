@@ -13,6 +13,7 @@ const initialState = {
   },
   agent: {
     autoMode: false,
+    manualMode: true,
     highlightMode: false,
     // playing: false,
     status: AgentStatus.STOPPED,
