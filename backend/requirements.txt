@@ -5,3 +5,4 @@ anthropic
 flask
 flask_socketio
 pyautogui
+google-genai

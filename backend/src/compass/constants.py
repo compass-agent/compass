@@ -1,4 +1,4 @@
-MODEL_NAME  =  "claude-3-5-sonnet-latest" # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
+RESPONSE_STREAM_MODE  =  True # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
 MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
 MODEL_NAME_AUTO  =  "claude-3-5-sonnet-latest"
 MAX_ITERATIONS = 20

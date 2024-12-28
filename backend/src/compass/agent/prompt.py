@@ -1,7 +1,8 @@
-import platform
 from datetime import datetime
+from compass.constants import PROMPT_CACHING
 
-def get_highlight_mode_prompt():
+
+def get_manual_mode_highlight_off_prompt():
     today = datetime.today()
     day = today.day  # Get the day of the month without leading zeros
     formatted_date = today.strftime(f'%A, %B {day}, %Y')
@@ -71,9 +72,24 @@ WHY GOOD? AI carefully reviewed the previous result and adjusted the next action
 
 </EXAMPLES>"""
 
-def get_system_prompt():
+def get_system_prompt(manual_mode: bool = True, highlight_mode: bool = False):
     """Returns the appropriate system prompt based on the highlight mode"""
+
+    system_prompt = None
+    if manual_mode:
+        if not highlight_mode:
+            system_prompt = get_manual_mode_highlight_off_prompt()
+        else:
+            raise NotImplementedError("Highlight mode is not yet supported")
+    else:
+        if highlight_mode:
+            raise ValueError("Highlight mode cannot be active in auto mode")
+        else:
+            system_prompt = get_tool_mode_prompt()
+
     return {
-        "highlight": get_highlight_mode_prompt(),
-        "tool": get_tool_mode_prompt()
+        "type": "text",
+        "text": system_prompt,
+        "cache_control": {"type": "ephemeral"} if PROMPT_CACHING else None
     }
+

@@ -18,16 +18,30 @@ function ChatHistory() {
   const { agent: agenStatus } = state;
   const chatRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
   console.log('ChatHistory - Current messages:', messages);
-
   // Add scroll to bottom effect: as the new chat is added
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [state.chat.messages]);
+  }, [state.chat.messages, streamingText]);
+
+  // Update streaming text handling
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === 'ai_response_stream') {
+        if (lastMessage.is_final) {
+          setStreamingText('');
+        } else {
+          setStreamingText(prev => prev + lastMessage.content);
+        }
+      }
+    }
+  }, [messages]);
 
   // Add the missing getRecentMessages function
   const getRecentMessages = () => {
@@ -67,17 +81,18 @@ function ChatHistory() {
       case MESSAGE_TYPES.AI_RESPONSE:
         if (!msg.content) {
           return null;
-      }
+        }
         return (
-          //ai-response
           <div className="message">
-            {/* <span className="message-icon">🤖</span> */}
-            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content copyable-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.content : ''}>
+            <div className="message-content copyable-text" title={agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.content : ''}>
               {msg.content}
             </div>
           </div>
         );
+      
+      case MESSAGE_TYPES.AI_RESPONSE_STREAM:
+        // Don't render individual stream messages
+        return null;
       
       case MESSAGE_TYPES.TOOL_USE:
         const action = msg.parameters?.action;
@@ -121,7 +136,7 @@ function ChatHistory() {
       
       default:
         return (
-          <div className=" message-content copyable-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.text : ''}>
+          <div className="message-content copyable-text" title={agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.text : ''}>
             {msg.text}
           </div>
         );
@@ -160,6 +175,14 @@ function ChatHistory() {
           {renderMessage(msg, agenStatus)}
         </React.Fragment>
         ))}
+        {/* Add streaming text display */}
+        {streamingText && (
+          <div className="message">
+            <div className="message-content copyable-text">
+              {streamingText}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

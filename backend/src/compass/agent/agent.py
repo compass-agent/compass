@@ -11,7 +11,7 @@ from anthropic.types.beta import (
 )
 
 from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction
-from compass.constants import MAX_ITERATIONS
+from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus
 from compass.agent.llm import LLM
@@ -156,11 +156,7 @@ class AgentService:
                 if not tool_blocks:
                     break
                 await self._execute_tools(tool_blocks)
-                # tool_result_content = await self._execute_tools(tool_blocks)
-                # if tool_result_content:
-                #     self._append_message(
-                #         {"role": "user", "content": tool_result_content}
-                #     )
+
                 iteration += 1
         except asyncio.CancelledError:
             logger.info("Message processing loop was cancelled")
@@ -252,15 +248,38 @@ class AgentService:
             logger.info("Agent is already processing")
 
     async def _next_step_proposal(self):
-        response_params = await self.llm.call(
-            self.messages, self.state_manager.highlight_mode, self.state_manager.manual_mode
-        )
-        for content_block in response_params:
-            if content_block["type"] == "text":
-                self.state_manager.emit_response(
-                    {"type": "ai_response", "content": content_block["text"]}
-                )
-        return response_params
+        if self.state_manager.manual_mode:
+            
+            if RESPONSE_STREAM_MODE:# Handle streaming response
+                response = self.llm.call_llm_wo_tools_stream(self.messages)
+                full_response = ""
+                async for content_token in response:
+                    self.state_manager.emit_response({
+                        "type": "ai_response_stream",
+                        "content": content_token,
+                        "is_final": False
+                    })
+                    full_response += content_token
+            else:
+                full_response = await self.llm.call_llm_wo_tools(self.messages)
+                self.state_manager.emit_response({
+                    "type": "ai_response",
+                    "content": full_response
+                })
+                
+            return [{"type": "text", "text": full_response, "cache_control": None}]
+        else:
+            # Handle regular response
+            response_params = await self.llm.call_llm_with_tools(
+                self.messages
+            )
+            for content_block in response_params:
+                if content_block["type"] == "text":
+                    self.state_manager.emit_response({
+                        "type": "ai_response",
+                        "content": content_block["text"]
+                    })
+            return response_params
 
     async def stop_processing(self) -> None:
         """Stop current processing loop"""
@@ -278,6 +297,7 @@ class AgentService:
         else:
             logger.info("No active processing task to stop")
             self.state_manager.set_status(AgentStatus.STOPPED)
+
     @log_execution_time(logger)
     async def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
