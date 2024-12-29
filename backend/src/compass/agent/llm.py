@@ -118,10 +118,9 @@ class LLM:
                 system=[system],
                 tools=self.tools_params,
                 betas=self.betas,
-            )
-            
+            )     
+                  
             response = raw_response.parse()
-            
             # Track token usage
             self.token_tracker.track_usage(
                 response.usage.input_tokens,

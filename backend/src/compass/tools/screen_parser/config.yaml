@@ -1,0 +1,56 @@
+general:
+  device: "mps"
+  screen_descriptor:
+    include_text: true
+    text_prefix: "Text element:"
+    icon_prefix: "Icon:"
+
+icon_detection:
+  default: "yolo"
+  available_detectors:
+    - yolo
+  yolo:
+    model_path: "OmniParser/weights/icon_detect_v1_5/model_v1_5.pt"
+    device: "${general.device}"
+    conf_threshold: 0.05
+    iou_threshold: 0.7
+
+text_detection:
+  default: "google"
+  available_detectors:
+    - easyocr
+    - paddle
+    - google
+  easyocr:
+    languages: ["en"]
+    gpu: false
+  paddle:
+    use_angle_cls: false
+    use_gpu: false
+    max_batch_size: 32
+    use_dilation: true
+    det_db_score_mode: "fast"
+    rec_batch_num: 32
+  google:
+    region: "us-west1" 
+
+captioning:
+  enabled: true
+  default: "claude"
+  available_captioners:
+    - blip2
+    - florence
+    - claude
+  blip2:
+    model_path: "OmniParser/weights/blip2-opt-2.7b"
+    batch_size: 32
+  florence:
+    model_path: "OmniParser/weights/Florence-2-base"
+    batch_size: 32
+  claude:
+    model: "claude-3-5-sonnet-20241022"
+    batch_size: 1
+    run_claude: false
+    icon_matcher:
+      database_path: "OmniParser/data/icon_database.pkl"
+      similarity_threshold: 0.95 

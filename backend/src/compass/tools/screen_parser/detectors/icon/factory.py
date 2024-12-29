@@ -1,0 +1,30 @@
+import yaml
+from pathlib import Path
+from typing import Dict, Any, Optional
+from .base import BaseIconDetector
+from .yolo_detector import YOLOIconDetector
+
+class IconDetectorFactory:
+    @staticmethod
+    def load_config() -> Dict[str, Any]:
+        config_path = Path(__file__).parent.parent.parent / 'config.yaml'
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        return config['icon_detection']
+
+    @staticmethod
+    def create_detector() -> BaseIconDetector:
+        """
+        Create an icon detector instance based on configuration
+        
+        Args:
+            detector_type: Override detector type from config, if None uses default from config
+            **kwargs: Override specific configuration parameters
+        """
+        # Load config
+        config = IconDetectorFactory.load_config()
+        detector_type = config['default']
+        if detector_type == 'yolo':
+            return YOLOIconDetector()
+        
+        raise ValueError(f"Unknown detector type: {detector_type}") 

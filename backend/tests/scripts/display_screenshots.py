@@ -130,4 +130,4 @@ def create_screenshot_report(log_id):
 
 if __name__ == "__main__":
     # Example usage
-    create_screenshot_report("20241213-1434-3300")
+    create_screenshot_report("20241215-1735-0158")
