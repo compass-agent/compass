@@ -48,11 +48,15 @@ class AgentStatus(Enum):
     STOPPED = "STOPPED"
     RUNNING = "RUNNING"
     STOPPING = "STOPPING"
-
+    
+class AgentMode(Enum):
+    MANUAL = "MANUAL"
+    SEMI_AUTO = "SEMI_AUTO"
+    AUTO = "AUTO"
+    
 @dataclass
 class AgentState:
-    auto_mode: bool = False
-    manual_mode: bool = True
+    mode: AgentMode = AgentMode.MANUAL
     highlight_mode: bool = False
     status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
@@ -66,8 +70,7 @@ class StateManager:
     def get_state(self) -> Dict[str, Any]:
         """Get current state as dictionary"""
         return {
-            'autoMode': self._state.auto_mode,
-            'manualMode': self._state.manual_mode,
+            'mode': self._state.mode.value,
             'highlightMode': self._state.highlight_mode,
             'status': self._state.status,
             'currentTask': self._state.current_task,
@@ -77,14 +80,12 @@ class StateManager:
     def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
         """Update state from external sources (frontend)"""
         logger.info(f'Update_state state_update: {state_update}')
-        if 'autoMode' in state_update:
-            self._state.auto_mode = state_update['autoMode']
         if 'highlightMode' in state_update:
             self._state.highlight_mode = state_update['highlightMode']
         if 'status' in state_update:
             self._state.status = state_update['status']
-        if 'manualMode' in state_update:
-            self._state.manual_mode = state_update['manualMode']
+        if 'mode' in state_update:
+            self._state.mode = AgentMode[state_update['mode']]
         # QUST?? there is any reason to send state where we have just received it?
         self._emit_state_update()
         return self.get_state()
@@ -113,16 +114,12 @@ class StateManager:
         self._socketio.emit('restore-window','restore')
 
     @property
-    def auto_mode(self) -> bool:
-        return self._state.auto_mode
-
-    @property
     def highlight_mode(self) -> bool:
         return self._state.highlight_mode
     
     @property
-    def manual_mode(self) -> bool:
-        return self._state.manual_mode
+    def mode(self) -> AgentMode:
+        return self._state.mode
 
     @property
     def status(self) -> str:

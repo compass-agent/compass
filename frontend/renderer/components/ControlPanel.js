@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import WebSocketService from "../services/websocket";
 import { useAppState } from "../context/AppContext";
 import "../styles/ControlPanel.scss";
-import { AgentStatus, ActionTypes } from "../constants";
+import { AgentStatus, ActionTypes, AgentMode } from "../constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faRotateRight,
@@ -19,9 +19,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const MODES = {
-  MANUAL: {mode: "Manual", title: "Manual Mode"},
-  SEMI_AUTO: {mode: "SemiAuto", title: "Semi-Automatic Mode"},
-  AUTO: {mode: "Auto", title: "Automatic Mode"},
+  MANUAL: {mode: AgentMode.MANUAL , title: "Manual Mode"},
+  SEMI_AUTO: {mode: AgentMode.SEMI_AUTO, title: "Semi-Automatic Mode"},
+  AUTO: {mode: AgentMode.AUTO, title: "Automatic Mode"},
   HIGHLIGHT: {mode: "HighLight", title: "Highlight Mode" }
 };
 
@@ -30,13 +30,14 @@ function ControlPanel() {
   const { agent: agentState, chat } = state;
   const [isWindowMoved, setIsWindowMoved] = useState(false);
   const [mode, setMode] = useState(MODES.MANUAL.mode);
+  const isAutoMode = agentState.mode === AgentMode.AUTO;
 
   useEffect(() => {
     console.log("ControlPanel - Agent state updated:", {
       status: agentState.status,
       currentInput: chat.currentInput,
     });
-    hanldeFullscrenToggle(agentState.autoMode);
+    hanldeFullscrenToggle(isAutoMode);
   }, [agentState.status, chat.currentInput]);
 
   const handleToolsClick = () => {
@@ -76,7 +77,7 @@ function ControlPanel() {
   };
 
 
-  const hanldeFullscrenToggle = (autoMode) => {
+  const hanldeFullscrenToggle = (isAutoMode) => {
     setIsWindowMoved(false);
     const handleMoveToBottomRightDone = () => {
       console.log("Window moved to bottom-right corner");
@@ -88,7 +89,7 @@ function ControlPanel() {
       );
     };
 
-    if (autoMode && agentState.status !== AgentStatus.STOPPED) {
+    if (isAutoMode && agentState.status !== AgentStatus.STOPPED) {
       // Exit fullscreen when switching to auto mode
       window.electron.ipcRenderer.send("toggle-fullscreen", false);
 
@@ -105,7 +106,7 @@ function ControlPanel() {
     }
 
     if (
-      autoMode &&
+      isAutoMode &&
       isWindowMoved &&
       agentState.status === AgentStatus.STOPPED &&
       agentState.pendingTools === 0
@@ -169,15 +170,14 @@ function ControlPanel() {
       `ControlPanel: handleMode: current mode ${mode} - Agent state: ${JSON.stringify(agentState)}`);
     if (mode === MODES.MANUAL.mode) {
       setMode(MODES.SEMI_AUTO.mode);
-      setManualMode(false);
+      setAgentMode(AgentMode.SEMI_AUTO);
     } else if (mode === MODES.SEMI_AUTO.mode) {
       setMode(MODES.AUTO.mode);
-      setAutoMode(true);
+      setAgentMode(AgentMode.AUTO);
       hanldeFullscrenToggle(true);
     } else if (MODES.AUTO.mode) {
       setMode(MODES.MANUAL.mode)
-      setAutoMode(false);
-      setManualMode(true);
+      setAgentMode(AgentMode.MANUAL);
       hanldeFullscrenToggle(false);
     }
     console.log(
@@ -186,33 +186,23 @@ function ControlPanel() {
     );
   };
 
-  const setManualMode = (isManual) => {
+  const setAgentMode = (mode) => {
     WebSocketService.updateControlState({
-      manualMode: isManual,
+      mode: mode,
     });
     // Optimistically update the front-end state
     dispatch({
       type: ActionTypes.SET_AGENT_STATE,
-      payload: { manualMode: isManual },
+      payload: { mode: mode },
     });
-  }
-
-  const setAutoMode = (isAuto) => {
-    WebSocketService.updateControlState({
-      autoMode: isAuto,
-    });
-    // Optimistically update the front-end state
-    dispatch({
-      type: ActionTypes.SET_AGENT_STATE,
-      payload: { autoMode: isAuto },
-    });
-  }
+  }  
 
   return (
     <div className="control-panel">
       <div className="left-controls">
         <button
-          className={`button ${mode === MODES.AUTO.mode || mode === MODES.SEMI_AUTO.mode ? "active" : ""}`}
+          className="button active"
+          // className={`button ${mode === MODES.AUTO.mode || mode === MODES.SEMI_AUTO.mode ? "active" : ""}`}
           onClick={handleMode}
           title={
             mode === MODES.AUTO.mode ? MODES.AUTO.title : mode === MODES.SEMI_AUTO.mode ? MODES.SEMI_AUTO.title : MODES.MANUAL.title }
@@ -236,11 +226,10 @@ function ControlPanel() {
       </div>
 
       <div className="right-controls">
-        {!agentState.autoMode && agentState.pendingTools > 0 && (
+        {!isAutoMode && agentState.pendingTools > 0 && (
           <button
             className={`button ${isAgentStatePlaying ? "active" : ""}`}
             onClick={handleToolsClick}
-            // disabled={agentStatePlaying}
             title={getToolsButtonTitle()}
           >
             <FontAwesomeIcon icon={faWrench} />
@@ -249,11 +238,9 @@ function ControlPanel() {
         <button
           className={`button ${isAgentStatePlaying ? "active" : ""}`}
           onClick={playButtonConfig.action}
-          // disabled={agentState.status === AgentStatus.STOPPING || playButtonConfig.disable}
           title={playButtonConfig.title}
         >
           <FontAwesomeIcon icon={playButtonConfig.icon} />
-          {/* {agentStatePlaying && <div className="spinner"></div>} */}
         </button>
       </div>
     </div>

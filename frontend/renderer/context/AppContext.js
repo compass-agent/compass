@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import WebSocketService from "../services/websocket";
-import { AgentStatus, ActionTypes } from "../constants";
+import { AgentStatus, ActionTypes, AgentMode } from "../constants";
 
 const AppContext = createContext();
 
@@ -12,10 +12,8 @@ const initialState = {
     error: null,
   },
   agent: {
-    autoMode: false,
-    manualMode: true,
+    mode: AgentMode.MANUAL,
     highlightMode: false,
-    // playing: false,
     status: AgentStatus.STOPPED,
     currentTask: null,
     pendingTools: 0,
@@ -85,7 +83,6 @@ function appReducer(state, action) {
         agent: {
           ...state.agent,
           status: AgentStatus.RUNNING,
-          // playing: true,
         },
       };
 

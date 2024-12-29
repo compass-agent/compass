@@ -3,7 +3,7 @@ import { useAppState } from '../context/AppContext';
 import '../styles/ChatHistory.scss';
 import { MESSAGE_TYPES } from '../constants';
 import { faSpinner  } from '@fortawesome/free-solid-svg-icons';
-import { AgentStatus } from '../constants';
+import { AgentStatus, AgentMode } from '../constants';
 
 const TOOL_ACTION_MAPPING = {
   screenshot: { icon: '📸', text: 'Taking screenshot...' },
@@ -15,10 +15,11 @@ const TOOL_ACTION_MAPPING = {
 function ChatHistory() {
   const { state } = useAppState();
   const { messages } = state.chat;
-  const { agent: agenStatus } = state;
+  const { agent: agentState } = state;
   const chatRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const isAutoMode = agentState.mode === AgentMode.AUTO;
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
   console.log('ChatHistory - Current messages:', messages);
@@ -59,8 +60,9 @@ function ChatHistory() {
     return messages.slice(-(lastAiIndex + 1));
   };
 
-  const renderMessage = (msg, agenStatus) => {
-    console.log('Rendering message:', msg, agenStatus.autoMode);
+  const renderMessage = (msg, agentState) => {
+    console.log('Rendering message:', msg);
+    console.log('Rendering agentStateMode:', agentState.mode);
     console.log('Rendering type:', MESSAGE_TYPES.USER, MESSAGE_TYPES.USER === msg.type);
     switch (msg.type) {
       case MESSAGE_TYPES.USER:
@@ -72,7 +74,7 @@ function ChatHistory() {
           <div className="message user-message">
             {/* <span className="message-icon">👤</span> */}
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content copyable-text" title={ (agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED) ? msg.text : ''}>
+            <div className="message-content copyable-text" title={ (isAutoMode && agentState.status !== AgentStatus.STOPPED) ? msg.text : ''}>
               {msg.text}
             </div>
           </div>
@@ -84,8 +86,8 @@ function ChatHistory() {
         }
         return (
           <div className="message">
-            <div className="message-content copyable-text" title={agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.content : ''}>
-              {msg.content}
+            <div className="message-content copyable-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.content : ''}>
+            {msg.content}
             </div>
           </div>
         );
@@ -107,7 +109,7 @@ function ChatHistory() {
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content copyable-text">
               {/* why tool-text? */}
-              <span className="tool-text" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? mapping.text : ''}>{mapping.text}</span>
+              <span className="tool-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? mapping.text : ''}>{mapping.text}</span>
             </div>
           </div>
         );
@@ -123,10 +125,10 @@ function ChatHistory() {
             {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
             <div className="message-content copyable-text">
               {msg.error ? (
-                <div className="tool-error" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.error : ''}>{msg.error}</div>
+                <div className="tool-error" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.error : ''}>{msg.error}</div>
               ) : (
                 <>
-                  {msg.output && <div className="tool-output" title={ agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.output : ''}>{msg.output}</div>}
+                  {msg.output && <div className="tool-output" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.output : ''}>{msg.output}</div>}
                   {msg.has_image && <div className="tool-image-placeholder">[Image]</div>}
                 </>
               )}
@@ -136,7 +138,7 @@ function ChatHistory() {
       
       default:
         return (
-          <div className="message-content copyable-text" title={agenStatus.autoMode && agenStatus.status !== AgentStatus.STOPPED ? msg.text : ''}>
+          <div className=" message-content copyable-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.text : ''}>
             {msg.text}
           </div>
         );
@@ -172,7 +174,7 @@ function ChatHistory() {
       >
         {(isCollapsed ? getRecentMessages() : messages).map((msg, index) => (
           <React.Fragment key={index}>
-          {renderMessage(msg, agenStatus)}
+          {renderMessage(msg, agentState)}
         </React.Fragment>
         ))}
         {/* Add streaming text display */}

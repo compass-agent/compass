@@ -8,14 +8,14 @@ import { AppProvider, useAppState } from "./context/AppContext";
 import Header from "./components/Header";
 import useUpdateContainerHeight from "./hooks/useUpdateContainerHeight";
 import useScrollToBottom from "./hooks/useScrollToBottom";
-import { AgentStatus } from "./constants";
+import { AgentStatus, AgentMode } from "./constants";
 
 // Separate component for the main app content to use the context
 function AppContent() {
   const { state } = useAppState();
   const { connection, chat, agent } = state;
   const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
-
+  const isAutoMode = agent.mode === AgentMode.AUTO;
   // Use custom hooks
   useUpdateContainerHeight(chatHistoryRef);
   useScrollToBottom(chatHistoryRef, chat.messages);
@@ -37,7 +37,7 @@ function AppContent() {
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper" style={{ display: (agent.autoMode && agent.status !== AgentStatus.STOPPED  ) ? 'none' : '' }}> 
+        <div className="input-box-wrapper" style={{ display: (isAutoMode && agent.status !== AgentStatus.STOPPED  ) ? 'none' : '' }}> 
           <MessageInput />
         </div>
       </div>

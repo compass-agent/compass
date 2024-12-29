@@ -13,7 +13,7 @@ from anthropic.types.beta import (
 from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction
 from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE
 from compass.utils.utility import HistoryLogger, log_execution_time
-from compass.services.state_manager import StateManager, AgentStatus
+from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.agent.llm import LLM
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class AgentService:
         logger.info("Taking screenshot and cursor position before calling AI")
         await self._take_screenshot()
 
-        if self.state_manager.auto_mode:
+        if self.state_manager.mode == AgentMode.AUTO:
             self.processing_task = asyncio.create_task(self._process_message_loop())
         else:
             self.processing_task = asyncio.create_task(
@@ -114,7 +114,7 @@ class AgentService:
     async def _process_message_single_mode(self, *args, **kwargs) -> None:
         try:
             response_params = await self._next_step_proposal()
-            if self.state_manager.manual_mode:
+            if self.state_manager.mode == AgentMode.MANUAL:
                 response_params = [
                     block for block in response_params if block["type"] == "text"
                 ]
@@ -156,7 +156,6 @@ class AgentService:
                 if not tool_blocks:
                     break
                 await self._execute_tools(tool_blocks)
-
                 iteration += 1
         except asyncio.CancelledError:
             logger.info("Message processing loop was cancelled")
@@ -248,7 +247,7 @@ class AgentService:
             logger.info("Agent is already processing")
 
     async def _next_step_proposal(self):
-        if self.state_manager.manual_mode:
+        if self.state_manager.mode == AgentMode.MANUAL:
             
             if RESPONSE_STREAM_MODE:# Handle streaming response
                 response = self.llm.call_llm_wo_tools_stream(self.messages)

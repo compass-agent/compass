@@ -12,6 +12,12 @@ const AgentStatus = {
   STOPPING: "STOPPING",
 };
 
+const AgentMode = Object.freeze({
+  MANUAL: "MANUAL",
+  SEMI_AUTO: "SEMI_AUTO",
+  AUTO: "AUTO",
+});
+
 const ButtonsBarHeight = 38;
 
 // Action types
@@ -27,4 +33,4 @@ const ActionTypes = {
   SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
 };
 
-module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes };
+module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode };
