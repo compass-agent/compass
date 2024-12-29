@@ -223,8 +223,7 @@ function ControlPanel() {
         <button
           className={`button ${isAgentStatePlaying ? "active" : ""}`}
           onClick={playButtonConfig.action}
-          disabled={agentState.status === AgentStatus.STOPPING || playButtonConfig.disable}
-          //TODO: Should play button be disabled when agent is stopping ?
+          // disabled={agentState.status === AgentStatus.STOPPING || playButtonConfig.disable}
           title={playButtonConfig.title}
         >
           <FontAwesomeIcon icon={playButtonConfig.icon} />
