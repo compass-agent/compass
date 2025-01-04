@@ -11,7 +11,7 @@ from anthropic.types.beta import (
 )
 
 from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction, FileOperationsTool
-from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE
+from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.agent.llm import LLM
@@ -104,7 +104,8 @@ class AgentService:
         self.stop_event.clear()
 
         logger.info("Taking screenshot and cursor position before calling AI")
-        await self._take_screenshot()
+        if PRE_RUN_SCREENSHOTS:
+            await self._take_screenshot()
 
         if self.state_manager.mode == AgentMode.AUTO:
             self.processing_task = asyncio.create_task(self._process_message_loop())
