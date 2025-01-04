@@ -1,9 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, get_args
 from collections import defaultdict
 import os
+from pathlib import Path
 
 from ...tools.base import BaseAnthropicTool, ToolResult, ToolError
+from ...constants import HOST_WORKING_DIR
+
+Command = Literal[
+    "view",
+    "create",
+    "str_replace",
+    "insert",
+    "undo_edit",
+]
 
 @dataclass
 class FileState:
@@ -12,45 +22,74 @@ class FileState:
     exists: bool
 
 class FileOperationsTool(BaseAnthropicTool):
-    """Tool for file operations including view, create, edit and undo capabilities"""
-
     api_type: Literal["text_editor_20241022"] = "text_editor_20241022"
     name: Literal["str_replace_editor"] = "str_replace_editor"
 
     def __init__(self):
         self._file_history = defaultdict(list)
+        self.base_path = Path(HOST_WORKING_DIR)
 
-    def _save_state(self, path: str, content: str, exists: bool):
-        """Save file state for undo operations"""
-        self._file_history[path].append(FileState(content, exists))
-
-    def _get_previous_state(self, path: str) -> Optional[FileState]:
-        """Get the previous file state for undo operations"""
-        history = self._file_history[path]
-        if len(history) > 1:
-            history.pop()  # Remove current state
-            return history[-1]
-        return None
-
-    async def __call__(self, *, command: str, path: str, **kwargs) -> ToolResult:
+    async def __call__(
+        self,
+        *,
+        command: Command,
+        path: str,
+        file_text: str | None = None,
+        view_range: list[int] | None = None,
+        old_str: str | None = None,
+        new_str: str | None = None,
+        insert_line: int | None = None,
+        **kwargs,
+    ) -> ToolResult:
         """Execute the requested file operation"""
-        operations = {
-            "view": self._view,
-            "create": self._create,
-            "str_replace": self._str_replace,
-            "insert": self._insert,
-            "undo_edit": self._undo_edit
-        }
+        _path = Path(path)
+        self.validate_path(command, _path)
         
-        if command not in operations:
-            raise ToolError(f"Unknown command: {command}")
+        if command == "view":
+            return await self._view(_path, view_range)
+        elif command == "create":
+            if file_text is None:
+                raise ToolError("Parameter `file_text` is required for command: create")
+            return await self._create(_path, file_text)
+        elif command == "str_replace":
+            if old_str is None:
+                raise ToolError("Parameter `old_str` is required for command: str_replace")
+            return await self._str_replace(_path, old_str, new_str)
+        elif command == "insert":
+            if insert_line is None:
+                raise ToolError("Parameter `insert_line` is required for command: insert")
+            if new_str is None:
+                raise ToolError("Parameter `new_str` is required for command: insert")
+            return await self._insert(_path, insert_line, new_str)
+        elif command == "undo_edit":
+            return await self._undo_edit(_path)
             
-        return await operations[command](path=path, **kwargs)
+        raise ToolError(
+            f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}'
+        )
 
-    async def _view(self, *, path: str, **kwargs) -> ToolResult:
+    def validate_path(self, command: str, path: Path):
+        """Check that the path/command combination is valid."""
+        # Convert relative paths to be relative to our working directory
+        if not path.is_absolute():
+            path = self.base_path / path
+            
+        if not path.exists() and command != "create":
+            raise ToolError(f"The path {path} does not exist. Please provide a valid path.")
+        if path.exists() and command == "create":
+            raise ToolError(f"File already exists at: {path}. Cannot overwrite files using command `create`.")
+        if path.is_dir() and command != "view":
+            raise ToolError(f"The path {path} is a directory and only the `view` command can be used on directories")
+
+    # Update method signatures to match the new __call__ parameters
+    async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
         """View contents of a file"""
         try:
-            if not os.path.exists(path):
+            # Convert relative paths to absolute
+            if not path.is_absolute():
+                path = self.base_path / path
+                
+            if not path.exists():
                 return ToolResult(error=f"File not found: {path}")
             
             with open(path, 'r') as f:
@@ -59,33 +98,33 @@ class FileOperationsTool(BaseAnthropicTool):
         except Exception as e:
             return ToolResult(error=str(e))
 
-    async def _create(self, *, path: str, content: str, **kwargs) -> ToolResult:
+    async def _create(self, path: Path, content: str) -> ToolResult:
         """Create a new file with content"""
         try:
-            if os.path.exists(path):
-                return ToolResult(error=f"File already exists: {path}")
-            
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            # Convert relative paths to absolute
+            if not path.is_absolute():
+                path = self.base_path / path
+                
+            os.makedirs(path.parent, exist_ok=True)
             with open(path, 'w') as f:
                 f.write(content)
             
-            self._save_state(path, content, True)
+            self._file_history[path].append(content)
             return ToolResult(output=f"Created file: {path}")
         except Exception as e:
             return ToolResult(error=str(e))
 
-    async def _str_replace(self, *, path: str, old_text: str, new_text: str, **kwargs) -> ToolResult:
+    async def _str_replace(self, path: Path, old_str: str, new_str: str | None) -> ToolResult:
         """Replace text in a file"""
         try:
-            if not os.path.exists(path):
-                return ToolResult(error=f"File not found: {path}")
-            
             with open(path, 'r') as f:
                 content = f.read()
             
-            self._save_state(path, content, True)
+            new_str = new_str if new_str is not None else ""
+            new_content = content.replace(old_str, new_str)
             
-            new_content = content.replace(old_text, new_text)
+            self._file_history[path].append(content)
+            
             with open(path, 'w') as f:
                 f.write(new_content)
                 
@@ -93,16 +132,13 @@ class FileOperationsTool(BaseAnthropicTool):
         except Exception as e:
             return ToolResult(error=str(e))
 
-    async def _insert(self, *, path: str, line_number: int, content: str, **kwargs) -> ToolResult:
+    async def _insert(self, path: Path, line_number: int, content: str) -> ToolResult:
         """Insert text at specific line number"""
         try:
-            if not os.path.exists(path):
-                return ToolResult(error=f"File not found: {path}")
-            
             with open(path, 'r') as f:
                 lines = f.readlines()
             
-            self._save_state(path, ''.join(lines), True)
+            self._file_history[path].append(''.join(lines))
             
             if line_number < 1 or line_number > len(lines) + 1:
                 return ToolResult(error=f"Invalid line number: {line_number}")
@@ -116,18 +152,15 @@ class FileOperationsTool(BaseAnthropicTool):
         except Exception as e:
             return ToolResult(error=str(e))
 
-    async def _undo_edit(self, *, path: str, **kwargs) -> ToolResult:
+    async def _undo_edit(self, path: Path) -> ToolResult:
         """Undo last edit operation"""
         try:
-            previous_state = self._get_previous_state(path)
-            if not previous_state:
-                return ToolResult(error=f"No previous state found for: {path}")
+            if not self._file_history[path]:
+                return ToolResult(error=f"No edit history found for: {path}")
             
-            if previous_state.exists:
-                with open(path, 'w') as f:
-                    f.write(previous_state.content)
-            else:
-                os.remove(path)
+            previous_content = self._file_history[path].pop()
+            with open(path, 'w') as f:
+                f.write(previous_content)
                 
             return ToolResult(output=f"Undid last change to {path}")
         except Exception as e:

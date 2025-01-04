@@ -11,3 +11,9 @@ PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 SCREENSHOT_SCALE_FACTOR = 0.7  # Reduce resolution by 50%
 SCREENSHOT_COLOR_DEPTH = 8     # 8-bit color depth (256 colors)
 KEEP_SCREENSHOTS = True        # Keep screenshots after use
+PRE_RUN_SCREENSHOTS = False    # Take screenshots before running the agent
+
+# Docker and OpenFOAM configuration
+DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
+DOCKER_WORKING_DIR = "/home/openfoam/run/pitzDaily"
+HOST_WORKING_DIR = "/Users/kazem/openfoam/run/pitzDaily"
