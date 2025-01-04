@@ -26,14 +26,13 @@ The user is running OpenFOAM 8 on macOS using Docker with the following setup:
 3. Visualization Setup:
    - ParaView is installed within the Docker container
    - GUI access through X11 forwarding via XQuartz
-   - All visualization done using 'paraFoam' command
+   - Interactive visualization through ParaView's GUI interface
 
 IMPORTANT NOTES: When suggesting file paths or commands:
 - Use host paths ({HOST_WORKING_DIR}...) for file operations
 - Use container paths ({DOCKER_WORKING_DIR}...) for OpenFOAM commands
-- Always use 'paraFoam --server' for visualization to enable both GUI interaction and Python scripting control
-- Never attempt to launch ParaView directly on the host
-- ParaView server mode (--server flag) is essential as it allows both interactive GUI usage and programmatic control through Python commands
+- Use 'paraFoam' in docker environment for visualization to launch ParaView GUI
+- Guide users through interactive ParaView operations using the GUI and by reviewing the screen.
 """
 
     def _get_openfoam_base_prompt(self) -> str:
@@ -95,12 +94,12 @@ Example commands:
     }}
 }}
 
-# Visualize results:
+# Launch ParaView GUI:
 {{
     "name": "bash_run",
     "input": {{
         "runtime": "docker",
-        "script": "cd {DOCKER_WORKING_DIR}myCase && paraFoam --server"
+        "script": "cd {DOCKER_WORKING_DIR}myCase && paraFoam"
     }}
 }}
 """

@@ -1,0 +1,60 @@
+.template-training-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #202020;
+  color: #e0e0e0;
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #333;
+
+    input[type="text"] {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background-color: #333;
+      color: #e0e0e0;
+    }
+
+    button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      background-color: #444;
+      color: #e0e0e0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &:hover {
+        background-color: #555;
+      }
+    }
+  }
+
+  .image-workspace {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .image-container {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+
+      img {
+        max-width: 100%;
+        max-height: calc(100vh - 100px);
+        object-fit: contain;
+      }
+    }
+  }
+} 

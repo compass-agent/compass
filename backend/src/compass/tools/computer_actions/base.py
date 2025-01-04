@@ -10,6 +10,9 @@ from dataclasses import dataclass
 
 from ..base import ToolResult, ScalingSource, ToolError
 from compass.services.state_manager import StateManager
+from compass.constants import SCREENSHOT_OPTIMIZATION
+from compass.tools.screen_parser.screen_parser import ScreenParser
+from compass.tools.screen_parser.models import ScreenData
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +22,19 @@ class ScreenshotResult:
     base64_image: str
     has_changed: bool | None = None  # None when comparison wasn't requested
     error: str | None = None  # To capture any errors that occurred
+    description: str | None = None  # Screen parser description
 
 class BaseComputerAction(ABC):
     """Base class for all computer actions."""
     
-    def __init__(self, width: int, height: int, scaled_width: int, scaled_height: int, state_manager: StateManager):
+    def __init__(self, 
+                 width: int, 
+                 height: int, 
+                 scaled_width: int, 
+                 scaled_height: int, 
+                 state_manager: StateManager,
+                 enable_screenshot_comparison: bool = False,
+                 enable_screen_description: bool = False):
         self.width = width
         self.height = height
         self.scaled_width = scaled_width
@@ -31,10 +42,13 @@ class BaseComputerAction(ABC):
         self._x_scaling_factor = scaled_width / width
         self._y_scaling_factor = scaled_height / height
         self.state_manager = state_manager
-        self._last_screenshot = None
+        self._last_screenshot = None if not enable_screenshot_comparison else None
+        self.screen_parser = ScreenParser() if enable_screen_description else None
+        self._enable_screenshot_comparison = enable_screenshot_comparison
+        self._enable_screen_description = enable_screen_description
 
     # @log_execution_time(logger)
-    async def capture_and_process_screenshot(self, compare_with_previous: bool = False) -> ScreenshotResult:
+    async def capture_and_process_screenshot(self) -> ScreenshotResult:
         """Core method to capture and process screenshot, returning a ScreenshotResult object"""
         try:
             logger.info("Capturing and processing screenshot")
@@ -48,31 +62,43 @@ class BaseComputerAction(ABC):
             
             logger.info(f"Reducing color depth from 256 to 8-bit")
             optimized_screenshot = scaled_screenshot.quantize(
-                colors=256,  # 8-bit color depth
+                colors=256,
                 method=Image.FASTOCTREE  # type: ignore
             )
             
             has_changed = None
-            if compare_with_previous and self._last_screenshot is not None:
+            if self._enable_screenshot_comparison and self._last_screenshot is not None:
                 has_changed = optimized_screenshot.tobytes() != self._last_screenshot.tobytes()
                 logger.info(f"Screenshot comparison result: changed={has_changed}")
             
-            self._last_screenshot = optimized_screenshot
+            if self._enable_screenshot_comparison:
+                self._last_screenshot = optimized_screenshot
             
             logger.info(f"Saving to memory buffer and encoding to base64")
             buffer = io.BytesIO()
             optimized_screenshot.save(
                 buffer,
                 format='PNG',
-                optimize=True  # Additional PNG optimization
+                optimize=True
             )
-            
-            logger.info(f"Converting to base64")
             base64_result = base64.b64encode(buffer.getvalue()).decode()
+            
+            description = None
+            if self._enable_screen_description and self.screen_parser:
+                # Create ScreenData object and get description using light parse
+                logger.info("Running light screen parsing")
+                screen_data = ScreenData(
+                    image_data=base64_result,
+                    elements=[],
+                    description=None
+                )
+                parsed_data = self.screen_parser.light_parse(screen_data)
+                description = parsed_data.description
             
             return ScreenshotResult(
                 base64_image=base64_result,
-                has_changed=has_changed
+                has_changed=has_changed,
+                description=description
             )
 
         except Exception as e:
@@ -81,7 +107,8 @@ class BaseComputerAction(ABC):
             return ScreenshotResult(
                 base64_image="",
                 has_changed=None,
-                error=error_msg
+                error=error_msg,
+                description=None
             )
 
     async def get_cursor_position(self) -> Tuple[int, int]:

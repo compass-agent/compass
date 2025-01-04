@@ -79,8 +79,7 @@ class AgentService:
         self.tool_collection = ToolCollection(
             ComputerTool(state_manager), 
             FileOperationsTool(), 
-            BashExecutor(),
-            ParaViewTool()
+            BashExecutor()
         )
         self.llm = LLM(self.tool_collection.to_params())
 

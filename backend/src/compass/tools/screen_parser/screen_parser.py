@@ -1,23 +1,18 @@
-from enum import Enum, auto
 import pandas as pd
-import numpy as np
-from PIL import Image
 from pathlib import Path
-import os
-import base64
-import io
 import yaml
 import logging
 import time
 
-from screen_parser.detectors.text import TextDetectionInput
-from screen_parser.detectors.icon import IconDetectionInput
-from screen_parser.captioners import CaptioningInput
-from screen_parser.utils.box_utils import remove_overlapping_boxes
-from screen_parser.utils.visualization import visualize_boxes
-from screen_parser.detectors.icon.factory import IconDetectorFactory
-from screen_parser.detectors.text.factory import TextDetectorFactory
-from screen_parser.captioners.factory import CaptionerFactory
+from compass.tools.screen_parser.utils.box_utils import remove_overlapping_boxes
+from compass.tools.screen_parser.utils.visualization import visualize_boxes
+from compass.tools.screen_parser.detectors.icon.factory import IconDetectorFactory
+from compass.tools.screen_parser.detectors.text.factory import TextDetectorFactory
+from compass.tools.screen_parser.captioners.factory import CaptionerFactory
+from compass.tools.screen_parser.models import ScreenData
+from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
+
+logger = logging.getLogger(__name__)
 
 class ScreenParser:
     def __init__(self):
@@ -30,11 +25,10 @@ class ScreenParser:
             format='%(asctime)s - [SCREEN PARSER] - %(message)s',
             force=True  # Force override any existing logger
         )
-        self.logger = logging.getLogger("screen_parser")  # Give it a specific name
-        self.logger.setLevel(logging.INFO)  # Explicitly set level
+        logger.setLevel(logging.INFO)  # Explicitly set level
         
         # Test that logging is working
-        self.logger.info("ScreenParser initialized")
+        logger.info("ScreenParser initialized")
         
         # Load config
         config_path = Path(__file__).parent / 'config.yaml'
@@ -46,111 +40,90 @@ class ScreenParser:
         self.include_text_in_description = self.config['general']['screen_descriptor']['include_text']
         
         # Initialize detectors using factories
-        self.icon_detector = IconDetectorFactory.create_detector()
-        self.text_detector = TextDetectorFactory.create_detector()
+        #self.icon_detector = IconDetectorFactory.create_detector()
+        #self.text_detector = TextDetectorFactory.create_detector()
         
-        if self.caption_enabled:
-            self.captioner = CaptionerFactory.create_captioner()
-        else:
-            self.captioner = None
+        # Initialize template matcher separately
+        self.template_matcher = TemplateDetector()
 
-    def parse(self, base64_image: str) -> pd.DataFrame:
-        """
-        Detect and analyze elements in the image
-        
-        Args:
-            base64_image (str): Base64 encoded image string
-            
-        Returns:
-            pd.DataFrame: Detection results
-        """        
+        #if self.caption_enabled:
+        #    self.captioner = CaptionerFactory.create_captioner()
+        #else:
+        #    self.captioner = None
+
+    def parse(self, screen_data: ScreenData) -> ScreenData:
+        """Parse a screen and identify all elements"""
         parse_start = time.time()
         
-        # Run icon detection with new API
         icon_start = time.time()
-        icon_input = IconDetectionInput.from_base64(base64_image)
-        icon_output = self.icon_detector.detect(icon_input)
-        self.logger.info(f"Icon detection took {time.time() - icon_start:.2f} seconds")
+        icon_results = self.icon_detector.detect(screen_data)
+        logger.info(f"Icon detection took {time.time() - icon_start:.2f} seconds")
         
-        # Run text detection with new API
         text_start = time.time()
-        text_input = TextDetectionInput.from_base64(base64_image)
-        text_output = self.text_detector.detect(text_input)
-        self.logger.info(f"Text detection took {time.time() - text_start:.2f} seconds")
+        text_results = self.text_detector.detect(screen_data)
+        logger.info(f"Text detection took {time.time() - text_start:.2f} seconds")
         
-        # Get image dimensions from base64
-        image_source = np.array(Image.open(io.BytesIO(base64.b64decode(base64_image))).convert('RGB'))        
+        merged_screen_data = remove_overlapping_boxes(icon_results, text_results)
         
-        # Handle overlaps with new unified interface
-        filtered_boxes = remove_overlapping_boxes(icon_output, text_output)
+        if self.captioner:
+            caption_start = time.time()
+            merged_screen_data = self.captioner.generate_captions(merged_screen_data)
+            logger.info(f"Captioning took {time.time() - caption_start:.2f} seconds")
         
-        # Generate captions if enabled, otherwise use default "icon" text
-        icon_boxes = [
-            box.bbox for box in filtered_boxes 
-            if box.box_type == 'icon'
-        ]
-        if icon_boxes:
-            if self.captioner:
-                caption_start = time.time()
-                caption_input = CaptioningInput(
-                    image=image_source,
-                    boxes=icon_boxes,
-                    batch_size=32
-                )
-                caption_output = self.captioner.generate_captions(caption_input)
-                self.logger.info(f"Captioning took {time.time() - caption_start:.2f} seconds")
-                
-                caption_idx = 0
-                for box in filtered_boxes:
-                    if box.box_type == 'icon':
-                        box.content = caption_output.captions[caption_idx]
-                        caption_idx += 1
-            else:
-                # Add default "icon" caption when captioning is disabled
-                for box in filtered_boxes:
-                    if box.box_type == 'icon':
-                        box.content = "icon"
+        # Generate and add screen description
+        description = self.screen_descriptor(merged_screen_data)
+        merged_screen_data.description = description
         
-        # Convert to DataFrame
-        detections = [
-            {
-                'x1': round(box.bbox[0], 2),
-                'y1': round(box.bbox[1], 2),
-                'x2': round(box.bbox[2], 2),
-                'y2': round(box.bbox[3], 2),
-                'type': box.box_type,
-                'text': box.content,
-                'interactivity': box.interactivity
-            }
-            for box in filtered_boxes
-        ]
-        
-        df = pd.DataFrame(detections)
-        print(f"\nFound {len(df[df['type']=='icon'])} icons and {len(df[df['type']=='text'])} text elements")
-        
-        self.logger.info(f"Total parsing took {time.time() - parse_start:.2f} seconds")
-        return df
+        logger.info(f"Total parsing took {time.time() - parse_start:.2f} seconds")
+        return merged_screen_data
 
-    def visualize_boxes(self, image_path, boxes_df, output_path=None):
-        """Wrapper for visualization utility"""
-        return visualize_boxes(image_path, boxes_df, output_path)
+    def light_parse(self, screen_data: ScreenData) -> ScreenData:
+        """
+        Lightweight parsing using only template matching and screen description.
+        Faster alternative to full parse() method.
+        """
+        parse_start = time.time()
+        
+        # Only run template matching for icon detection
+        detection_start = time.time()
+        detected_screen = self.template_matcher.detect(screen_data)
+        logger.info(f"Template matching detection took {time.time() - detection_start:.2f} seconds")
+        
+        # Generate and add screen description
+        description = self.screen_descriptor(detected_screen)
+        detected_screen.description = description
+        
+        logger.info(f"Total light parsing took {time.time() - parse_start:.2f} seconds")
+        return detected_screen
 
-    def save_results(self, df, output_path):
-        """Save detection results to CSV"""
-        df.to_csv(output_path, index=False)
-        print(f"Results saved to: {output_path}") 
-
-    def screen_descriptor(self, df):
+    def screen_descriptor(self, screen_data: ScreenData) -> str:
         """
         Create a structured description of elements in the screen
         
         Args:
-            df (pd.DataFrame): Detection results DataFrame
-            output_path (str, optional): Path to save description text
+            screen_data (ScreenData): Detection results in ScreenData format
             
         Returns:
             str: Formatted screen description
         """
+        # Convert ScreenData elements to DataFrame for processing
+        # check if no elements are present or if elements are empty
+        if not screen_data.elements or all(not element.coordinates for element in screen_data.elements):
+            return ""
+        
+        elements_data = []
+        for element in screen_data.elements:
+            coords = element.coordinates
+            elements_data.append({
+                'type': element.element_type,
+                'text': element.text or element.caption,
+                'x1': coords['x1'],
+                'y1': coords['y1'],
+                'x2': coords['x2'],
+                'y2': coords['y2']
+            })
+        df = pd.DataFrame(elements_data)
+        
         # Create copy of relevant elements
         if self.include_text_in_description:
             elements_df = df.copy()
@@ -196,9 +169,6 @@ if __name__ == "__main__":
     # Add SingleTest directory to Python path to import key
     project_root = Path(__file__).parent.parent
     sys.path.append(str(project_root))
-    from SingleTest.key import ANTHROPIC_API_KEY
-    os.environ['ANTHROPIC_API_KEY'] = ANTHROPIC_API_KEY
-
     # Set up paths
     base_path = Path(__file__).parent
     test_image = base_path / 'imgs/last_image.png'
@@ -206,31 +176,38 @@ if __name__ == "__main__":
     try:
         # Initialize parser
         parser = ScreenParser()
-        print("Initialized with Anthropic captioning and Google Cloud Vision text detection")
+        print("Initialized parser with both full and light parsing capabilities")
         
-        # Load and encode image
-        with open(test_image, 'rb') as image_file:
-            base64_image = base64.b64encode(image_file.read()).decode()
+        # Create ScreenData from image file
+        screen_data = ScreenData.from_path(str(test_image))
         
-        # Detect objects and generate captions
-        results_df = parser.parse(base64_image)
+        # Test both parsing methods
+        print("\nTesting light parse...")
+        light_parsed = parser.light_parse(screen_data)
+        print(f"Light parse description:\n{light_parsed.description}\n")
         
-        # Save results to CSV
-        csv_path = test_image.with_suffix('.csv')
-        parser.save_results(results_df, str(csv_path))
+        print("\nTesting full parse...")
+        full_parsed = parser.parse(screen_data)
+        print(f"Full parse description:\n{full_parsed.description}\n")
         
-        # Generate and save screen description
-        desc_path = test_image.with_suffix('.desc.txt')
-        screen_desc = parser.screen_descriptor(results_df)
-        output_path = str(desc_path)
-        # Save if output path provided
-        if output_path:
-            output_path = Path(output_path).with_suffix('.txt')
-            with open(output_path, 'w') as f:
-                f.write(screen_desc)
-        # Generate and save visualization
-        output_path = base_path / 'imgs/last_image_annotated.png'
-        parser.visualize_boxes(str(test_image), results_df, str(output_path))
+        # Save results
+        base_name = test_image.stem
+        
+        # Save light parse results
+        light_desc_path = test_image.with_suffix('.light.desc.txt')
+        with open(light_desc_path, 'w') as f:
+            f.write(light_parsed.description or "")
+        
+        light_output_path = base_path / f'imgs/{base_name}_light_annotated.png'
+        visualize_boxes(str(test_image), light_parsed, str(light_output_path))
+        
+        # Save full parse results
+        full_desc_path = test_image.with_suffix('.full.desc.txt')
+        with open(full_desc_path, 'w') as f:
+            f.write(full_parsed.description or "")
+        
+        full_output_path = base_path / f'imgs/{base_name}_full_annotated.png'
+        visualize_boxes(str(test_image), full_parsed, str(full_output_path))
         
     except Exception as e:
         print(f"Error processing image: {e}") 

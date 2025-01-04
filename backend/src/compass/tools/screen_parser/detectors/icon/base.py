@@ -1,28 +1,23 @@
 from abc import ABC, abstractmethod
-from .models import IconDetectionInput, IconDetectionOutput
+from compass.tools.screen_parser.models import ScreenData
 
 class BaseIconDetector(ABC):
     """Abstract base class for icon detection"""
     
     @abstractmethod
-    def __init__(self, model_path: str):
-        """
-        Initialize icon detector
-        
-        Args:
-            model_path: Path to model weights/configuration
-        """
+    def __init__(self):
+        """Initialize icon detector"""
         pass
     
     @abstractmethod
-    def detect(self, input_data: IconDetectionInput) -> IconDetectionOutput:
+    def detect(self, screen_data: ScreenData) -> ScreenData:
         """
-        Detect icons in the input image
+        Detect icons in the input image and return new ScreenData instance
         
         Args:
-            input_data: IconDetectionInput object containing image and detection parameters
+            screen_data: ScreenData object containing image and detection parameters
             
         Returns:
-            IconDetectionOutput object containing detected icon locations
+            New ScreenData object containing detected icons
         """
         pass 

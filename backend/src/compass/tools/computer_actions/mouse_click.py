@@ -4,6 +4,7 @@ from typing import Optional, Tuple, Literal
 
 from ..base import ToolResult, ToolError
 from .base import BaseComputerAction
+from compass.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,17 @@ COMPARE_WITH_PREVIOUS = True
 
 class MouseClickAction(BaseComputerAction):
     """Handles mouse click actions."""
+
+    def __init__(self, width: int, height: int, scaled_width: int, scaled_height: int, state_manager: StateManager):
+        super().__init__(
+            width=width,
+            height=height,
+            scaled_width=scaled_width,
+            scaled_height=scaled_height,
+            state_manager=state_manager,
+            enable_screenshot_comparison=True,
+            enable_screen_description=True
+        )
 
     async def execute(self, 
                 action: Literal["left_click", "right_click", "middle_click", "double_click"],
@@ -36,14 +48,19 @@ class MouseClickAction(BaseComputerAction):
             logger.info(f"Click action completed: {action}")
 
             # Take screenshot with comparison
-            screenshot_result = await self.capture_and_process_screenshot(compare_with_previous=COMPARE_WITH_PREVIOUS)
+            screenshot_result = await self.capture_and_process_screenshot()
             
-            output_message = ""
+            output_parts = []
+            
             if screenshot_result.has_changed is False:
-                output_message = f"Important: The screen did not change after executing this {action} action. Was that the desired outcome? If NOT, please run this action again, before continuing."
+                output_parts.append(f"Important: The screen did not change after executing this {action} action. Was that the desired outcome? If NOT, please run this action again, before continuing.")
+            
+            if screenshot_result.description:
+                output_parts.append("\nScreen Description:")
+                output_parts.append(screenshot_result.description)
             
             return ToolResult(
-                output=output_message, 
+                output="\n".join(output_parts), 
                 error=None, 
                 base64_image=screenshot_result.base64_image
             ) 

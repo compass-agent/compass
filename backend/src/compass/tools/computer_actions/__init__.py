@@ -96,7 +96,7 @@ class ComputerTool(BaseAnthropicTool):
             "state_manager": state_manager,
         }
         
-        # Initialize all actions with common parameters
+        # Initialize actions with specific settings
         self.screenshot_action = ScreenshotAction(**action_params)
         self.cursor_position_action = CursorPositionAction(**action_params)
         self.mouse_movement_action = MouseMovementAction(**action_params)

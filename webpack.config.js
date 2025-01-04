@@ -2,10 +2,13 @@ const path = require("path");
 
 module.exports = {
   mode: "development",
-  entry: "./frontend/renderer/index.js",
+  entry: {
+    app: './frontend/renderer/index.js',
+    templateTraining: './frontend/renderer/template-training/index.js'
+  },
   output: {
-    path: path.resolve(__dirname, "frontend/renderer/build"),
-    filename: "renderer.js",
+    path: path.resolve(__dirname, "frontend/renderer/dist"),
+    filename: "[name].bundle.js",
   },
   module: {
     rules: [

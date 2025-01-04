@@ -63,6 +63,16 @@ class WebSocketService {
         message: "Connection failed. Retrying...",
       });
     });
+
+    this.socket.on("detection_result", (data) => {
+      console.log("WebSocket received detection result:", data);
+      this.stateHandlers?.onDetectionResult?.(data);
+    });
+
+    this.socket.on("template_saved", (data) => {
+      console.log("WebSocket template saved:", data);
+      this.stateHandlers?.onTemplateSaved?.(data);
+    });
   }
 
   disconnect() {
@@ -102,6 +112,20 @@ class WebSocketService {
     if (this.socket?.connected) {
       console.log("WebSocket sending execute_tool_and_generate_action");
       this.socket.emit("execute_tool_and_generate_action");
+    }
+  }
+
+  uploadScreenshot(imageData) {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending upload_screenshot");
+      this.socket.emit("upload_screenshot", { image: imageData });
+    }
+  }
+
+  saveTemplate(templateData) {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending save_template");
+      this.socket.emit("save_template", templateData);
     }
   }
 }

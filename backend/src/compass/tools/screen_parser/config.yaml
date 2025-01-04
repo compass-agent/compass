@@ -5,15 +5,24 @@ general:
     text_prefix: "Text element:"
     icon_prefix: "Icon:"
 
+template_matching:
+  enabled: true
+  database_path: "data/icon_templates.csv"
+  threshold: 0.8
+
 icon_detection:
-  default: "yolo"
+  default: "template"
   available_detectors:
     - yolo
+    - template
   yolo:
-    model_path: "OmniParser/weights/icon_detect_v1_5/model_v1_5.pt"
+    model_path: "src/compass/tools/screen_parser/data/icon_detect_v1_5/model_v1_5.pt"
     device: "${general.device}"
     conf_threshold: 0.05
     iou_threshold: 0.7
+  template:
+    database_path: "data/icon_templates.csv"
+    threshold: 0.8
 
 text_detection:
   default: "google"
@@ -42,15 +51,15 @@ captioning:
     - florence
     - claude
   blip2:
-    model_path: "OmniParser/weights/blip2-opt-2.7b"
+    model_path: "src/compass/tools/screen_parser/data/blip2-opt-2.7b"
     batch_size: 32
   florence:
-    model_path: "OmniParser/weights/Florence-2-base"
+    model_path: "src/compass/tools/screen_parser/data/Florence-2-base"
     batch_size: 32
   claude:
     model: "claude-3-5-sonnet-20241022"
     batch_size: 1
     run_claude: false
     icon_matcher:
-      database_path: "OmniParser/data/icon_database.pkl"
+      database_path: "src/compass/tools/screen_parser/data/icon_database.pkl"
       similarity_threshold: 0.95 

@@ -17,6 +17,7 @@ const WINDOW_CONFIG = {
 
 let mainWindow;
 let previewWindow = null;
+let templateTrainingWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -56,6 +57,38 @@ function createWindow() {
       .then((name) => console.log(`Added Extension: ${name}`))
       .catch((err) => console.error("Failed to install React DevTools:", err));
   }
+}
+
+function createTemplateTrainingWindow() {
+  templateTrainingWindow = new BrowserWindow({
+    width: 1024,
+    height: 768,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    },
+    show: false, // Don't show until ready
+  });
+
+  templateTrainingWindow.loadFile(
+    path.join(__dirname, '../renderer/template-training/index.html')
+  );
+
+  // Center the window and show when ready
+  templateTrainingWindow.once('ready-to-show', () => {
+    templateTrainingWindow.center();
+    templateTrainingWindow.show();
+  });
+
+  // Dev tools for debugging
+  if (process.env.NODE_ENV === 'development') {
+    templateTrainingWindow.webContents.openDevTools();
+  }
+
+  templateTrainingWindow.on('closed', () => {
+    templateTrainingWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
@@ -205,3 +238,8 @@ ipcMain.handle("save-file-dialog", async (event, content) => {
   }
 });
 
+ipcMain.on('open-template-training', () => {
+  if (!templateTrainingWindow) {
+    createTemplateTrainingWindow();
+  }
+});

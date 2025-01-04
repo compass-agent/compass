@@ -1,24 +1,39 @@
 import easyocr
 import numpy as np
 from .base import BaseTextDetector
-from .models import TextDetectionInput, TextDetectionOutput, TextDetectionBox
+from compass.tools.screen_parser.models import ScreenData
+import logging
+import time
 
 class EasyOCRDetector(BaseTextDetector):
     def __init__(self):
-        self.detector = easyocr.Reader(['en'])
-    
-    def detect(self, input_data: TextDetectionInput) -> TextDetectionOutput:
-        # Convert base64 to PIL Image
-        image = input_data.to_pil()
+        """Initialize EasyOCR detector"""
+        self.logger = logging.getLogger("easyocr_detector")
+        self.logger.setLevel(logging.INFO)
         
-        # Convert PIL Image to numpy array
-        image_array = np.array(image)
+        self.detector = easyocr.Reader(['en'])
+        self.logger.info("EasyOCR initialized")
+    
+    def detect(self, screen_data: ScreenData) -> ScreenData:
+        """
+        Detect text using EasyOCR and return new ScreenData instance
+        """
+        detect_start = time.time()
+        
+        # Create new ScreenData instance for results
+        result_screen = ScreenData(image_data=screen_data.image_data)
+        
+        # Convert to numpy array for EasyOCR
+        image_array = screen_data.to_numpy()
         
         # Run detection
+        model_start = time.time()
         result = self.detector.readtext(image_array)
+        model_time = time.time() - model_start
+        self.logger.info(f"EasyOCR detection took {model_time:.2f} seconds")
         
         # Process results
-        boxes = []
+        process_start = time.time()
         for coords, text, confidence in result:
             # Convert to XYXY format
             x1 = coords[0][0]
@@ -26,10 +41,16 @@ class EasyOCRDetector(BaseTextDetector):
             x2 = coords[2][0]
             y2 = coords[2][1]
             
-            boxes.append(TextDetectionBox(
+            result_screen.add_text_element(
+                bbox=(float(x1), float(y1), float(x2), float(y2)),
                 text=text,
-                confidence=confidence,
-                bbox=(x1, y1, x2, y2)
-            ))
+                confidence=float(confidence)
+            )
         
-        return TextDetectionOutput(boxes=boxes) 
+        process_time = time.time() - process_start
+        self.logger.info(f"Results processing took {process_time:.2f} seconds")
+        
+        total_time = time.time() - detect_start
+        self.logger.info(f"Total detection time: {total_time:.2f} seconds")
+        
+        return result_screen 

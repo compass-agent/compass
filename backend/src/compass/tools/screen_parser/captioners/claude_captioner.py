@@ -1,15 +1,17 @@
 from .base import BaseCaptioner
-from .models import CaptioningInput, CaptioningOutput
+from compass.tools.screen_parser.models import ScreenData
 import anthropic
 from PIL import Image
 import base64
 from io import BytesIO
 import os
-import asyncio
-from typing import List, Tuple
 from pathlib import Path
 import yaml
-from .icon_matcher import IconMatcher, BatchMatchResult
+import logging
+import time
+from typing import Tuple
+
+logger = logging.getLogger(__name__)
 
 class ClaudeModelConfig:
     SONNET = "claude-3-5-sonnet-20241022"
@@ -32,23 +34,15 @@ class ClaudeCaptioner(BaseCaptioner):
         
         # Use model from config if not provided
         self.model_name = config['captioning']['claude']['model']
-        self.run_claude = config['captioning']['claude'].get('run_claude', False)
-        
-        # Initialize IconMatcher
-        icon_matcher_config = config['captioning']['claude']['icon_matcher']
-        self.icon_matcher = IconMatcher(
-            similarity_threshold=icon_matcher_config['similarity_threshold']
-        )
-        self.icon_matcher.load_database(icon_matcher_config['database_path'])
-        
+        self.save_debug_crops = config['captioning']['claude'].get('save_debug_crops', False)
         # Only initialize Claude client if needed
-        if self.run_claude:
-            api_key = os.getenv('ANTHROPIC_API_KEY')
-            if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
-            self.client = anthropic.Anthropic(api_key=api_key, max_retries=4)
-            self.costs = ClaudeModelConfig.get_costs(self.model_name)
-            
+
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+        self.client = anthropic.Anthropic(api_key=api_key, max_retries=4)
+        self.costs = ClaudeModelConfig.get_costs(self.model_name)
+        
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_cost = 0.0
@@ -68,7 +62,7 @@ class ClaudeCaptioner(BaseCaptioner):
             input_data, 
             box: tuple, 
             image_height: int, 
-            image_width: int) -> Tuple[dict, tuple]:
+            image_width: int) -> dict:
         """Preprocess a single bounding box and return message data and debug info"""
         xmin, ymin, xmax, ymax = [int(coord) for coord in box]
         
@@ -121,85 +115,44 @@ class ClaudeCaptioner(BaseCaptioner):
             }
         ]
         
-        return message_data, (xmin, xmax, ymin, ymax)
+        return message_data
 
-    async def _get_caption(self, message_data: dict) -> Tuple[str, dict]:
-        """Make async API call to get caption"""
+    def _get_caption(self, message_data: dict) -> Tuple[str, dict | None]:
+        """Make synchronous API call to get caption"""
         try:
             message = self.client.messages.create(**message_data)
             return message.content[0].text.strip(), message
         except Exception as e:
-            print(f"Error generating caption: {e}")
-            return "Error: Could not generate caption", None # type: ignore
+            logger.error(f"Error generating caption: {e}")
+            return "Error: Could not generate caption", None
 
-    def generate_captions(self, input_data: CaptioningInput) -> CaptioningOutput:
-        image_height, image_width = input_data.image.shape[:2]
+    def generate_captions(self, screen_data: ScreenData) -> ScreenData:
+        """Generate captions for icons in the screen data"""
+        if not screen_data.icon_elements:
+            return screen_data
+            
+        start_time = time.time()
+        logger.info(f"Starting caption generation for {len(screen_data.icon_elements)} icons")
         
-        # Preprocess all boxes and collect base64 images
-        base64_images = []
-        for box in input_data.boxes:
+        # Get image and dimensions
+        image = screen_data.to_pil()
+        image_width, image_height = image.size
+        
+        # Process each icon
+        for icon in screen_data.icon_elements:
             try:
-                message_data, _ = self._preprocess_box(input_data, box, image_height, image_width)
-                # Extract icon image base64 from message data
-                icon_data = message_data["messages"][0]["content"][1]["source"]["data"]
-                base64_images.append(icon_data)
-            except Exception as e:
-                print(f"Error preprocessing box {box}: {e}")
-                base64_images.append(None)
-
-        if self.run_claude:
-            # Prepare message data for each valid image
-            message_data_list = []
-            for box in input_data.boxes:
-                try:
-                    message_data, _ = self._preprocess_box(input_data, box, image_height, image_width)
-                    message_data_list.append(message_data)
-                except Exception as e:
-                    print(f"Error preprocessing box {box}: {e}")
-                    message_data_list.append(None)
-
-            # Create and run async tasks only for the LLM calls
-            async def process_all_captions():
-                tasks = [
-                    self._get_caption(data)
-                    for data in message_data_list
-                    if data is not None
-                ]
-                results = await asyncio.gather(*tasks)
-                return results
-            
-            # Run async processing for LLM calls
-            results = asyncio.run(process_all_captions())
-            
-            # Process results
-            generated_texts = []
-            for caption, message in results:
-                generated_texts.append(caption)
+                message_data = self._preprocess_box(
+                    screen_data, icon.bbox, image_height, image_width
+                )
+                caption, message = self._get_caption(message_data)
+                icon.caption = caption  # Only assign the caption string
                 if message:
                     self._update_usage_stats(message)
-        else:
-            # Use IconMatcher
-            # Filter out None values
-            valid_images = [img for img in base64_images if img is not None]
-            
-            # Get matches using IconMatcher
-            results = self.icon_matcher.find_matches_batch(valid_images)
-            
-            # Convert results to captions list
-            generated_texts = []
-            result_idx = 0
-            for base64_img in base64_images:
-                if base64_img is None:
-                    generated_texts.append(None)
-                else:
-                    match = results.matches[result_idx]
-                    generated_texts.append(match.caption if match else None)
-                    result_idx += 1
-        
-        return CaptioningOutput(
-            captions=generated_texts,
-            metadata=self.get_usage_stats()
-        )
+            except Exception as e:
+                logger.error(f"Error preprocessing icon: {e}")
+
+        logger.info(f"Caption generation completed in {time.time() - start_time:.2f} seconds")
+        return screen_data
 
     def _update_usage_stats(self, message):
         """Update token usage and cost statistics"""

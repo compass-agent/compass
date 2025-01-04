@@ -5,13 +5,15 @@ from .custom_actions import SleepAction
 from .file_operations import FileOperationsTool
 from .command.command_tool import BashExecutor
 from .paraview.paraview_tool import ParaViewTool
+from . import screen_parser
 __ALL__ = [
     CLIResult,
-    ComputerTool,
+    ComputerTool,   
     SleepAction,
     ToolCollection,
     ToolResult,
     FileOperationsTool,
     BashExecutor,
-    ParaViewTool
+    ParaViewTool,
+    screen_parser
 ]

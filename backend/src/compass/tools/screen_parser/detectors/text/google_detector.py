@@ -1,8 +1,7 @@
 from google.cloud import vision
 from .base import BaseTextDetector
-from .models import TextDetectionInput, TextDetectionOutput, TextDetectionBox
+from compass.tools.screen_parser.models import ScreenData
 import base64
-import io
 import logging
 import time
 
@@ -15,15 +14,18 @@ class GoogleCloudTextDetector(BaseTextDetector):
         self.logger.setLevel(logging.INFO)
         self.client = vision.ImageAnnotatorClient()
     
-    def detect(self, input_data: TextDetectionInput) -> TextDetectionOutput:
+    def detect(self, screen_data: ScreenData) -> ScreenData:
         """
         Detect text using Google Cloud Vision API
         """
         detect_start = time.time()
         
-        # Create image object directly from base64
+        # Create new ScreenData instance for results
+        result_screen = ScreenData(image_data=screen_data.image_data)
+        
+        # Create image object from base64
         self.logger.info("Creating Vision API request")
-        image = vision.Image(content=base64.b64decode(input_data.get_base64()))
+        image = vision.Image(content=base64.b64decode(screen_data.image_data))
         
         # Perform text detection
         api_start = time.time()
@@ -41,7 +43,6 @@ class GoogleCloudTextDetector(BaseTextDetector):
         
         # Process detected texts
         process_start = time.time()
-        boxes = []
         for text in response.text_annotations[1:]:  # Skip first result which is the entire text
             vertices = text.bounding_poly.vertices
             x1 = min(vertex.x for vertex in vertices)
@@ -49,11 +50,11 @@ class GoogleCloudTextDetector(BaseTextDetector):
             x2 = max(vertex.x for vertex in vertices)
             y2 = max(vertex.y for vertex in vertices)
             
-            boxes.append(TextDetectionBox(
+            result_screen.add_text_element(
+                bbox=(float(x1), float(y1), float(x2), float(y2)),
                 text=text.description,
-                confidence=1.0,  # Google Cloud Vision doesn't provide confidence scores
-                bbox=(float(x1), float(y1), float(x2), float(y2))
-            ))
+                confidence=1.0  # Google Cloud Vision doesn't provide confidence scores
+            )
         
         process_time = time.time() - process_start
         self.logger.info(f"Results processing took {process_time:.2f} seconds")
@@ -61,4 +62,4 @@ class GoogleCloudTextDetector(BaseTextDetector):
         total_time = time.time() - detect_start
         self.logger.info(f"Total text detection time: {total_time:.2f} seconds")
         
-        return TextDetectionOutput(boxes=boxes) 
+        return result_screen 

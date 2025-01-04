@@ -11,7 +11,8 @@ import {
   faExpand,
   faCompress,
   faUpRightAndDownLeftFromCenter,
-  faMinus
+  faMinus,
+  faImage
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 
@@ -73,6 +74,11 @@ function Header() {
   const handleSettings = () => {
     // TODO: Implement settings functionality
     console.log("Settings clicked");
+  };
+
+  const handleTemplateTraining = () => {
+    console.log('Template training button clicked');
+    window.electron.ipcRenderer.send('open-template-training');
   };
 
   return (
@@ -163,6 +169,14 @@ function Header() {
             title="Settings"
           >
             <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
+
+          <button
+            className="header-button"
+            onClick={handleTemplateTraining}
+            title="Template Training"
+          >
+            <FontAwesomeIcon icon={faImage} />
           </button>
         </div>
       ) : (

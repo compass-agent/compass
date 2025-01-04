@@ -8,6 +8,7 @@ from compass.utils.utility import HistoryLogger
 import logging
 import asyncio
 from threading import Thread
+from compass.training_agent.training_agent import TrainingAgent
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def run_event_loop_in_thread(loop):
 # Start the event loop in a background thread
 background_thread = Thread(target=run_event_loop_in_thread, args=(async_loop,), daemon=True)
 background_thread.start()
-
+training_agent = TrainingAgent()
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
 
@@ -127,6 +128,30 @@ def handle_execute_tool_and_generate_action():
         run_async(combined_operation())
     except Exception as e:
         logger.error(f"Error in combined operation: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('upload_screenshot')
+def handle_screenshot_upload(data):
+    """Handle screenshot upload for template training"""
+    try:
+        result = training_agent.process_screenshot(data['image'])
+        emit('detection_result', result)
+    except Exception as e:
+        logger.error(f"Error processing screenshot: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('save_template')
+def handle_save_template(data):
+    """Save labeled template to database"""
+    try:
+        training_agent.save_template(
+            image_data=data['image'],
+            caption=data['caption'],
+            bbox=data['bbox']
+        )
+        emit('template_saved', {'success': True})
+    except Exception as e:
+        logger.error(f"Error saving template: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 if __name__ == '__main__':

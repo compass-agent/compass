@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import torch
 from .base import BaseIconDetector
-from .models import IconDetectionInput, IconDetectionOutput, IconBox
+from compass.tools.screen_parser.models import ScreenData
 from pathlib import Path
 import yaml
 import logging
@@ -9,9 +9,7 @@ import time
 
 class YOLOIconDetector(BaseIconDetector):
     def __init__(self):
-        """
-        Initialize YOLO detector
-        """
+        """Initialize YOLO detector"""
         # Set up logging
         self.logger = logging.getLogger("yolo_detector")
         self.logger.setLevel(logging.INFO)
@@ -29,42 +27,42 @@ class YOLOIconDetector(BaseIconDetector):
         self.model.to(self.device)
         self.logger.info(f'YOLO model initialized on {self.device}')
     
-    def detect(self, input_data: IconDetectionInput) -> IconDetectionOutput:
+    def detect(self, screen_data: ScreenData) -> ScreenData:
         """
-        Detect icons using YOLO
+        Detect icons using YOLO and return new ScreenData instance
         """
         detect_start = time.time()
+        
+        # Create new ScreenData instance for results
+        result_screen = ScreenData(image_data=screen_data.image_data)
         
         # Use config values loaded during initialization
         kwargs = {
             'conf': self.conf_threshold,
             'iou': self.iou_threshold
         }
-        if input_data.image_size:
-            kwargs['imgsz'] = input_data.image_size[0]
             
         # Run detection
         model_start = time.time()
-        results = self.model(input_data.to_pil(), **kwargs) # type: ignore
+        results = self.model(screen_data.to_pil(), **kwargs)
         model_time = time.time() - model_start
         self.logger.info(f"YOLO model inference took {model_time:.2f} seconds")
         
         # Process results
         process_start = time.time()
-        boxes = []
         if len(results) > 0:
             result = results[0]  # Get first image results
             for box, conf in zip(result.boxes.xyxy, result.boxes.conf):
                 if isinstance(box, torch.Tensor):
                     box = box.cpu().numpy()
-                boxes.append(IconBox(
-                    bbox=tuple(float(x) for x in box), # type: ignore
+                result_screen.add_icon_element(
+                    bbox=(float(box[0]), float(box[1]), float(box[2]), float(box[3])),
                     confidence=float(conf)
-                ))
+                )
         process_time = time.time() - process_start
         self.logger.info(f"Results processing took {process_time:.2f} seconds")
         
         total_time = time.time() - detect_start
         self.logger.info(f"Total detection time: {total_time:.2f} seconds")
         
-        return IconDetectionOutput(boxes=boxes) 
+        return result_screen 

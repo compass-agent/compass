@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
-from .models import TextDetectionInput, TextDetectionOutput
+from compass.tools.screen_parser.models import ScreenData
 
 class BaseTextDetector(ABC):
     """Abstract base class for text detection"""
     
     @abstractmethod
-    def detect(self, input_data: TextDetectionInput) -> TextDetectionOutput:
+    def detect(self, screen_data: ScreenData) -> ScreenData:
         """
-        Detect text in the input image
+        Detect text in the input image and return new ScreenData instance
         
         Args:
-            input_data: TextDetectionInput object containing base64 encoded image
+            screen_data: ScreenData object containing image and detection parameters
             
         Returns:
-            TextDetectionOutput object containing detected texts and their locations
+            New ScreenData object containing detected texts
         """
         pass 

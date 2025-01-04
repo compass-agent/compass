@@ -6,7 +6,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electron", {
   platform: process.platform,
   ipcRenderer: {
-    send: (channel, ...args) => {
+    send: (channel, data) => {
       const validChannels = [
         "toggle-fullscreen",
         "close-window",
@@ -15,12 +15,13 @@ contextBridge.exposeInMainWorld("electron", {
         "move-to-bottom-right",
         "show-coordinate-preview",
         "hide-coordinate-preview",
+        "open-template-training",
         "open-file-editor",
         "save-file-content",
         "close-editor-window",
       ];
       if (validChannels.includes(channel)) {
-        ipcRenderer.send(channel, ...args);
+        ipcRenderer.send(channel, data);
       }
     },
     on: (channel, func) => {
@@ -45,7 +46,11 @@ contextBridge.exposeInMainWorld("electron", {
   restoreWindow: () => ipcRenderer.send("restore-window"),
   closeWindow: () => ipcRenderer.send("close-window"),
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
-  toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"),
+  toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"), // Expose toggle function
+  templateTraining: {
+    saveTemplate: (data) => ipcRenderer.send('save-template', data),
+    onTemplateSaved: (callback) => ipcRenderer.on('template-saved', callback),
+  }
 });
 
 // Add coordinate preview API

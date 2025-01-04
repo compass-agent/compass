@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faSearch, faSave } from '@fortawesome/free-solid-svg-icons';
@@ -35,6 +35,16 @@ function TemplateTraining() {
       console.error('Server error:', error);
       setIsAnalyzing(false);
       alert('Error analyzing image: ' + error.message);
+    });
+
+    newSocket.on('template_saved', (response) => {
+      console.log('Template saved successfully:', response);
+      // Optionally show success message to user
+    });
+
+    newSocket.on('template_save_error', (error) => {
+      console.error('Error saving template:', error);
+      alert('Error saving template: ' + error.message);
     });
 
     setSocket(newSocket);
@@ -107,6 +117,226 @@ function TemplateTraining() {
     }));
   };
 
+  // Add this new effect to handle keyboard events
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!selectedBox) return;
+
+      const MOVE_AMOUNT = 1; // pixels to move/resize per keypress
+      const box = boxes[selectedBox] || {
+        x: detections[selectedBox]?.bbox[0] || 0,
+        y: detections[selectedBox]?.bbox[1] || 0,
+        width: (detections[selectedBox]?.bbox[2] - detections[selectedBox]?.bbox[0]) || 0,
+        height: (detections[selectedBox]?.bbox[3] - detections[selectedBox]?.bbox[1]) || 0
+      };
+
+      if (e.shiftKey) {
+        // Move box with Shift + Arrow keys
+        switch (e.key) {
+          case 'ArrowLeft': 
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, x: box.x - MOVE_AMOUNT }}));
+            break;
+          case 'ArrowRight':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, x: box.x + MOVE_AMOUNT }}));
+            break;
+          case 'ArrowUp':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, y: box.y - MOVE_AMOUNT }}));
+            break;
+          case 'ArrowDown':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, y: box.y + MOVE_AMOUNT }}));
+            break;
+        }
+      } else if (e.metaKey) {
+        // Prevent default browser behavior for Cmd + Arrow keys
+        e.preventDefault();
+        
+        // Resize box with Command + Arrow keys
+        switch (e.key) {
+          case 'ArrowLeft':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, width: box.width - MOVE_AMOUNT }}));
+            break;
+          case 'ArrowRight':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, width: box.width + MOVE_AMOUNT }}));
+            break;
+          case 'ArrowUp':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, height: box.height - MOVE_AMOUNT }}));
+            break;
+          case 'ArrowDown':
+            setBoxes(prev => ({ ...prev, [selectedBox]: { ...box, height: box.height + MOVE_AMOUNT }}));
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedBox, boxes, detections]);
+
+  // Add this effect to initialize boxes when detections change
+  useEffect(() => {
+    if (detections && detections.length > 0) {
+      const initialBoxes = {};
+      detections.forEach((detection, index) => {
+        initialBoxes[index] = {
+          x: detection.bbox[0],
+          y: detection.bbox[1],
+          width: detection.bbox[2] - detection.bbox[0],
+          height: detection.bbox[3] - detection.bbox[1]
+        };
+      });
+      setBoxes(initialBoxes);
+    }
+  }, [detections]);
+
+  // Add this effect to update imageSize when image loads
+  useEffect(() => {
+    const imageElement = document.querySelector('.image-container img');
+    if (imageElement) {
+      const updateImageSize = () => {
+        setImageSize({
+          width: imageElement.naturalWidth,
+          height: imageElement.naturalHeight
+        });
+      };
+      imageElement.addEventListener('load', updateImageSize);
+      // In case image is already loaded
+      if (imageElement.complete) {
+        updateImageSize();
+      }
+      return () => imageElement.removeEventListener('load', updateImageSize);
+    }
+  }, []);
+
+  // Add this useEffect to debug
+  useEffect(() => {
+    console.log('Detections:', detections);
+    console.log('Boxes:', boxes);
+    console.log('ImageSize:', imageSize);
+  }, [detections, boxes, imageSize]);
+
+  // Initialize boxes when detections change
+  useEffect(() => {
+    if (!detections) return;
+    
+    const initialBoxes = {};
+    detections.forEach((detection, index) => {
+      if (detection && detection.bbox) {
+        initialBoxes[index] = {
+          x: detection.bbox[0] || 0,
+          y: detection.bbox[1] || 0,
+          width: (detection.bbox[2] - detection.bbox[0]) || 0,
+          height: (detection.bbox[3] - detection.bbox[1]) || 0
+        };
+      }
+    });
+    setBoxes(initialBoxes);
+  }, [detections]);
+
+  // Image size effect
+  useEffect(() => {
+    const imageElement = document.querySelector('.image-container img');
+    if (!imageElement) return;
+
+    const updateImageSize = () => {
+      setImageSize({
+        width: imageElement.naturalWidth || imageElement.offsetWidth,
+        height: imageElement.naturalHeight || imageElement.offsetHeight
+      });
+    };
+
+    imageElement.addEventListener('load', updateImageSize);
+    if (imageElement.complete) {
+      updateImageSize();
+    }
+
+    return () => imageElement.removeEventListener('load', updateImageSize);
+  }, []);
+
+  // Render boxes
+  const renderBoxes = () => {
+    if (!detections || !Array.isArray(detections)) return null;
+
+    return detections.map((detection, index) => {
+      if (!detection || !detection.bbox) return null;
+
+      const imageElement = document.querySelector('.image-container img');
+      if (!imageElement) return null;
+
+      const displayedWidth = imageElement.offsetWidth || 1;
+      const displayedHeight = imageElement.offsetHeight || 1;
+
+      const scaleX = displayedWidth / (imageSize.width || 1);
+      const scaleY = displayedHeight / (imageSize.height || 1);
+
+      const box = boxes[index] || {
+        x: detection.bbox[0] || 0,
+        y: detection.bbox[1] || 0,
+        width: (detection.bbox[2] - detection.bbox[0]) || 0,
+        height: (detection.bbox[3] - detection.bbox[1]) || 0
+      };
+
+      const scaledBox = {
+        x: Math.round(box.x * scaleX),
+        y: Math.round(box.y * scaleY),
+        width: Math.round(box.width * scaleX),
+        height: Math.round(box.height * scaleY)
+      };
+
+      return (
+        <div
+          key={index}
+          className={`detection-box ${selectedBox === index ? 'selected' : ''} ${captions?.[index] ? 'labeled' : ''}`}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: `${scaledBox.width}px`,
+            height: `${scaledBox.height}px`,
+            border: selectedBox === index ? '2px solid #ff0000' : 
+                   captions?.[index] ? '2px solid #0088ff' : 
+                   '2px solid #00ff00',
+            cursor: 'pointer',
+            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+            transform: `translate(${scaledBox.x}px, ${scaledBox.y}px)`
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (typeof handleBoxClick === 'function') {
+              handleBoxClick(index);
+            }
+          }}
+        />
+      );
+    });
+  };
+
+  const handleSaveTemplates = () => {
+    if (!socket || !image) {
+      alert('No connection or image available');
+      return;
+    }
+
+    // Save each captioned box as a template
+    Object.entries(captions).forEach(([boxIndex, caption]) => {
+      const box = boxes[boxIndex];
+      if (!box) return;
+
+      // Convert box coordinates back to original format [x1, y1, x2, y2]
+      const bbox = [
+        box.x,
+        box.y,
+        box.x + box.width,
+        box.y + box.height
+      ];
+
+      socket.emit('save_template', {
+        image: image,
+        caption: caption,
+        bbox: bbox
+      });
+    });
+  };
+
   return (
     <div className="template-training-container">
       <div className="toolbar">
@@ -145,10 +375,10 @@ function TemplateTraining() {
           }}
         />
         <button 
-          onClick={() => {/* Save to backend implementation */}}
+          onClick={handleSaveTemplates}
           disabled={Object.keys(captions).length === 0}
         >
-          Save All Templates
+          <FontAwesomeIcon icon={faSave} /> Save All Templates
         </button>
       </div>
 
@@ -160,56 +390,7 @@ function TemplateTraining() {
               alt="Template"
               onLoad={handleImageLoad}
             />
-            {detections.map((detection, index) => {
-              const imageElement = document.querySelector('.image-container img');
-              const displayedWidth = imageElement ? imageElement.offsetWidth : 0;
-              const displayedHeight = imageElement ? imageElement.offsetHeight : 0;
-
-              const scaleX = displayedWidth / imageSize.width;
-              const scaleY = displayedHeight / imageSize.height;
-
-              const x = Math.round(detection.bbox[0] * scaleX);
-              const y = Math.round(detection.bbox[1] * scaleY);
-              const width = Math.round((detection.bbox[2] - detection.bbox[0]) * scaleX);
-              const height = Math.round((detection.bbox[3] - detection.bbox[1]) * scaleY);
-
-              return (
-                <Draggable
-                  key={index}
-                  defaultPosition={{x, y}}
-                  position={boxes[index] ? boxes[index] : null}
-                  onStop={(e, data) => handleDragStop(index, e, data)}
-                  bounds="parent"
-                >
-                  <div
-                    className={`detection-box ${selectedBox === index ? 'selected' : ''} ${captions[index] ? 'labeled' : ''}`}
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      width: `${width}px`,
-                      height: `${height}px`,
-                      border: selectedBox === index ? '2px solid #ff0000' : 
-                             captions[index] ? '2px solid #0088ff' : 
-                             '2px solid #00ff00',
-                      cursor: 'move',
-                      backgroundColor: 'rgba(0, 255, 0, 0.1)',
-                      transform: `translate(${x}px, ${y}px)`
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBoxClick(index);
-                    }}
-                  >
-                    {captions[index] && (
-                      <div className="caption-label">
-                        {captions[index]}
-                      </div>
-                    )}
-                  </div>
-                </Draggable>
-              );
-            })}
+            {renderBoxes()}
           </div>
         )}
       </div>

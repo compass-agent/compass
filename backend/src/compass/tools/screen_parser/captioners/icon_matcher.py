@@ -7,7 +7,6 @@ import io
 import pickle
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
-import json
 from pathlib import Path
 
 @dataclass
@@ -141,3 +140,12 @@ class IconMatcher:
                 results.append(None)
                 
         return BatchMatchResult(matches=results)
+
+
+"""
+        icon_matcher_config = config['captioning']['claude']['icon_matcher']
+        self.icon_matcher = IconMatcher(
+            similarity_threshold=icon_matcher_config['similarity_threshold']
+        )
+        self.icon_matcher.load_database(icon_matcher_config['database_path'])
+"""

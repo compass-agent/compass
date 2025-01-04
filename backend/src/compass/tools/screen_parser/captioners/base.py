@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .models import CaptioningInput, CaptioningOutput
+from compass.tools.screen_parser.models import ScreenData
 
 class BaseCaptioner(ABC):
     """Abstract base class for image captioning"""
@@ -10,14 +10,14 @@ class BaseCaptioner(ABC):
         pass
     
     @abstractmethod
-    def generate_captions(self, input_data: CaptioningInput) -> CaptioningOutput:
+    def generate_captions(self, screen_data: ScreenData) -> ScreenData:
         """
-        Generate captions for image regions
+        Generate captions for icons in the screen data
         
         Args:
-            input_data: CaptioningInput object containing image and regions
+            screen_data: ScreenData object containing image and detected elements
             
         Returns:
-            CaptioningOutput object containing generated captions
+            Updated ScreenData object with captions added to icon elements
         """
         pass 
