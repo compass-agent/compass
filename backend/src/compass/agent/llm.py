@@ -120,7 +120,7 @@ class LLM:
         self, 
         messages: list[BetaMessageParam]
     ):
-        """Call the LLM API using streaming"""
+        """Call the LLM API without tools and not streaming"""
         try:
             system = get_system_prompt(manual_mode = True, highlight_mode = False)
             messages_updated = self.preprocess_messages(messages)

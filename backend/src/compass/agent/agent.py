@@ -252,7 +252,7 @@ class AgentService:
             if RESPONSE_STREAM_MODE:# Handle streaming response
                 response = self.llm.call_llm_wo_tools_stream(self.messages)
                 full_response = ""
-                async for content_token in response:
+                async for content_token in response: # type: ignore
                     self.state_manager.emit_response({
                         "type": "ai_response_stream",
                         "content": content_token,
