@@ -10,7 +10,7 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 
-from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction
+from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction, FileOperationsTool
 from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
@@ -72,7 +72,9 @@ class AgentService:
 
         self.history_tracker = HistoryLogger()
         self.tool_collection = ToolCollection(
-            ComputerTool(state_manager), SleepAction()
+            ComputerTool(state_manager), 
+            FileOperationsTool(), 
+            SleepAction()
         )
         self.llm = LLM(self.tool_collection.to_params())
 
