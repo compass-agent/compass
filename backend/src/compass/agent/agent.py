@@ -151,10 +151,11 @@ class AgentService:
                     f"Processing iteration {iteration} status {self.state_manager.status}"
                 )
                 response_params = await self._next_step_proposal()
-                self._append_message({"role": "assistant", "content": response_params})
 
                 tool_blocks = [
-                    block for block in response_params if block["type"] == "tool_use"
+                    cast(BetaToolUseBlockParam, block) 
+                    for block in response_params 
+                    if block["type"] == "tool_use"
                 ]
                 if not tool_blocks:
                     break
@@ -175,7 +176,7 @@ class AgentService:
         """Store tool proposals for later execution"""
         for block in response_params:
             if block["type"] == "tool_use":
-                logger.info(f"Tool action: {block['input']}")
+                logger.info(f"Tool action: {block['name']} with input: {block['input']}")
                 self.pending_tool_queue.append(block)
         self.state_manager.set_pending_tools(len(self.pending_tool_queue))
 
@@ -197,8 +198,8 @@ class AgentService:
             logger.info(
                 f"Executing tool: {content_block['name']} with input: {content_block['input']}"
             )
-            # Create and append a tool_use block
-            tool_use_block = {
+            # Properly type the tool_use_block as BetaMessageParam
+            tool_use_block: BetaMessageParam = {
                 "role": "assistant",
                 "content": [
                     {
@@ -216,9 +217,15 @@ class AgentService:
 
             tool_result = _make_api_tool_result(result, content_block["id"])
 
-            if isinstance(tool_result, dict) and tool_result["content"]:
+            # Add type checking for tool_result
+            if (isinstance(tool_result, dict) and 
+                "content" in tool_result and 
+                tool_result["content"]):
                 self._append_message(tool_use_block)
-                self._append_message({"role": "user", "content": [tool_result]})
+                self._append_message({
+                    "role": "user", 
+                    "content": [cast(BetaToolResultBlockParam, tool_result)]
+                })
                 # Emit individual result
                 self.state_manager.emit_response(
                     {"type": "tool_result", "content": tool_result}
@@ -251,8 +258,7 @@ class AgentService:
 
     async def _next_step_proposal(self):
         if self.state_manager.mode == AgentMode.MANUAL:
-            
-            if RESPONSE_STREAM_MODE:# Handle streaming response
+            if RESPONSE_STREAM_MODE:
                 response = self.llm.call_llm_wo_tools_stream(self.messages)
                 full_response = ""
                 async for content_token in response: # type: ignore
@@ -269,18 +275,22 @@ class AgentService:
                     "content": full_response
                 })
                 
-            return [{"type": "text", "text": full_response, "cache_control": None}]
+            response_params = [{"type": "text", "text": full_response, "cache_control": None}]
+            self._append_message({"role": "assistant", "content": response_params}) # type: ignore
+            return response_params
         else:
             # Handle regular response
-            response_params = await self.llm.call_llm_with_tools(
-                self.messages
-            )
+            response_params = await self.llm.call_llm_with_tools(self.messages)
+            text_blocks = []
             for content_block in response_params:
                 if content_block["type"] == "text":
                     self.state_manager.emit_response({
                         "type": "ai_response",
                         "content": content_block["text"]
                     })
+                    text_blocks.append(content_block)
+            if text_blocks:
+                self._append_message({"role": "assistant", "content": text_blocks})
             return response_params
 
     async def stop_processing(self) -> None:
