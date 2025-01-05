@@ -97,9 +97,13 @@ class AgentService:
         logger.info(f"New message received: {message}")
         await self.stop_processing()
 
-        self._append_message(
-            {"role": "user", "content": [{"type": "text", "text": message}]}
-        )
+        # Skip appending empty messages if last message was from user
+        if not message and self.messages and self.messages[-1]["role"] == "user":
+            logger.info("Skipping empty user message since last message was from user")
+        else:
+            self._append_message(
+                {"role": "user", "content": [{"type": "text", "text": message}]}
+            )
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
 
