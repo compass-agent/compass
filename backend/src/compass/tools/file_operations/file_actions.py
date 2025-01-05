@@ -98,27 +98,7 @@ class FileOperationsTool(BaseAnthropicTool):
         except ValueError:
             raise ToolError(f"Access denied: {path} is outside the working directory")
 
-    def _get_directory_tree(self, path: Path, max_depth: int = 3, current_depth: int = 0) -> str:
-        """Generate a tree-like directory structure string up to specified depth"""
-        if not path.exists() or current_depth > max_depth:
-            return ""
-        
-        result = []
-        indent = "  " * current_depth
-        
-        try:
-            for item in sorted(path.iterdir()):
-                if item.is_dir():
-                    result.append(f"{indent}📁 {item.name}/")
-                    if current_depth < max_depth:
-                        result.append(self._get_directory_tree(item, max_depth, current_depth + 1))
-                else:
-                    result.append(f"{indent}📄 {item.name}")
-        except PermissionError:
-            result.append(f"{indent}⚠️ Permission denied")
-        
-        return "\n".join(result)
-
+    # Update method signatures to match the new __call__ parameters
     async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
         """View contents of a file or directory structure"""
         try:
@@ -129,20 +109,29 @@ class FileOperationsTool(BaseAnthropicTool):
                 return ToolResult(error=f"Path not found: {path}")
             
             if path.is_dir():
-                tree = self._get_directory_tree(path)
-                return ToolResult(output=f"Directory structure for {path}:\n\n{tree}")
-            
-            with open(path, 'r') as f:
-                content = f.read()
+                # Show directory structure using tree-like format
+                tree_content = []
+                for root, dirs, files in os.walk(path):
+                    level = root[len(str(path)):].count(os.sep)
+                    indent = "│   " * level
+                    tree_content.append(f"{indent}📁 {os.path.basename(root)}/")
+                    subindent = "│   " * (level + 1)
+                    for f in files:
+                        tree_content.append(f"{subindent}📄 {f}")
                 
-            # Add file size handling
-            if len(content) > MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS:
-                prefix = content[:MAX_PREFIX_CHARS]
-                suffix = content[-MAX_SUFFIX_CHARS:]
-                skipped_chars = len(content) - (MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS)
-                content = f"[Showing first {MAX_PREFIX_CHARS} and last {MAX_SUFFIX_CHARS} characters. Skipping {skipped_chars} characters in the middle...]\n\n{prefix}\n\n[...]\n\n{suffix}"
-                
-            return ToolResult(output=content)
+                return ToolResult(output="\n".join(tree_content))
+            else:
+                # Handle file content as before
+                with open(path, 'r') as f:
+                    content = f.read()
+                    
+                if len(content) > MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS:
+                    prefix = content[:MAX_PREFIX_CHARS]
+                    suffix = content[-MAX_SUFFIX_CHARS:]
+                    skipped_chars = len(content) - (MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS)
+                    content = f"[Showing first {MAX_PREFIX_CHARS} and last {MAX_SUFFIX_CHARS} characters. Skipping {skipped_chars} characters in the middle...]\n\n{prefix}\n\n[...]\n\n{suffix}"
+                    
+                return ToolResult(output=content)
         except Exception as e:
             return ToolResult(error=str(e))
 

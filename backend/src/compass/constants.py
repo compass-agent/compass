@@ -17,7 +17,7 @@ KEEP_SCREENSHOTS = True        # Keep screenshots after use
 # For now, we only set these here. But in the future, we will allow set them in the UI.
 
 # Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
-AGENT_NAME = "Generic" # Or Generic # Generic is the default basic agent
+AGENT_NAME = "Generic" # OpenFoam Or Generic # Generic is the default basic agent
 # Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
 DOCKER_WORKING_DIR = "/home/openfoam/run"

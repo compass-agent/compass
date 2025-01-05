@@ -97,6 +97,13 @@ class WebSocketService {
       this.socket.emit("generate_next_action");
     }
   }
+
+  executeToolAndGenerateAction() {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending execute_tool_and_generate_action");
+      this.socket.emit("execute_tool_and_generate_action");
+    }
+  }
 }
 
 export default new WebSocketService();

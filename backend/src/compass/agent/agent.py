@@ -10,7 +10,7 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 
-from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, CommandTool, ParaViewTool
+from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, ParaViewTool, BashExecutor
 from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
@@ -23,11 +23,16 @@ def _make_api_tool_result(
     result: ToolResult, tool_use_id: str
 ) -> BetaToolResultBlockParam:
     """Convert an agent ToolResult to an API ToolResultBlockParam."""
-    tool_result_content: list[BetaTextBlockParam | BetaImageBlockParam] | str = []
+    tool_result_content: list[BetaTextBlockParam | BetaImageBlockParam] = []
     is_error = False
+    
     if result.error:
         is_error = True
-        tool_result_content = _maybe_prepend_system_tool_result(result, result.error)
+        formatted_error = _maybe_prepend_system_tool_result(result, result.error)
+        tool_result_content = [{
+            "type": "text",
+            "text": formatted_error
+        }]
     else:
         if result.output:
             tool_result_content.append(
@@ -74,7 +79,7 @@ class AgentService:
         self.tool_collection = ToolCollection(
             ComputerTool(state_manager), 
             FileOperationsTool(), 
-            CommandTool(),
+            BashExecutor(),
             ParaViewTool()
         )
         self.llm = LLM(self.tool_collection.to_params())
@@ -227,7 +232,7 @@ class AgentService:
                     "role": "user", 
                     "content": [cast(BetaToolResultBlockParam, tool_result)]
                 })
-                logger.info(f"Emitting tool result: {tool_result}")
+                logger.debug(f"Emitting tool result: {tool_result}")
                 self.state_manager.emit_response({
                     "type": "tool_result",
                     "toolUseId": content_block["id"],
@@ -297,14 +302,20 @@ class AgentService:
                     })
                     text_blocks.append(content_block)
                 elif content_block["type"] == "tool_use":
-                    self.state_manager.emit_response({
-                        "type": "tool_use",
+                    tool_blocks.append({
                         "id": content_block["id"],
                         "name": content_block["name"],
                         "input": content_block["input"]
                     })
-                    tool_blocks.append(content_block)
             
+            # Emit all tool blocks together if there are any
+            if tool_blocks:
+                self.state_manager.emit_response({
+                    "type": "tool_use_group",
+                    "tools": tool_blocks
+                })
+            # log info about what being emitted
+            logger.info(f"Emitting tool use group: {tool_blocks}")
             # Append text blocks to message history if they exist
             if text_blocks:
                 self._append_message({"role": "assistant", "content": text_blocks})

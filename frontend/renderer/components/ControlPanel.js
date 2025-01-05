@@ -45,9 +45,7 @@ function ControlPanel() {
   };
 
   const handleToolsAndNextActionClick = () => {
-
-    WebSocketService.executeNextTool();
-    WebSocketService.generateNextAction();
+    WebSocketService.executeToolAndGenerateAction();
   };
 
   const handlePlayClick = () => {

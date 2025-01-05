@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { FaSearchLocation } from 'react-icons/fa';
 
 function CoordinatePreviewButton({ x, y }) {
   useEffect(() => {
@@ -21,7 +22,7 @@ function CoordinatePreviewButton({ x, y }) {
       className="coordinate-preview-button"
       onClick={handleClick}
     >
-      highlight
+      <FaSearchLocation />
     </button>
   );
 }

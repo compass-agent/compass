@@ -22,7 +22,7 @@ function ChatHistory() {
   const [previewCoord, setPreviewCoord] = useState({ x: 0, y: 0, visible: false });
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
-  console.log('ChatHistory - Current messages:', messages);
+  // console.log('ChatHistory - Current messages:', messages);
   // Add scroll to bottom effect: as the new chat is added
   useEffect(() => {
     if (chatRef.current) {
@@ -103,58 +103,20 @@ function ChatHistory() {
     });
   };
 
-  const renderToolDetails = (tool) => {
-    const action = tool.name || tool.input?.action;
-    
-    if (action === 'mouse_move' && tool.input?.coordinate) {
-      const [x, y] = tool.input.coordinate;
-      return (
-        <div className="tool-details">
-          <div 
-            className="tool-input-value"
-            onMouseEnter={() => setPreviewCoord({ x, y, visible: true })}
-            onMouseLeave={() => setPreviewCoord(prev => ({ ...prev, visible: false }))}
-          >
-            Moving to coordinates: ({x}, {y})
-          </div>
-        </div>
-      );
-    }
-
-    if (action === 'command') {
-      return (
-        <div className="tool-details">
-          <div className="tool-input-label">Environment:</div>
-          <code className="tool-input-value">{tool.input.environment}</code>
-          <div className="tool-input-label">Command:</div>
-          <pre className="tool-command-block">
-            <code>{tool.input.command}</code>
-          </pre>
-        </div>
-      );
-    }
-
-    // For file operations
-    return (
-      <div className="tool-details">
-        {Object.entries(tool.input || {}).map(([key, value]) => (
-          <div key={key}>
-            <div className="tool-input-label">{key}:</div>
-            <pre className="tool-input-value">
-              <code>{value}</code>
-            </pre>
-          </div>
-        ))}
-      </div>
-    );
+  const handleFileClick = (filePath) => {
+    // Send IPC message to main process to open file
+    window.electron.ipcRenderer.send('open-file', filePath);
   };
 
   const renderToolUse = (tool) => {
+    console.log('renderToolUse - Received tool:', tool);
+    
     const toolId = tool.id;
     const toolResult = toolResults.get(toolId);
     const isExpanded = expandedTools.has(toolId);
     
     const action = tool.input?.action || tool.name;
+    console.log('renderToolUse - Looking up action in TOOL_ACTION_MAPPING:', action);
     
     const toolInfo = TOOL_ACTION_MAPPING[action] || { 
       label: 'Unknown Action',
@@ -183,7 +145,15 @@ function ChatHistory() {
             {hasExpandableContent && (
               <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
             )}
-            <span className="tool-label">{labelContent}</span>
+            <span className="tool-label" onClick={(e) => {
+              // Prevent expansion toggle when clicking the file link
+              if (e.target.classList.contains('file-link')) {
+                e.stopPropagation();
+                handleFileClick(tool.input.path);
+              }
+            }}>
+              {labelContent}
+            </span>
           </div>
           <span className="tool-status">
             {toolResult ? (
@@ -216,24 +186,14 @@ function ChatHistory() {
   };
 
   const renderMessage = (msg, agentState) => {
-    console.log('Rendering message:', {
-      type: msg.type,
-      content: msg.content,
-      toolUseId: msg.content?.tool_use_id
-    });
-    console.log('Rendering agentStateMode:', agentState.mode);
-    console.log('Rendering type:', MESSAGE_TYPES.USER, MESSAGE_TYPES.USER === msg.type);
+    console.log('renderMessage - Full message object:', msg);
+    
     switch (msg.type) {
       case MESSAGE_TYPES.USER:
-        if (!msg.text) {
-          return null;
-      }
+        if (!msg.text) return null;
         return (
-          // user-message
           <div className="message user-message">
-            {/* <span className="message-icon">👤</span> */}
-            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content copyable-text" title={ (isAutoMode && agentState.status !== AgentStatus.STOPPED) ? msg.text : ''}>
+            <div className="message-content copyable-text" title={(isAutoMode && agentState.status !== AgentStatus.STOPPED) ? msg.text : ''}>
               {msg.text}
             </div>
           </div>
@@ -245,16 +205,6 @@ function ChatHistory() {
           <div className="message">
             <div className="message-content copyable-text">
               {msg.content}
-              {/* If this message has tool suggestions, render them */}
-              {msg.tools && (
-                <div className="tool-suggestions">
-                  {msg.tools.map((tool, index) => (
-                    <React.Fragment key={tool.id || index}>
-                      {renderToolUse(tool)}
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         );
@@ -263,16 +213,28 @@ function ChatHistory() {
         // Don't render individual stream messages
         return null;
       
-      case MESSAGE_TYPES.TOOL_USE:
-        return renderToolUse(msg);
-      
       case MESSAGE_TYPES.TOOL_RESULT:
         // Don't render tool results as separate messages
         return null;
       
+      case MESSAGE_TYPES.TOOL_USE_GROUP:
+        console.log('renderMessage - Processing tool_use_group:', {
+          tools: msg.tools,
+          content: msg.content
+        });
+        return (
+          <div className="tool-suggestion-group">
+            {(msg.tools || []).map((tool, index) => (
+              <React.Fragment key={tool.id || index}>
+                {renderToolUse(tool)}
+              </React.Fragment>
+            ))}
+          </div>
+        );
+      
       default:
         return (
-          <div className=" message-content copyable-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.text : ''}>
+          <div className="message-content copyable-text" title={isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.text : ''}>
             {msg.text}
           </div>
         );
@@ -280,20 +242,8 @@ function ChatHistory() {
   };
 
   return (
-    //isCollapsed is not applied yet
     <div className='chat-history-container'>
-      {/* <div className="chat-header">
-        <button 
-          className="collapse-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? '▼' : '▲'}
-        </button>
-      </div> */}
-      <div 
-        ref={chatRef}
-        className="chat-history"
-      >
+      <div ref={chatRef} className="chat-history">
         {(isCollapsed ? getRecentMessages() : messages).map((msg, index) => (
           <React.Fragment key={index}>
           {renderMessage(msg, agentState)}
@@ -308,11 +258,13 @@ function ChatHistory() {
           </div>
         )}
       </div>
-      <CoordinatePreview 
-        x={previewCoord.x}
-        y={previewCoord.y}
-        visible={previewCoord.visible}
-      />
+      {previewCoord.visible && (
+        <CoordinatePreview 
+          x={previewCoord.x}
+          y={previewCoord.y}
+          visible={true}
+        />
+      )}
     </div>
   );
 }

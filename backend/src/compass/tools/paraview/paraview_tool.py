@@ -12,22 +12,26 @@ class ParaViewTool(BaseAnthropicTool):
     
     def __init__(self):
         self.working_dir = Path(HOST_WORKING_DIR)
+        # Default ParaView server connection settings
+        self.server_host = "localhost"
+        self.server_port = 11111  # Default ParaView server port
 
     async def __call__(
         self,
         *,
         script: str,
     ) -> ToolResult:
-        """Execute ParaView Python commands"""
+        """Execute ParaView Python commands in the active session"""
         try:
             start_time = time.time()
             
             # Create a temporary Python script file
             script_path = self.working_dir / ".temp_paraview_script.py"
             
-            # Add necessary imports
+            # Add necessary imports and server connection
             full_script = (
                 "from paraview.simple import *\n"
+                f"Connect('{self.server_host}:{self.server_port}')\n"
                 f"{script}\n"
             )
             

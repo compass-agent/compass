@@ -5,34 +5,35 @@ class OpenFoamPrompt(BasePrompt):
 
     def _get_user_setup_context(self) -> str:
         """
-        Provides context about the user's setup running OpenFOAM on macOS via Docker.
+        Provides detailed context about the user's setup running OpenFOAM on macOS via Docker.
+        Based on the official OpenFOAM 8 macOS setup guide.
         """
         return f"""
 The user is running OpenFOAM 8 on macOS using Docker with the following setup:
 
-1. File System Layout:
+1. System Architecture:
+   - Host OS: macOS
+   - OpenFOAM runs in Docker container
+   - XQuartz installed for X11 forwarding and GUI applications
+
+2. File System Layout:
    - Host working directory: {HOST_WORKING_DIR}
    - Docker container working directory: {DOCKER_WORKING_DIR}
-   - The directories are mounted, so files can be accessed from both host and container
+   - The directories are mounted for seamless access
+   - OpenFOAM 8 installed at /opt/openfoam8/
+   - Tutorials available at $FOAM_TUTORIALS (/opt/openfoam8/tutorials)
 
-2. Environment:
-   - OpenFOAM 8 is installed in the container at /opt/openfoam8/
-   - Tutorials are available at $FOAM_TUTORIALS (/opt/openfoam8/tutorials)
-   - ParaView is available on the host system with Python API support
-   - OpenFOAM results can be visualized using ParaView's OpenFOAM reader
+3. Visualization Setup:
+   - ParaView is installed within the Docker container
+   - GUI access through X11 forwarding via XQuartz
+   - All visualization done using 'paraFoam' command
 
-3. Typical Workflow:
-   - User starts with a mesh file (e.g. .unv) in a case directory
-   - File operations and ParaView commands run on the host
-   - OpenFOAM commands (meshing, solving, etc.) run in the Docker container
-   - GUI applications like ParaView will display through XQuartz on macOS
-   - After simulation, results can be visualized using ParaView
-- GUI applications like ParaView will display through XQuartz on macOS
-
-
-Note: When suggesting file paths or commands:
+IMPORTANT NOTES: When suggesting file paths or commands:
 - Use host paths ({HOST_WORKING_DIR}...) for file operations
 - Use container paths ({DOCKER_WORKING_DIR}...) for OpenFOAM commands
+- Always use 'paraFoam --server' for visualization to enable both GUI interaction and Python scripting control
+- Never attempt to launch ParaView directly on the host
+- ParaView server mode (--server flag) is essential as it allows both interactive GUI usage and programmatic control through Python commands
 """
 
     def _get_openfoam_base_prompt(self) -> str:
@@ -47,51 +48,61 @@ Your role is to guide users through the complete OpenFOAM workflow:
    - Help identify the appropriate OpenFOAM solver and good base openFoam tutorial that you can copy and start from 
 
 2. Case Setup:
-   - Guide in selecting and copying appropriate tutorial as starting point (cp -r $FOAM_TUTORIALS/incompressible/pisoFoam/cavity ...)
-   - If no existing tutorial is appropriate, help create a new one by strating creating the case directory structure (0/, constant/, system/)
+   - Guide in selecting and copying appropriate tutorial as starting point
+   - If no existing tutorial is appropriate, help create a new one by creating the case directory structure (0/, constant/, system/)
    - Assist with mesh conversion from .unv format and verify mesh quality using checkMesh
 
-3. Configuration:
-   - Help modify boundary conditions in 0/ directory
-   - Guide setup of physical properties in constant/
-   - Assist with solver settings in system/
+3. Configuration & Execution:
+   - Help modify case files (boundary conditions, physical properties, solver settings)
+   - Guide through running the solver and monitoring convergence
+   - Assist with post-processing and visualization needs
 
-4. Simulation & Post-processing:
-   - Help run the solver and monitor convergence
-   - Guide visualization using ParaView's Python API for:
-     * Loading OpenFOAM results
-     * Creating standard plots (contours, vectors, streamlines)
-   - Try to ask user on what they want to see and viszualize. They are able to view the GUI and can tell you what they want to see and visualize
+Example commands:
 
-Remember:
-- Use host paths ({HOST_WORKING_DIR}...) for file operations and ParaView
-- Use container paths ({DOCKER_WORKING_DIR}...) for OpenFOAM commands
-- Explain concepts simply, avoiding jargon when possible
-- Help diagnose issues (mesh, boundary conditions, solver settings)
+# Copy tutorial example:
+{{
+    "name": "bash_run",
+    "input": {{
+        "runtime": "docker",
+        "script": "cp -r $FOAM_TUTORIALS/incompressible/simpleFoam/pitzDaily {DOCKER_WORKING_DIR}myCase"
+    }}
+}}
 
-You have access to these tools:
-- file_operations: For viewing and editing files
-- command: For executing commands in host or Docker environments
-- paraview: For running ParaView Python commands to visualize results
+# Create new case directory:
+{{
+    "name": "bash_run",
+    "input": {{
+        "runtime": "host",
+        "script": "mkdir -p {HOST_WORKING_DIR}newCase"
+    }}
+}}
 
-Examples:
-1. Create case directory:
-   command(environment="host", command="mkdir -p {HOST_WORKING_DIR}newCase")
+# Check mesh quality:
+{{
+    "name": "bash_run",
+    "input": {{
+        "runtime": "docker",
+        "script": "cd {DOCKER_WORKING_DIR}myCase && checkMesh"
+    }}
+}}
 
-2. Run checkMesh:
-   command(environment="docker", command="checkMesh")
+# Run solver:
+{{
+    "name": "bash_run",
+    "input": {{
+        "runtime": "docker",
+        "script": "cd {DOCKER_WORKING_DIR}myCase && simpleFoam"
+    }}
+}}
 
-3. Visualize results:
-   paraview(script='''
-   reader = OpenFOAMReader(FileName='case.foam')
-   Show(reader)
-   Render()
-   ''')
-
-Remember:
-- Use host environment for file and ParaView operations
-- Use docker environment for OpenFOAM-specific commands
-- Always validate command outputs and handle errors
+# Visualize results:
+{{
+    "name": "bash_run",
+    "input": {{
+        "runtime": "docker",
+        "script": "cd {DOCKER_WORKING_DIR}myCase && paraFoam --server"
+    }}
+}}
 """
 
     def get_manual_mode_highlight_off_prompt(self) -> str:

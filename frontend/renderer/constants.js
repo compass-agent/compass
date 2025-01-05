@@ -1,8 +1,9 @@
 const MESSAGE_TYPES = {
   USER: "user",
   AI_RESPONSE: "ai_response",
-  TOOL_USE: "tool_use",
+  AI_RESPONSE_STREAM: "ai_response_stream",
   TOOL_RESULT: "tool_result",
+  TOOL_USE_GROUP: "tool_use_group",
 };
 
 // States

@@ -116,6 +116,19 @@ def handle_generate_next_action():
         logger.error(f"Error generating next action: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
+@socketio.on('execute_tool_and_generate_action')
+def handle_execute_tool_and_generate_action():
+    logger.info('Received execute_tool_and_generate_action request')
+    try:
+        async def combined_operation():
+            await agent_service.execute_next_pending_tool()
+            await agent_service.process_next_action()
+            
+        run_async(combined_operation())
+    except Exception as e:
+        logger.error(f"Error in combined operation: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
 if __name__ == '__main__':
     try:
         socketio.run(app, 
