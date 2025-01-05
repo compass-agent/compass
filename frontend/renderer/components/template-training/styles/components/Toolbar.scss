@@ -1,0 +1,36 @@
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #333;
+
+  input[type="text"] {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #e0e0e0;
+  }
+
+  button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    background-color: #444;
+    color: #e0e0e0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover {
+      background-color: #555;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+} 
