@@ -1,3 +1,5 @@
+import os
+
 RESPONSE_STREAM_MODE  =  False # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
 MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
 MODEL_NAME_AUTO  =  "claude-3-5-sonnet-latest"
@@ -21,7 +23,13 @@ AGENT_NAME = "Generic" # OpenFoam Or Generic # Generic is the default basic agen
 # Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
 DOCKER_WORKING_DIR = "/home/openfoam/run"
-HOST_WORKING_DIR = "/Users/kazem/openfoam/run/"
+
+# Get the current user's home directory
+HOME_DIR = os.path.expanduser("~")
+print(f"Home directory: {HOME_DIR}")
+
+HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
+# HOST_WORKING_DIR = "/Users/kazem/openfoam/run/"
 
 # Screenshot configuration
 PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent

@@ -6,6 +6,8 @@ import asyncio
 import logging
 from ...constants import DOCKER_CONTAINER_NAME, DOCKER_WORKING_DIR
 import subprocess
+import platform
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +19,16 @@ class BashExecutor(BaseAnthropicTool):
         self.container_working_dir = Path(DOCKER_WORKING_DIR)
         # Get host IP for X11 forwarding
         try:
-            self.host_ip = subprocess.check_output(
-                "ifconfig en0 | grep inet | awk '$1==\"inet\" {print $2}'", 
-                shell=True
+            if platform.system() == "Darwin":  # macOS
+                command = "ifconfig en0 | grep inet | awk '$1==\"inet\" {print $2}'"
+            elif platform.system() == "Linux":  # Linux
+                command = "hostname -I | awk '{print $1}'"
+            elif platform.system() == "Windows":  # Windows
+                command = "ipconfig | findstr \"IPv4\" | findstr \"192.168.0.\" | awk -F \": \" '{print $2}'"
+            else:
+                raise ValueError("Unsupported operating system")
+            self.host_ip = subprocess.check_output(command, 
+            shell=True
             ).decode().strip()
             # Set up X11 permissions
             subprocess.run(f"xhost + {self.host_ip}", shell=True)
