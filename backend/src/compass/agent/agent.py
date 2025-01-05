@@ -10,7 +10,7 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 
-from compass.tools import ComputerTool, ToolCollection, ToolResult, SleepAction, FileOperationsTool
+from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, CommandTool, ParaViewTool
 from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
@@ -74,7 +74,8 @@ class AgentService:
         self.tool_collection = ToolCollection(
             ComputerTool(state_manager), 
             FileOperationsTool(), 
-            SleepAction()
+            CommandTool(),
+            ParaViewTool()
         )
         self.llm = LLM(self.tool_collection.to_params())
 
@@ -98,7 +99,7 @@ class AgentService:
         await self.stop_processing()
 
         # Skip appending empty messages if last message was from user
-        if not message and self.messages and self.messages[-1]["role"] == "user":
+        if not message:
             logger.info("Skipping empty user message since last message was from user")
         else:
             self._append_message(
@@ -195,10 +196,7 @@ class AgentService:
             logger.info(
                 f"Expected to execute tool: {content_block['name']} with input: {content_block['input']}"
             )
-        for content_block in tool_blocks:
-            self.state_manager.emit_response(
-                {"type": "tool_use", "parameters": content_block["input"]}
-            )
+        for content_block in tool_blocks: 
             logger.info(
                 f"Executing tool: {content_block['name']} with input: {content_block['input']}"
             )
@@ -223,17 +221,19 @@ class AgentService:
 
             # Add type checking for tool_result
             if (isinstance(tool_result, dict) and 
-                "content" in tool_result and 
-                tool_result["content"]):
+                "content" in tool_result):
                 self._append_message(tool_use_block)
                 self._append_message({
                     "role": "user", 
                     "content": [cast(BetaToolResultBlockParam, tool_result)]
                 })
-                # Emit individual result
-                self.state_manager.emit_response(
-                    {"type": "tool_result", "content": tool_result}
-                )
+                logger.info(f"Emitting tool result: {tool_result}")
+                self.state_manager.emit_response({
+                    "type": "tool_result",
+                    "toolUseId": content_block["id"],
+                    "content": tool_result["content"],
+                    "isError": tool_result["is_error"]
+                })
 
         return
 
@@ -286,6 +286,9 @@ class AgentService:
             # Handle regular response
             response_params = await self.llm.call_llm_with_tools(self.messages)
             text_blocks = []
+            tool_blocks = []
+            
+            # Separate text and tool blocks
             for content_block in response_params:
                 if content_block["type"] == "text":
                     self.state_manager.emit_response({
@@ -293,8 +296,19 @@ class AgentService:
                         "content": content_block["text"]
                     })
                     text_blocks.append(content_block)
+                elif content_block["type"] == "tool_use":
+                    self.state_manager.emit_response({
+                        "type": "tool_use",
+                        "id": content_block["id"],
+                        "name": content_block["name"],
+                        "input": content_block["input"]
+                    })
+                    tool_blocks.append(content_block)
+            
+            # Append text blocks to message history if they exist
             if text_blocks:
                 self._append_message({"role": "assistant", "content": text_blocks})
+            
             return response_params
 
     async def stop_processing(self) -> None:

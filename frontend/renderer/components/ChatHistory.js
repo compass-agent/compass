@@ -4,13 +4,10 @@ import '../styles/ChatHistory.scss';
 import { MESSAGE_TYPES } from '../constants';
 import { faSpinner  } from '@fortawesome/free-solid-svg-icons';
 import { AgentStatus, AgentMode } from '../constants';
-
-const TOOL_ACTION_MAPPING = {
-  screenshot: { icon: '📸', text: 'Taking screenshot...' },
-  click: { icon: '🖱️', text: 'Clicking element' },
-  type: { icon: '⌨️', text: 'Typing text' },
-  // Add more mappings as needed
-};
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faTimes, faClock } from '@fortawesome/free-solid-svg-icons';
+import { TOOL_ACTION_MAPPING } from '../constants/toolActionMappings';
+import CoordinatePreview from './preview/components/CoordinatePreview';
 
 function ChatHistory() {
   const { state } = useAppState();
@@ -20,6 +17,9 @@ function ChatHistory() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const isAutoMode = agentState.mode === AgentMode.AUTO;
+  const [toolResults, setToolResults] = useState(new Map()); // Store tool results by ID
+  const [expandedTools, setExpandedTools] = useState(new Set());
+  const [previewCoord, setPreviewCoord] = useState({ x: 0, y: 0, visible: false });
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
   console.log('ChatHistory - Current messages:', messages);
@@ -44,6 +44,37 @@ function ChatHistory() {
     }
   }, [messages]);
 
+  // Add logging to tool results effect
+  useEffect(() => {
+    console.log('Tool Results Effect - Current toolResults:', toolResults);
+    console.log('Tool Results Effect - Processing messages:', messages);
+    
+    const newToolResults = new Map(toolResults);
+    messages.forEach(msg => {
+      console.log('Processing message:', msg);
+      if (msg.type === MESSAGE_TYPES.TOOL_RESULT) {
+        console.log('Raw tool result message:', msg);
+        console.log('Tool result content:', msg.content);
+        console.log('Tool use ID:', msg.toolUseId);
+        
+        if (msg.toolUseId) {
+          console.log('Setting tool result for ID:', msg.toolUseId);
+          newToolResults.set(msg.toolUseId, {
+            isError: msg.isError,
+            result: msg.content
+          });
+        } else {
+          console.warn('Tool result message missing toolUseId:', msg);
+        }
+      }
+    });
+    
+    if (newToolResults.size !== toolResults.size) {
+      console.log('Updating tool results:', Object.fromEntries(newToolResults));
+      setToolResults(newToolResults);
+    }
+  }, [messages]);
+
   // Add the missing getRecentMessages function
   const getRecentMessages = () => {
     if (!messages.length) return [];
@@ -60,8 +91,136 @@ function ChatHistory() {
     return messages.slice(-(lastAiIndex + 1));
   };
 
+  const toggleToolExpansion = (toolId) => {
+    setExpandedTools(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(toolId)) {
+        newSet.delete(toolId);
+      } else {
+        newSet.add(toolId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderToolDetails = (tool) => {
+    const action = tool.name || tool.input?.action;
+    
+    if (action === 'mouse_move' && tool.input?.coordinate) {
+      const [x, y] = tool.input.coordinate;
+      return (
+        <div className="tool-details">
+          <div 
+            className="tool-input-value"
+            onMouseEnter={() => setPreviewCoord({ x, y, visible: true })}
+            onMouseLeave={() => setPreviewCoord(prev => ({ ...prev, visible: false }))}
+          >
+            Moving to coordinates: ({x}, {y})
+          </div>
+        </div>
+      );
+    }
+
+    if (action === 'command') {
+      return (
+        <div className="tool-details">
+          <div className="tool-input-label">Environment:</div>
+          <code className="tool-input-value">{tool.input.environment}</code>
+          <div className="tool-input-label">Command:</div>
+          <pre className="tool-command-block">
+            <code>{tool.input.command}</code>
+          </pre>
+        </div>
+      );
+    }
+
+    // For file operations
+    return (
+      <div className="tool-details">
+        {Object.entries(tool.input || {}).map(([key, value]) => (
+          <div key={key}>
+            <div className="tool-input-label">{key}:</div>
+            <pre className="tool-input-value">
+              <code>{value}</code>
+            </pre>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderToolUse = (tool) => {
+    const toolId = tool.id;
+    const toolResult = toolResults.get(toolId);
+    const isExpanded = expandedTools.has(toolId);
+    
+    const action = tool.input?.action || tool.name;
+    
+    const toolInfo = TOOL_ACTION_MAPPING[action] || { 
+      label: 'Unknown Action',
+      description: () => 'Performing action'
+    };
+
+    const labelContent = typeof toolInfo.label === 'function' 
+      ? toolInfo.label(tool)
+      : toolInfo.label;
+
+    const description = toolInfo.description(tool);
+    const hasExpandableContent = description && (
+      description.text || 
+      description.component || 
+      (typeof description === 'string' && description.length > 0)
+    );
+    
+    return (
+      <div className="tool-suggestion">
+        <div 
+          className="tool-header" 
+          onClick={() => hasExpandableContent && toggleToolExpansion(toolId)}
+          style={{ cursor: hasExpandableContent ? 'pointer' : 'default' }}
+        >
+          <div className="tool-header-content">
+            {hasExpandableContent && (
+              <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+            )}
+            <span className="tool-label">{labelContent}</span>
+          </div>
+          <span className="tool-status">
+            {toolResult ? (
+              toolResult.isError ? (
+                <FontAwesomeIcon icon={faTimes} className="error" />
+              ) : (
+                <FontAwesomeIcon icon={faCheck} className="success" />
+              )
+            ) : (
+              <FontAwesomeIcon icon={faClock} className="pending" />
+            )}
+          </span>
+        </div>
+        {isExpanded && hasExpandableContent && (
+          <div className="tool-details">
+            <div className="tool-input-value">
+              {typeof description === 'object' ? (
+                <>
+                  {description.text}
+                  {description.component}
+                </>
+              ) : (
+                description
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMessage = (msg, agentState) => {
-    console.log('Rendering message:', msg);
+    console.log('Rendering message:', {
+      type: msg.type,
+      content: msg.content,
+      toolUseId: msg.content?.tool_use_id
+    });
     console.log('Rendering agentStateMode:', agentState.mode);
     console.log('Rendering type:', MESSAGE_TYPES.USER, MESSAGE_TYPES.USER === msg.type);
     switch (msg.type) {
@@ -81,13 +240,21 @@ function ChatHistory() {
         );
 
       case MESSAGE_TYPES.AI_RESPONSE:
-        if (!msg.content) {
-          return null;
-        }
+        if (!msg.content) return null;
         return (
           <div className="message">
-            <div className="message-content copyable-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.content : ''}>
-            {msg.content}
+            <div className="message-content copyable-text">
+              {msg.content}
+              {/* If this message has tool suggestions, render them */}
+              {msg.tools && (
+                <div className="tool-suggestions">
+                  {msg.tools.map((tool, index) => (
+                    <React.Fragment key={tool.id || index}>
+                      {renderToolUse(tool)}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -97,44 +264,11 @@ function ChatHistory() {
         return null;
       
       case MESSAGE_TYPES.TOOL_USE:
-        const action = msg.parameters?.action;
-        const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action ...' };
-        if (!mapping.text) {
-          return null;
-      }
-        return (
-          //tool-use
-          <div className="message">
-            {/* <span className="message-icon">{mapping.icon}</span> */}
-            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content copyable-text">
-              {/* why tool-text? */}
-              <span className="tool-text" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? mapping.text : ''}>{mapping.text}</span>
-            </div>
-          </div>
-        );
+        return renderToolUse(msg);
       
       case MESSAGE_TYPES.TOOL_RESULT:
-        if (!msg.error && !msg.output) {
-          return null;
-      }
-        return (
-          //tool-result
-          <div className="message">
-            {/* <span className="message-icon">📊</span> */}
-            {/* <FontAwesomeIcon icon={faSpinner}  spin  /> */}
-            <div className="message-content copyable-text">
-              {msg.error ? (
-                <div className="tool-error" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.error : ''}>{msg.error}</div>
-              ) : (
-                <>
-                  {msg.output && <div className="tool-output" title={ isAutoMode && agentState.status !== AgentStatus.STOPPED ? msg.output : ''}>{msg.output}</div>}
-                  {msg.has_image && <div className="tool-image-placeholder">[Image]</div>}
-                </>
-              )}
-            </div>
-          </div>
-        );
+        // Don't render tool results as separate messages
+        return null;
       
       default:
         return (
@@ -143,18 +277,6 @@ function ChatHistory() {
           </div>
         );
     }
-  };
-//TODO KAZEM => Is there any Usage?
-  const renderToolAction = (parameters) => {
-    const action = parameters.action;
-    const mapping = TOOL_ACTION_MAPPING[action] || { icon: '🔧', text: 'Performing action' };
-    
-    return (
-      <div className="tool-action">
-        <span className="tool-icon">{mapping.icon}</span>
-        <span className="tool-text">{mapping.text}</span>
-      </div>
-    );
   };
 
   return (
@@ -186,6 +308,11 @@ function ChatHistory() {
           </div>
         )}
       </div>
+      <CoordinatePreview 
+        x={previewCoord.x}
+        y={previewCoord.y}
+        visible={previewCoord.visible}
+      />
     </div>
   );
 }

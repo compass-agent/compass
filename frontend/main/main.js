@@ -4,6 +4,7 @@ const {
   default: installExtension,
   REACT_DEVELOPER_TOOLS,
 } = require("electron-devtools-installer");
+const { handleCoordinatePreview } = require('./coordinatePreview');
 
 require("dotenv").config();
 
@@ -15,6 +16,8 @@ const WINDOW_CONFIG = {
 };
 
 let mainWindow;
+let previewWindow = null;
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: WINDOW_CONFIG.WIDTH,
@@ -55,9 +58,15 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  handleCoordinatePreview(ipcMain);
+});
 
 app.on("window-all-closed", () => {
+  if (previewWindow) {
+    previewWindow = null;
+  }
   if (process.platform !== "darwin") {
     app.quit();
   }

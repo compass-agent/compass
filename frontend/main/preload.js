@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("electron", {
         "minimize-window",
         "maximize-window",
         "move-to-bottom-right",
+        "show-coordinate-preview",
+        "hide-coordinate-preview"
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.send(channel, ...args);
@@ -35,4 +37,10 @@ contextBridge.exposeInMainWorld("electron", {
   closeWindow: () => ipcRenderer.send("close-window"),
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
   toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"), // Expose toggle function
+});
+
+// Add coordinate preview API
+contextBridge.exposeInMainWorld('coordinatePreview', {
+  showPreview: (x, y) => ipcRenderer.send('show-coordinate-preview', { x, y }),
+  hidePreview: () => ipcRenderer.send('hide-coordinate-preview')
 });

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, get_args
+from typing import Literal, get_args
 from collections import defaultdict
 import os
 from pathlib import Path
@@ -15,6 +15,9 @@ Command = Literal[
     "undo_edit",
 ]
 
+MAX_PREFIX_CHARS = 10000
+MAX_SUFFIX_CHARS = 1000
+
 @dataclass
 class FileState:
     """Tracks the state of a file for undo operations"""
@@ -28,6 +31,8 @@ class FileOperationsTool(BaseAnthropicTool):
     def __init__(self):
         self._file_history = defaultdict(list)
         self.base_path = Path(HOST_WORKING_DIR)
+        # Create base directory if it doesn't exist
+        os.makedirs(self.base_path, exist_ok=True)
 
     async def __call__(
         self,
@@ -74,26 +79,69 @@ class FileOperationsTool(BaseAnthropicTool):
         if not path.is_absolute():
             path = self.base_path / path
             
-        if not path.exists() and command != "create":
+        # Special handling for create command
+        if command == "create":
+            if path.exists():
+                raise ToolError(f"File already exists at: {path}. Cannot overwrite files using command `create`.")
+            # Ensure parent directory exists
+            os.makedirs(path.parent, exist_ok=True)
+            return
+
+        if not path.exists():
             raise ToolError(f"The path {path} does not exist. Please provide a valid path.")
-        if path.exists() and command == "create":
-            raise ToolError(f"File already exists at: {path}. Cannot overwrite files using command `create`.")
         if path.is_dir() and command != "view":
             raise ToolError(f"The path {path} is a directory and only the `view` command can be used on directories")
 
-    # Update method signatures to match the new __call__ parameters
-    async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
-        """View contents of a file"""
+        # Ensure the path is within the allowed working directory
         try:
-            # Convert relative paths to absolute
+            path.relative_to(self.base_path)
+        except ValueError:
+            raise ToolError(f"Access denied: {path} is outside the working directory")
+
+    def _get_directory_tree(self, path: Path, max_depth: int = 3, current_depth: int = 0) -> str:
+        """Generate a tree-like directory structure string up to specified depth"""
+        if not path.exists() or current_depth > max_depth:
+            return ""
+        
+        result = []
+        indent = "  " * current_depth
+        
+        try:
+            for item in sorted(path.iterdir()):
+                if item.is_dir():
+                    result.append(f"{indent}📁 {item.name}/")
+                    if current_depth < max_depth:
+                        result.append(self._get_directory_tree(item, max_depth, current_depth + 1))
+                else:
+                    result.append(f"{indent}📄 {item.name}")
+        except PermissionError:
+            result.append(f"{indent}⚠️ Permission denied")
+        
+        return "\n".join(result)
+
+    async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
+        """View contents of a file or directory structure"""
+        try:
             if not path.is_absolute():
                 path = self.base_path / path
                 
             if not path.exists():
-                return ToolResult(error=f"File not found: {path}")
+                return ToolResult(error=f"Path not found: {path}")
+            
+            if path.is_dir():
+                tree = self._get_directory_tree(path)
+                return ToolResult(output=f"Directory structure for {path}:\n\n{tree}")
             
             with open(path, 'r') as f:
                 content = f.read()
+                
+            # Add file size handling
+            if len(content) > MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS:
+                prefix = content[:MAX_PREFIX_CHARS]
+                suffix = content[-MAX_SUFFIX_CHARS:]
+                skipped_chars = len(content) - (MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS)
+                content = f"[Showing first {MAX_PREFIX_CHARS} and last {MAX_SUFFIX_CHARS} characters. Skipping {skipped_chars} characters in the middle...]\n\n{prefix}\n\n[...]\n\n{suffix}"
+                
             return ToolResult(output=content)
         except Exception as e:
             return ToolResult(error=str(e))

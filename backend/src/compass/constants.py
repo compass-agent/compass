@@ -11,9 +11,17 @@ PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 SCREENSHOT_SCALE_FACTOR = 0.7  # Reduce resolution by 50%
 SCREENSHOT_COLOR_DEPTH = 8     # 8-bit color depth (256 colors)
 KEEP_SCREENSHOTS = True        # Keep screenshots after use
-PRE_RUN_SCREENSHOTS = False    # Take screenshots before running the agent
 
-# Docker and OpenFOAM configuration
+
+## PARAMETERS SET  BY USER
+# For now, we only set these here. But in the future, we will allow set them in the UI.
+
+# Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
+AGENT_NAME = "Generic" # Or Generic # Generic is the default basic agent
+# Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
-DOCKER_WORKING_DIR = "/home/openfoam/run/pitzDaily"
-HOST_WORKING_DIR = "/Users/kazem/openfoam/run/pitzDaily"
+DOCKER_WORKING_DIR = "/home/openfoam/run"
+HOST_WORKING_DIR = "/Users/kazem/openfoam/run/"
+
+# Screenshot configuration
+PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent

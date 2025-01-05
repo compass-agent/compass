@@ -15,7 +15,7 @@ from anthropic.types.beta import (
 )
 
 from compass.key import ANTHROPIC_API_KEY
-from compass.agent.prompt import get_system_prompt
+from compass.agent.prompt import get_prompt_handler
 from compass.utils.utility import TokenTracker
 from compass.constants import (
     MODEL_NAME_MANUAL,
@@ -23,7 +23,8 @@ from compass.constants import (
     MAX_TOKENS,
     PROMPT_CACHING,
     COMPUTER_USE_BETA_FLAG,
-    PROMPT_CACHING_BETA_FLAG
+    PROMPT_CACHING_BETA_FLAG,
+    AGENT_NAME
 )
 from compass.utils.utility import log_execution_time
 
@@ -46,6 +47,7 @@ class LLM:
     def __init__(self, tools_params):
         self.token_tracker = TokenTracker()
         self.tools_params = tools_params
+        self.prompt_handler = get_prompt_handler(AGENT_NAME)
         logger.info(f"Tools params: {self.tools_params}")
         self.betas = [COMPUTER_USE_BETA_FLAG] + ([PROMPT_CACHING_BETA_FLAG] if PROMPT_CACHING else [])
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
@@ -88,7 +90,7 @@ class LLM:
     ) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
         """Call the LLM API using beta tools API"""
         try:
-            system = get_system_prompt(manual_mode = False, highlight_mode = False)
+            system = self.prompt_handler.get_system_prompt(manual_mode=False, highlight_mode=False)
             messages = self._remove_old_screenshots(
                 messages,
                 SCREENSHOT_KEEP_COUNT,
@@ -122,7 +124,7 @@ class LLM:
     ):
         """Call the LLM API without tools and not streaming"""
         try:
-            system = get_system_prompt(manual_mode = True, highlight_mode = False)
+            system = self.prompt_handler.get_system_prompt(manual_mode=True, highlight_mode=False)
             messages_updated = self.preprocess_messages(messages)
 
             raw_response = self.client.messages.create(
@@ -144,7 +146,7 @@ class LLM:
     ) -> AsyncGenerator[str, None] | str:
         """Call the LLM API using streaming"""
         try:
-            system = get_system_prompt(manual_mode = True, highlight_mode = False)
+            system = self.prompt_handler.get_system_prompt(manual_mode=True, highlight_mode=False)
             messages_updated = self.preprocess_messages(messages)
             with self.client.messages.stream(
                 max_tokens=MAX_TOKENS,
