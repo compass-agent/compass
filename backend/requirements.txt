@@ -6,3 +6,4 @@ flask
 flask_socketio
 pyautogui
 google-genai
+sqlalchemy

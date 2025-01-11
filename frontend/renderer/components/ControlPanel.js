@@ -32,6 +32,8 @@ function ControlPanel() {
   const [mode, setMode] = useState(MODES.MANUAL.mode);
   const isAutoMode = agentState.mode === AgentMode.AUTO;
 
+  // Comment out or remove this entire useEffect
+  /*
   useEffect(() => {
     console.log("ControlPanel - Agent state updated:", {
       status: agentState.status,
@@ -39,6 +41,7 @@ function ControlPanel() {
     });
     hanldeFullscrenToggle(isAutoMode);
   }, [agentState.status, chat.currentInput]);
+  */
 
   const handleToolsClick = () => {
     WebSocketService.executeNextTool();
@@ -172,11 +175,11 @@ function ControlPanel() {
     } else if (mode === MODES.SEMI_AUTO.mode) {
       setMode(MODES.AUTO.mode);
       setAgentMode(AgentMode.AUTO);
-      hanldeFullscrenToggle(true);
+      // hanldeFullscrenToggle(true); # TODO: fix this. Currently this not working properly in Mac. 
     } else if (MODES.AUTO.mode) {
       setMode(MODES.MANUAL.mode)
       setAgentMode(AgentMode.MANUAL);
-      hanldeFullscrenToggle(false);
+      // hanldeFullscrenToggle(false);
     }
     console.log(
       "ControlPanel: handleMode: - mode: ",

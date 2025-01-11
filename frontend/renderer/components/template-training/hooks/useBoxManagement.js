@@ -113,6 +113,10 @@ export const useBoxManagement = (detections) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.target.tagName.toLowerCase() === 'input') {
+        return;
+      }
+
       if (selectedBox === null) return;
 
       const STEP = e.shiftKey ? 10 : 1;

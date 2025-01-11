@@ -1,13 +1,11 @@
 import logging
-from pathlib import Path
-import pandas as pd
 import base64
-from typing import Dict, List, Tuple
+from typing import Dict, List
 import numpy as np
 import cv2
 from compass.tools.screen_parser.detectors.icon.yolo_detector import YOLOIconDetector
 from compass.tools.screen_parser.models import ScreenData
-from compass.constants import TEMPLATE_DATABASE_PATH
+from compass.database.models import Session, Template
 
 logger = logging.getLogger(__name__)
 
@@ -15,18 +13,7 @@ class TrainingAgent:
     def __init__(self):
         """Initialize training agent with YOLO detector"""
         self.detector = YOLOIconDetector()
-        self.database_path = Path(__file__).parent.parent / TEMPLATE_DATABASE_PATH
-        self._ensure_database_exists()
         
-    def _ensure_database_exists(self):
-        """Create database file if it doesn't exist"""
-        if not self.database_path.exists():
-            self.database_path.parent.mkdir(parents=True, exist_ok=True)
-            pd.DataFrame(columns=['base64_image', 'caption']).to_csv(
-                self.database_path, index=False
-            )
-            logger.info(f"Created new template database at {self.database_path}")
-    
     def process_screenshot(self, image_data: str) -> Dict:
         """
         Process screenshot using YOLO detector
@@ -37,13 +24,9 @@ class TrainingAgent:
         Returns:
             Dict containing detected regions
         """
-        # Create ScreenData object from base64 image
         screen_data = ScreenData(image_data=image_data)
-        
-        # Run YOLO detection
         result = self.detector.detect(screen_data)
         
-        # Convert results to format expected by frontend
         detections = []
         for icon in result.icon_elements:
             detections.append({
@@ -85,7 +68,8 @@ class TrainingAgent:
         return cropped_b64
 
     def save_template(self, image_data: str, caption: str, 
-                     bbox: List[float]) -> None:
+                     bbox: List[float], agent_name: str = "OpenFoam", 
+                     page_name: str = "default") -> None:
         """
         Save template to database
         
@@ -93,25 +77,26 @@ class TrainingAgent:
             image_data: Base64 encoded image
             caption: Template caption/description
             bbox: Bounding box coordinates [x1, y1, x2, y2]
+            agent_name: Name of the agent this template belongs to
+            page_name: Name of the page this template belongs to
         """
         try:
             # Crop and encode the icon region
             cropped_image = self._crop_and_encode_image(image_data, bbox)
             
-            # Load existing database
-            df = pd.read_csv(self.database_path)
+            # Create new template record
+            template = Template(
+                base64_image=cropped_image,
+                caption=caption,
+                agent_name=agent_name,
+                page_name=page_name
+            )
             
-            # Add new template with cropped image
-            new_row = pd.DataFrame([{
-                'base64_image': cropped_image,
-                'caption': caption
-            }])
-            
-            # Append to database
-            df = pd.concat([df, new_row], ignore_index=True)
-            
-            # Save updated database
-            df.to_csv(self.database_path, index=False)
+            # Save to database
+            with Session() as session:
+                session.add(template)
+                session.commit()
+                
             logger.info(f"Saved new template with caption: {caption}")
             
         except Exception as e:

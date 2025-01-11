@@ -4,8 +4,10 @@ import { faUpload, faSearch, faSave, faTrash } from '@fortawesome/free-solid-svg
 import '../styles/components/Toolbar.scss';
 
 const Toolbar = ({
-  templateName,
-  setTemplateName,
+  agentName,
+  setAgentName,
+  pageName,
+  setPageName,
   handleImageUpload,
   handleAnalyze,
   isAnalyzing,
@@ -29,9 +31,15 @@ const Toolbar = ({
     <div className="toolbar">
       <input
         type="text"
-        placeholder="Template Name"
-        value={templateName}
-        onChange={(e) => setTemplateName(e.target.value)}
+        placeholder="Agent Name"
+        value={agentName}
+        onChange={(e) => setAgentName(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Page Name"
+        value={pageName}
+        onChange={(e) => setPageName(e.target.value)}
       />
       <button onClick={() => document.getElementById('imageUpload').click()}>
         <FontAwesomeIcon icon={faUpload} /> Upload Image

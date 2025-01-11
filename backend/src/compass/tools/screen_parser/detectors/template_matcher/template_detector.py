@@ -11,6 +11,8 @@ from pathlib import Path
 import yaml
 from compass.constants import TEMPLATE_DATABASE_PATH
 import time
+from compass.database.models import Session, Template
+
 logger = logging.getLogger(__name__)
 
 class TemplateDetector:
@@ -35,30 +37,27 @@ class TemplateDetector:
             raise RuntimeError("Template matching is not enabled in config")
             
         self.threshold = config.get('threshold', 0.8)
-        self.templates = self._load_templates(config['database_path'])
+        self.templates = self._load_templates()
         logger.info(f"Loaded {len(self.templates)} templates from database")
         
-    def _load_templates(self, db_path: str) -> List[Tuple[np.ndarray, str]]:
-        """
-        Load templates from CSV file
-        
-        Expected CSV format:
-        base64_image,caption
-        """
-        df = pd.read_csv(db_path)
+    def _load_templates(self) -> List[Tuple[np.ndarray, str]]:
+        """Load templates from database"""
         templates = []
         
-        for _, row in df.iterrows():
-            try:
-                # Convert base64 to numpy array
-                img_bytes = base64.b64decode(row['base64_image'])
-                img = Image.open(io.BytesIO(img_bytes))
-                img_array = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-                templates.append((img_array, row['caption']))
-            except Exception as e:
-                logger.warning(f"Failed to load template: {e}")
-                continue
-                
+        with Session() as session:
+            db_templates = session.query(Template).all()
+            
+            for template in db_templates:
+                try:
+                    # Convert base64 to numpy array
+                    img_bytes = base64.b64decode(template.base64_image)
+                    img = Image.open(io.BytesIO(img_bytes))
+                    img_array = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                    templates.append((img_array, template.caption))
+                except Exception as e:
+                    logger.warning(f"Failed to load template: {e}")
+                    continue
+                    
         return templates
     
     def detect(self, screen_data: ScreenData) -> ScreenData:

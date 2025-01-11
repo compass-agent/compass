@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Toolbar from './components/Toolbar';
 import ImageWorkspace from './components/ImageWorkspace';
 import { useSocketConnection } from './hooks/useSocketConnection';
@@ -9,7 +9,8 @@ import WebSocketService from '../../services/websocket';
 import ReactDOM from 'react-dom/client';
 
 function TemplateTraining() {
-  const [templateName, setTemplateName] = useState('');
+  const [agentName, setAgentName] = useState('OpenFoam');
+  const [pageName, setPageName] = useState('default');
   const [inputValue, setInputValue] = useState('');
 
   // Custom hooks
@@ -41,6 +42,15 @@ function TemplateTraining() {
     createNewBox,
     deleteBox
   } = useBoxManagement(detections);
+
+  // Add this effect to update input value when selecting a box
+  useEffect(() => {
+    if (selectedBox !== null && captions[selectedBox]) {
+      setInputValue(captions[selectedBox]);
+    } else if (selectedBox === null) {
+      setInputValue('');
+    }
+  }, [selectedBox, captions]);
 
   const handleAnalyze = () => {
     if (!image) {
@@ -83,7 +93,9 @@ function TemplateTraining() {
       WebSocketService.saveTemplate({
         image: image,
         caption: caption,
-        bbox: bbox
+        bbox: bbox,
+        agent_name: agentName,
+        page_name: pageName
       });
     });
   };
@@ -91,8 +103,10 @@ function TemplateTraining() {
   return (
     <div className="template-training-container">
       <Toolbar
-        templateName={templateName}
-        setTemplateName={setTemplateName}
+        agentName={agentName}
+        setAgentName={setAgentName}
+        pageName={pageName}
+        setPageName={setPageName}
         handleImageUpload={handleImageUpload}
         handleAnalyze={handleAnalyze}
         isAnalyzing={isAnalyzing}

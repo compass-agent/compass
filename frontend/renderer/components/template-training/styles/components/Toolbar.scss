@@ -11,6 +11,19 @@
     border: 1px solid #444;
     background-color: #333;
     color: #e0e0e0;
+
+    // Style specifically for agent name and page name inputs
+    &[placeholder="Agent Name"],
+    &[placeholder="Page Name"] {
+      width: 150px;  // Set fixed width for these inputs
+      min-width: 150px;  // Ensure minimum width
+    }
+
+    // Style for caption input (to differentiate it)
+    &[placeholder="Enter caption for selected box"] {
+      flex: 1;  // Allow caption input to take remaining space
+      min-width: 200px;
+    }
   }
 
   button {

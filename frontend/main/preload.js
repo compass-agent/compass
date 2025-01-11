@@ -9,10 +9,10 @@ contextBridge.exposeInMainWorld("electron", {
     send: (channel, data) => {
       const validChannels = [
         "toggle-fullscreen",
+        "move-to-bottom-right",
         "close-window",
         "minimize-window",
         "maximize-window",
-        "move-to-bottom-right",
         "show-coordinate-preview",
         "hide-coordinate-preview",
         "open-template-training",
@@ -21,7 +21,9 @@ contextBridge.exposeInMainWorld("electron", {
         "close-editor-window",
       ];
       if (validChannels.includes(channel)) {
-        ipcRenderer.send(channel, data);
+        if (channel !== "toggle-fullscreen" && channel !== "move-to-bottom-right") {
+          ipcRenderer.send(channel, data);
+        }
       }
     },
     on: (channel, func) => {
