@@ -4,35 +4,82 @@ from typing import Dict, List
 import numpy as np
 import cv2
 from compass.tools.screen_parser.detectors.icon.yolo_detector import YOLOIconDetector
-from compass.tools.screen_parser.models import ScreenData
+from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
+from compass.tools.screen_parser.models import ScreenData, BoundingBox
+from compass.tools.screen_parser.utils.box_utils import calculate_iou
 from compass.database.models import Session, Template
 
 logger = logging.getLogger(__name__)
 
+IOU_THRESHOLD = 0.9  # Using same threshold as box_utils
+
 class TrainingAgent:
     def __init__(self):
-        """Initialize training agent with YOLO detector"""
-        self.detector = YOLOIconDetector()
+        """Initialize training agent with YOLO and template detectors"""
+        self.yolo_detector = YOLOIconDetector()
         
-    def process_screenshot(self, image_data: str) -> Dict:
+    def process_screenshot(self, image_data: str, agent_name: str) -> Dict:
         """
-        Process screenshot using YOLO detector
+        Process screenshot using template matching and YOLO detection
         
         Args:
             image_data: Base64 encoded image
+            agent_name: Name of agent to filter templates
             
         Returns:
-            Dict containing detected regions
+            Dict containing detected regions with labels where available
         """
+        # Create ScreenData object
         screen_data = ScreenData(image_data=image_data)
-        result = self.detector.detect(screen_data)
         
+        # First run template matching
+        template_detector = TemplateDetector(agent_name=agent_name)
+        template_results = template_detector.detect(screen_data)
+        
+        # Then run YOLO detection
+        yolo_results = self.yolo_detector.detect(screen_data)
+        
+        # Combine results, removing YOLO detections that overlap with templates
         detections = []
-        for icon in result.icon_elements:
+        
+        # Add template matches first
+        for template in template_results.icon_elements:
             detections.append({
-                'bbox': icon.bbox,
-                'confidence': icon.confidence
+                'bbox': template.bbox,
+                'confidence': template.confidence,
+                'caption': template.caption  # Include template caption
             })
+        
+        # Add non-overlapping YOLO detections
+        for yolo_detection in yolo_results.icon_elements:
+            should_add = True
+            
+            # Create BoundingBox objects for IOU calculation
+            yolo_box = BoundingBox(
+                bbox=yolo_detection.bbox,
+                element_type="icon",
+                confidence=yolo_detection.confidence
+            )
+            
+            # Check for overlap with template detections
+            for template in template_results.icon_elements:
+                template_box = BoundingBox(
+                    bbox=template.bbox,
+                    element_type="icon",
+                    confidence=template.confidence,
+                    caption=template.caption
+                )
+                
+                if calculate_iou(yolo_box, template_box) > IOU_THRESHOLD:
+                    should_add = False
+                    break
+            
+            if should_add:
+                detections.append({
+                    'bbox': yolo_detection.bbox,
+                    'confidence': yolo_detection.confidence,
+                    'caption': None  # No caption for new YOLO detections
+                })
             
         return {
             'detections': detections,
@@ -68,10 +115,10 @@ class TrainingAgent:
         return cropped_b64
 
     def save_template(self, image_data: str, caption: str, 
-                     bbox: List[float], agent_name: str = "OpenFoam", 
+                     bbox: List[float], agent_name: str = "FreeCAD", 
                      page_name: str = "default") -> None:
         """
-        Save template to database
+        Save template to database, updating caption if template already exists
         
         Args:
             image_data: Base64 encoded image
@@ -84,21 +131,31 @@ class TrainingAgent:
             # Crop and encode the icon region
             cropped_image = self._crop_and_encode_image(image_data, bbox)
             
-            # Create new template record
-            template = Template(
-                base64_image=cropped_image,
-                caption=caption,
-                agent_name=agent_name,
-                page_name=page_name
-            )
-            
-            # Save to database
             with Session() as session:
-                session.add(template)
+                # Check if template already exists
+                existing_template = session.query(Template).filter_by(
+                    base64_image=cropped_image,
+                    agent_name=agent_name
+                ).first()
+                
+                if existing_template:
+                    # Update caption if template exists
+                    existing_template.caption = caption
+                    existing_template.page_name = page_name
+                    logger.info(f"Updated existing template caption to: {caption}")
+                else:
+                    # Create new template if it doesn't exist
+                    template = Template(
+                        base64_image=cropped_image,
+                        caption=caption,
+                        agent_name=agent_name,
+                        page_name=page_name
+                    )
+                    session.add(template)
+                    logger.info(f"Saved new template with caption: {caption}")
+                
                 session.commit()
                 
-            logger.info(f"Saved new template with caption: {caption}")
-            
         except Exception as e:
             logger.error(f"Failed to save template: {e}")
             raise

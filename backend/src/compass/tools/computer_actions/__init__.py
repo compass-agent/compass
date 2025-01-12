@@ -83,7 +83,11 @@ class ComputerTool(BaseAnthropicTool):
         self._initialize_screen_dimensions()
         logger.info("Finding best target dimension, XGA, WXGA, FWXGA...")
         self._find_best_standard_dimension()
-        
+                # Broadcast scaling factors to frontend
+        state_manager.broadcast_scaling_factors(
+            x_factor=self._x_scaling_factor,
+            y_factor=self._y_scaling_factor
+        )
         logger.info(f"Computer works with image dimensions of {self.width}x{self.height}")
         logger.info(f"Agent will be working with image dimensions of {self.scaled_width}x{self.scaled_height}")
         
@@ -139,6 +143,7 @@ class ComputerTool(BaseAnthropicTool):
         logger.info(f"final scaling factors: {self._x_scaling_factor}, {self._y_scaling_factor}")
         self.scaled_width = round(self.width * self._x_scaling_factor)
         self.scaled_height = round(self.height * self._y_scaling_factor)
+        
         logger.info(f"scaled dimensions: {self.scaled_width}, {self.scaled_height}")
 
     async def __call__(

@@ -46,7 +46,7 @@ class BaseComputerAction(ABC):
         self.screen_parser = ScreenParser() if enable_screen_description else None
         self._enable_screenshot_comparison = enable_screenshot_comparison
         self._enable_screen_description = enable_screen_description
-
+        
     # @log_execution_time(logger)
     async def capture_and_process_screenshot(self) -> ScreenshotResult:
         """Core method to capture and process screenshot, returning a ScreenshotResult object"""

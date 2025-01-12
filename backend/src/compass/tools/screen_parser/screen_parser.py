@@ -6,9 +6,9 @@ import time
 
 from compass.tools.screen_parser.utils.box_utils import remove_overlapping_boxes
 from compass.tools.screen_parser.utils.visualization import visualize_boxes
-from compass.tools.screen_parser.detectors.icon.factory import IconDetectorFactory
-from compass.tools.screen_parser.detectors.text.factory import TextDetectorFactory
-from compass.tools.screen_parser.captioners.factory import CaptionerFactory
+#from compass.tools.screen_parser.detectors.icon.factory import IconDetectorFactory
+#from compass.tools.screen_parser.detectors.text.factory import TextDetectorFactory
+#from compass.tools.screen_parser.captioners.factory import CaptionerFactory
 from compass.tools.screen_parser.models import ScreenData
 from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
 
@@ -142,9 +142,9 @@ class ScreenParser:
                   "There might be some icons not being matched or labeled. While the descriptions may have slight inaccuracies, " \
                   "the coordinate positions are reliable. When referencing these elements, please use the provided coordinates as their exact locations, if possible."
         else:
-            des = "Below is a list of icons detected on the screen, sorted from top-left to bottom-right. " \
-                  "There are some unnamed icons. While the descriptions may have slight inaccuracies, " \
-                  "the coordinate positions are reliable. When referencing these icons, please use the provided coordinates as their exact locations."
+            des = "\n\nBelow is a list of icons detected on the screen, sorted from top-left to bottom-right. " \
+                  "There are some unnamed icons or unmatched icons. While the descriptions may have slight inaccuracies, " \
+                  "the coordinate positions are reliable. When referencing these icons, please use the provided coordinates as their exact locations. \n\n"
         
         descriptions = [des]
         

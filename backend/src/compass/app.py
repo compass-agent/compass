@@ -134,7 +134,10 @@ def handle_execute_tool_and_generate_action():
 def handle_screenshot_upload(data):
     """Handle screenshot upload for template training"""
     try:
-        result = training_agent.process_screenshot(data['image'])
+        result = training_agent.process_screenshot(
+            image_data=data['image'],
+            agent_name=data['agent_name']
+        )
         emit('detection_result', result)
     except Exception as e:
         logger.error(f"Error processing screenshot: {e}", exc_info=True)

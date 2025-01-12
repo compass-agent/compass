@@ -73,6 +73,12 @@ class WebSocketService {
       console.log("WebSocket template saved:", data);
       this.stateHandlers?.onTemplateSaved?.(data);
     });
+
+    this.socket.on("scaling_factors", (data) => {
+      console.log("WebSocket: Raw scaling factors data received:", data);
+      console.log("WebSocket: x_factor =", data.x_factor, "y_factor =", data.y_factor);
+      this.stateHandlers?.onScalingFactors?.(data);
+    });
   }
 
   disconnect() {
@@ -115,17 +121,22 @@ class WebSocketService {
     }
   }
 
-  uploadScreenshot(imageData) {
+  uploadScreenshot(imageData, agentName) {
     if (this.socket?.connected) {
       console.log("WebSocket sending upload_screenshot");
-      this.socket.emit("upload_screenshot", { image: imageData });
+      this.socket.emit("upload_screenshot", {
+        image: imageData,
+        agent_name: agentName
+      });
     }
   }
 
   saveTemplate(templateData) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending save_template");
+      console.log("WebSocket sending save_template with data:", templateData);
       this.socket.emit("save_template", templateData);
+    } else {
+      console.error("Socket not connected when trying to save template");
     }
   }
 }

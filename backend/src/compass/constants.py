@@ -20,7 +20,9 @@ KEEP_SCREENSHOTS = True        # Keep screenshots after use
 # For now, we only set these here. But in the future, we will allow set them in the UI.
 
 # Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
-AGENT_NAME = "OpenFoam" # OpenFoam Or Generic # Generic is the default basic agent
+AGENT_NAME = "FreeCAD" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
+
+
 # Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
 DOCKER_WORKING_DIR = "/home/openfoam/run"
@@ -34,3 +36,10 @@ HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
 
 # Screenshot configuration
 PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent
+
+# Define tool configurations for different agents
+AGENT_TOOLS = {
+    "OpenFoam": ["computer", "file", "bash"],
+    "FreeCAD": ["computer"],
+    "Generic": ["computer", "file", "bash"]
+}

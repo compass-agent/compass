@@ -9,6 +9,20 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "frontend/renderer/dist"),
     filename: "[name].bundle.js",
+    clean: true,
+    publicPath: '/',
+  },
+  cache: false,
+  optimization: {
+    moduleIds: 'deterministic',
+    removeAvailableModules: false,
+    removeEmptyChunks: false,
+    splitChunks: false,
+  },
+  watchOptions: {
+    ignored: /node_modules/,
+    poll: 1000,
+    aggregateTimeout: 300,
   },
   module: {
     rules: [
@@ -25,13 +39,9 @@ module.exports = {
           options: {
             presets: [
               "@babel/preset-env",
-              [
-                "@babel/preset-react",
-                {
-                  runtime: "automatic",
-                },
-              ],
+              ["@babel/preset-react", { runtime: "automatic" }],
             ],
+            cacheDirectory: false,
           },
         },
       },
@@ -41,11 +51,7 @@ module.exports = {
       },
       {
         test: /\.scss$/,
-        use: [
-          "style-loader", // Injects styles into DOM
-          "css-loader", // Turns CSS into CommonJS
-          "sass-loader", // Compiles Sass to CSS
-        ],
+        use: ["style-loader", "css-loader", "sass-loader"],
       },
     ],
   },

@@ -133,4 +133,12 @@ class StateManager:
     async def transition_status(self, status: AgentStatus, current_task: Optional[str] = None) -> None:
         """Async version of set_status for use in async contexts"""
         self.set_status(status, current_task)
+
+    def broadcast_scaling_factors(self, x_factor: float, y_factor: float) -> None:
+        """Broadcast the current scaling factors to all connected clients."""
+        self._socketio.emit('scaling_factors', {
+            'x_factor': x_factor,
+            'y_factor': y_factor
+        })
+        logger.info(f"Broadcasting scaling factors: x={x_factor}, y={y_factor}")
   

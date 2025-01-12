@@ -15,17 +15,27 @@ export const useBoxManagement = (detections) => {
     }
     
     const initialBoxes = {};
+    const initialCaptions = {};
+
     detections.forEach((detection, index) => {
       if (detection && detection.bbox) {
+        // Create box
         initialBoxes[index] = {
           x: detection.bbox[0] || 0,
           y: detection.bbox[1] || 0,
           width: (detection.bbox[2] - detection.bbox[0]) || 0,
           height: (detection.bbox[3] - detection.bbox[1]) || 0
         };
+
+        // If detection has a caption (from template match), add it
+        if (detection.caption) {
+          initialCaptions[index] = detection.caption;
+        }
       }
     });
+
     setBoxes(initialBoxes);
+    setCaptions(initialCaptions);
   }, [detections]);
 
   const handleBoxClick = (index) => {

@@ -26,6 +26,7 @@ export function useSocketConnection() {
       onError: (error) => {
         console.error('WebSocket error:', error);
         setIsAnalyzing(false);
+        setDetections([]); // Clear detections on error
       }
     });
 

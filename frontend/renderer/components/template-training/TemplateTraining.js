@@ -9,9 +9,10 @@ import WebSocketService from '../../services/websocket';
 import ReactDOM from 'react-dom/client';
 
 function TemplateTraining() {
-  const [agentName, setAgentName] = useState('OpenFoam');
+  const [agentName, setAgentName] = useState('FreeCAD');
   const [pageName, setPageName] = useState('default');
   const [inputValue, setInputValue] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
 
   // Custom hooks
   const { 
@@ -43,7 +44,7 @@ function TemplateTraining() {
     deleteBox
   } = useBoxManagement(detections);
 
-  // Add this effect to update input value when selecting a box
+  // Update input value when selecting a box
   useEffect(() => {
     if (selectedBox !== null && captions[selectedBox]) {
       setInputValue(captions[selectedBox]);
@@ -52,6 +53,22 @@ function TemplateTraining() {
     }
   }, [selectedBox, captions]);
 
+  // Add useEffect for WebSocket handlers
+  useEffect(() => {
+    WebSocketService.setStateHandlers({
+      ...WebSocketService.stateHandlers,
+      onTemplateSaved: (data) => {
+        if (data.success) {
+          setSaveStatus('Templates saved successfully!');
+          // Clear the success message after 3 seconds
+          setTimeout(() => setSaveStatus(''), 3000);
+        } else {
+          setSaveStatus('Error saving templates');
+        }
+      }
+    });
+  }, []);
+
   const handleAnalyze = () => {
     if (!image) {
       alert('Please upload an image first');
@@ -59,7 +76,8 @@ function TemplateTraining() {
     }
 
     setIsAnalyzing(true);
-    WebSocketService.uploadScreenshot(image);
+    // Pass agentName to uploadScreenshot
+    WebSocketService.uploadScreenshot(image, agentName);
   };
 
   const handleKeyPress = (e) => {
@@ -79,6 +97,13 @@ function TemplateTraining() {
       return;
     }
 
+    if (Object.keys(captions).length === 0) {
+      alert('No templates to save');
+      return;
+    }
+
+    setSaveStatus('Saving templates...');
+    
     Object.entries(captions).forEach(([boxIndex, caption]) => {
       const box = boxes[boxIndex];
       if (!box) return;
@@ -90,6 +115,13 @@ function TemplateTraining() {
         box.y + box.height
       ];
 
+      console.log('Saving template:', {
+        caption,
+        bbox,
+        agent_name: agentName,
+        page_name: pageName
+      });
+
       WebSocketService.saveTemplate({
         image: image,
         caption: caption,
@@ -100,14 +132,29 @@ function TemplateTraining() {
     });
   };
 
+  const handleImageUploadWithCleanup = (event) => {
+    handleImageUpload(event, {
+      setDetections,
+      setBoxes,
+      setCaptions,
+      setSelectedBox,
+      setIsAnalyzing
+    });
+  };
+
   return (
     <div className="template-training-container">
+      {saveStatus && (
+        <div className={`save-status ${saveStatus.includes('Error') ? 'error' : 'success'}`}>
+          {saveStatus}
+        </div>
+      )}
       <Toolbar
         agentName={agentName}
         setAgentName={setAgentName}
         pageName={pageName}
         setPageName={setPageName}
-        handleImageUpload={handleImageUpload}
+        handleImageUpload={handleImageUploadWithCleanup}
         handleAnalyze={handleAnalyze}
         isAnalyzing={isAnalyzing}
         inputValue={inputValue}

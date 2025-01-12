@@ -26,7 +26,12 @@ const initialState = {
 
   compassWindow: {
     actionType: null,
-  }
+  },
+
+  scaling: {
+    xFactor: 1.147,
+    yFactor: 1.194
+  },
 };
 
 // Reducer
@@ -112,6 +117,16 @@ function appReducer(state, action) {
         },
       };
 
+    case ActionTypes.SET_SCALING_FACTORS:
+      console.log("AppContext: Setting scaling factors:", action.payload);
+      return {
+        ...state,
+        scaling: {
+          xFactor: action.payload.x_factor,
+          yFactor: action.payload.y_factor
+        }
+      };
+
     default:
       return state;
   }
@@ -166,6 +181,13 @@ export function AppProvider({ children }) {
           type: ActionTypes.SET_ERROR,
           payload: error.message,
         }),
+
+      onScalingFactors: (data) => {
+        dispatch({
+          type: ActionTypes.SET_SCALING_FACTORS,
+          payload: data
+        });
+      },
     });
 
     WebSocketService.connect();

@@ -10,8 +10,8 @@ from anthropic.types.beta import (
     BetaToolUseBlockParam,
 )
 
-from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, ParaViewTool, BashExecutor
-from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS
+from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, BashExecutor
+from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.agent.llm import LLM
@@ -87,6 +87,19 @@ class AgentService:
         self.recording_iteration = 0
         logger.info("Agent successfully initialized")
         # self._mock_enabled = False
+
+        # Configure tools based on agent type
+        tools = []
+        agent_tool_config = AGENT_TOOLS.get(AGENT_NAME, ["computer", "file", "bash"])  # Default to all tools
+        
+        if "computer" in agent_tool_config:
+            tools.append(ComputerTool(state_manager))
+        if "file" in agent_tool_config:
+            tools.append(FileOperationsTool())
+        if "bash" in agent_tool_config:
+            tools.append(BashExecutor())
+        
+        self.tool_collection = ToolCollection(*tools)
 
     def _append_message(self, message: BetaMessageParam) -> None:
         """Helper method to append message and save messages state"""
