@@ -11,22 +11,14 @@ from compass.tools.screen_parser.utils.visualization import visualize_boxes
 #from compass.tools.screen_parser.captioners.factory import CaptionerFactory
 from compass.tools.screen_parser.models import ScreenData
 from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
-
+from compass.utils.utility import log_execution_time
 logger = logging.getLogger(__name__)
 
 class ScreenParser:
     def __init__(self):
         """
         Initialize ScreenParser with settings from config file
-        """        
-        # Set up logging with more explicit configuration
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - [SCREEN PARSER] - %(message)s',
-            force=True  # Force override any existing logger
-        )
-        logger.setLevel(logging.INFO)  # Explicitly set level
-        
+        """           
         # Test that logging is working
         logger.info("ScreenParser initialized")
         
@@ -51,6 +43,7 @@ class ScreenParser:
         #else:
         #    self.captioner = None
 
+    @log_execution_time(logger)
     def parse(self, screen_data: ScreenData) -> ScreenData:
         """Parse a screen and identify all elements"""
         parse_start = time.time()
@@ -76,32 +69,37 @@ class ScreenParser:
         
         logger.info(f"Total parsing took {time.time() - parse_start:.2f} seconds")
         return merged_screen_data
-
-    def light_parse(self, screen_data: ScreenData) -> ScreenData:
+    
+    @log_execution_time(logger)
+    def light_parse(self, screen_data: ScreenData, x_scaling_factor: float = 1.0, y_scaling_factor: float = 1.0) -> ScreenData:
         """
         Lightweight parsing using only template matching and screen description.
         Faster alternative to full parse() method.
+        
+        Args:
+            screen_data (ScreenData): The screen data to parse
+            x_scaling_factor (float): Factor to scale x coordinates
+            y_scaling_factor (float): Factor to scale y coordinates
         """
-        parse_start = time.time()
         
         # Only run template matching for icon detection
         detection_start = time.time()
         detected_screen = self.template_matcher.detect(screen_data)
         logger.info(f"Template matching detection took {time.time() - detection_start:.2f} seconds")
-        
-        # Generate and add screen description
-        description = self.screen_descriptor(detected_screen)
+        # Generate and add screen description with scaling factors
+        description = self.screen_descriptor(detected_screen, x_scaling_factor, y_scaling_factor)
         detected_screen.description = description
-        
-        logger.info(f"Total light parsing took {time.time() - parse_start:.2f} seconds")
         return detected_screen
 
-    def screen_descriptor(self, screen_data: ScreenData) -> str:
+    @log_execution_time(logger)
+    def screen_descriptor(self, screen_data: ScreenData, x_scaling_factor: float = 1.0, y_scaling_factor: float = 1.0) -> str:
         """
         Create a structured description of elements in the screen
         
         Args:
             screen_data (ScreenData): Detection results in ScreenData format
+            x_scaling_factor (float): Factor to scale x coordinates
+            y_scaling_factor (float): Factor to scale y coordinates
             
         Returns:
             str: Formatted screen description
@@ -130,9 +128,9 @@ class ScreenParser:
         else:
             elements_df = df[df['type'] == 'icon'].copy()
         
-        # Calculate center coordinates
-        elements_df['center_x'] = (elements_df['x1'] + elements_df['x2']) / 2
-        elements_df['center_y'] = (elements_df['y1'] + elements_df['y2']) / 2
+        # Calculate center coordinates and apply scaling
+        elements_df['center_x'] = ((elements_df['x1'] + elements_df['x2']) / 2) * x_scaling_factor
+        elements_df['center_y'] = ((elements_df['y1'] + elements_df['y2']) / 2) * y_scaling_factor
         
         # Sort by y first (top to bottom), then x (left to right)
         elements_df = elements_df.sort_values(['center_y', 'center_x'])

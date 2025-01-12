@@ -84,6 +84,148 @@ class LLM:
             message["content"] = list(reversed(new_content))
         return messages
 
+    def _filter_tool_pairs(
+        self,
+        messages: list[BetaMessageParam],
+        offset: int = 10
+    ) -> list[BetaMessageParam]:
+        """
+        Filter out old tool use/result pairs while preserving recent ones based on offset.
+        
+        Args:
+            messages: List of messages to process
+            offset: Number of recent messages to exclude from filtering
+        
+        Returns:
+            List of messages with filtered tool pairs
+        """
+        if offset >= len(messages):
+            return messages
+
+        # Only process messages before the offset (from end)
+        messages_to_process = len(messages) - offset
+        filtered = []
+        
+        i = 0
+        while i < len(messages):
+            # Always keep messages within the offset range
+            if i >= messages_to_process:
+                filtered.extend(messages[i:])
+                break
+            
+            current = messages[i]
+            
+            # Check if this is a tool use message
+            is_tool_use = (
+                current.get("role") == "assistant"
+                and len(current.get("content", [])) == 1
+                and current.get("content", [{}])[0].get("type") == "tool_use"
+            )
+            
+            # If not a tool use message, keep it
+            if not is_tool_use:
+                filtered.append(current)
+                i += 1
+                continue
+            
+            # If it is a tool use message, check if next message is the corresponding result
+            if i + 1 < len(messages):
+                next_msg = messages[i + 1]
+                is_tool_result = (
+                    next_msg.get("role") == "user"
+                    and len(next_msg.get("content", [])) == 1
+                    and next_msg.get("content", [{}])[0].get("type") == "tool_result"
+                )
+                
+                # Keep only the most recent tool pairs
+                if not is_tool_result:
+                    filtered.append(current)
+                i += 2
+            else:
+                filtered.append(current)
+                i += 1
+            
+        return filtered
+
+    def _truncate_tool_results(
+        self,
+        messages: list[BetaMessageParam],
+        max_chars: int = 50,
+        offset: int = 4
+    ) -> list[BetaMessageParam]:
+        """
+        Truncate text content in tool_results that are older than the offset.
+        
+        Args:
+            messages: List of messages to process
+            max_chars: Maximum number of characters to keep in text content
+            offset: Number of recent messages to exclude from truncation
+        
+        Returns:
+            List of messages with truncated tool results
+        """
+        if offset >= len(messages):
+            return messages
+
+        # Only process messages before the offset (from end)
+        messages_to_process = len(messages) - offset
+        
+        for i in range(messages_to_process):
+            content = messages[i].get("content", [])
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    tool_content = block.get("content", [])
+                    for item in tool_content:
+                        if (isinstance(item, dict) and 
+                            item.get("type") == "text" and 
+                            len(item.get("text", "")) > max_chars):
+                            item["text"] = item["text"][:max_chars] + "..."
+
+        return messages
+    @log_execution_time(logger)
+    def _reduce_message_size(
+        self,
+        messages: list[BetaMessageParam],
+        images_to_keep: int = 1,
+        tool_pairs_offset: int = 8,
+        truncate_chars: int = 50,
+        truncate_offset: int = 4,
+    ) -> list[BetaMessageParam]:
+        """
+        Preprocess messages by applying all filtering and truncation steps.
+        
+        Args:
+            messages: List of messages to process
+            images_to_keep: Number of recent screenshots to preserve
+            tool_pairs_offset: Number of recent messages to exclude from tool pair filtering
+            truncate_chars: Maximum number of characters for tool result text
+            truncate_offset: Number of recent messages to exclude from truncation
+        
+        Returns:
+            Processed list of messages
+        """
+        # Remove old screenshots
+        reduce_messages = self._remove_old_screenshots(
+            messages,
+            images_to_keep=images_to_keep
+        )
+
+        # Filter out old tool pairs
+        reduce_messages = self._filter_tool_pairs(
+            reduce_messages,
+            offset=tool_pairs_offset
+        )
+
+        # Truncate long tool results
+        reduce_messages = self._truncate_tool_results(
+            reduce_messages,
+            max_chars=truncate_chars,
+            offset=truncate_offset
+        )
+
+        return reduce_messages
+
+    @log_execution_time(logger)
     async def call_llm_with_tools(
         self, 
         messages: list[BetaMessageParam],
@@ -91,16 +233,20 @@ class LLM:
         """Call the LLM API using beta tools API"""
         try:
             system = self.prompt_handler.get_system_prompt(manual_mode=False, highlight_mode=False)
-            messages = self._remove_old_screenshots(
+            
+            reduce_messages = self._reduce_message_size(
                 messages,
-                SCREENSHOT_KEEP_COUNT,
+                images_to_keep=1,
+                tool_pairs_offset=8,
+                truncate_chars=50,
+                truncate_offset=4
             )
 
             # Using with_raw_response for better error handling
             raw_response = self.client.beta.messages.with_raw_response.create(
                 max_tokens=MAX_TOKENS,
-                messages=messages,
-                model= MODEL_NAME_AUTO,
+                messages=reduce_messages,
+                model=MODEL_NAME_AUTO,
                 system=[system], # type: ignore
                 tools=self.tools_params,
                 betas=self.betas,
@@ -118,6 +264,7 @@ class LLM:
             logger.error(f"LLM API call failed: {e}")
             raise
 
+    @log_execution_time(logger)
     async def call_llm_wo_tools(
         self, 
         messages: list[BetaMessageParam]
@@ -125,7 +272,16 @@ class LLM:
         """Call the LLM API without tools and not streaming"""
         try:
             system = self.prompt_handler.get_system_prompt(manual_mode=True, highlight_mode=False)
-            messages_updated = self.preprocess_messages(messages)
+            
+            reduce_messages = self._reduce_message_size(
+                messages,
+                images_to_keep=1,
+                tool_pairs_offset=8,
+                truncate_chars=50,
+                truncate_offset=4
+            )
+            
+            messages_updated = self.preprocess_messages(reduce_messages)
 
             raw_response = self.client.messages.create(
                 max_tokens=MAX_TOKENS,

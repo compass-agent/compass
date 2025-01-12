@@ -8,10 +8,13 @@ from pathlib import Path
 import logging
 import time
 
+
+logger = logging.getLogger(__name__)
+
+
 class BLIP2Captioner(BaseCaptioner):
     def __init__(self, model_path=None):
-        self.logger = logging.getLogger("blip2_captioner")
-        self.logger.setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
         
         # Load config to get device setting and model path
         config_path = Path(__file__).parent.parent / 'config.yaml'
@@ -25,14 +28,14 @@ class BLIP2Captioner(BaseCaptioner):
         self.to_pil = ToPILImage()
         
         # Initialize model and processor
-        self.logger.info(f"Loading BLIP2 model from {self.model_path}")
+        logger.info(f"Loading BLIP2 model from {self.model_path}")
         self.processor = Blip2Processor.from_pretrained(self.model_path)
         dtype = torch.float16 if self.device != 'cpu' else torch.float32
         self.model = Blip2ForConditionalGeneration.from_pretrained(
             self.model_path, device_map=None, torch_dtype=dtype
         )
         self.model.to(self.device) # type: ignore
-        self.logger.info(f"BLIP2 model loaded and moved to {self.device}")
+        logger.info(f"BLIP2 model loaded and moved to {self.device}")
 
     @torch.inference_mode()
     def generate_captions(self, screen_data: ScreenData) -> ScreenData:
@@ -41,7 +44,7 @@ class BLIP2Captioner(BaseCaptioner):
             return screen_data
             
         start_time = time.time()
-        self.logger.info(f"Starting caption generation for {len(screen_data.icon_elements)} icons")
+        logger.info(f"Starting caption generation for {len(screen_data.icon_elements)} icons")
         
         # Get image crops for each icon
         image = screen_data.to_pil()
@@ -85,5 +88,5 @@ class BLIP2Captioner(BaseCaptioner):
                 if idx < len(screen_data.icon_elements):
                     screen_data.icon_elements[idx].caption = caption.strip()
         
-        self.logger.info(f"Caption generation completed in {time.time() - start_time:.2f} seconds")
+        logger.info(f"Caption generation completed in {time.time() - start_time:.2f} seconds")
         return screen_data 

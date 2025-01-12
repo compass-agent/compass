@@ -13,6 +13,7 @@ from compass.services.state_manager import StateManager
 from compass.constants import SCREENSHOT_OPTIMIZATION
 from compass.tools.screen_parser.screen_parser import ScreenParser
 from compass.tools.screen_parser.models import ScreenData
+from compass.utils.utility import log_execution_time
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +48,70 @@ class BaseComputerAction(ABC):
         self._enable_screenshot_comparison = enable_screenshot_comparison
         self._enable_screen_description = enable_screen_description
         
-    # @log_execution_time(logger)
+    @log_execution_time(logger)
+    def _take_screenshot(self, use_logical_dimensions: bool = True) -> Image.Image:
+        """Helper method to capture screenshot with either logical or physical dimensions.
+        """
+        screenshot = pyautogui.screenshot()
+        if use_logical_dimensions:
+            logical_width, logical_height = pyautogui.size()
+            screenshot = screenshot.resize(
+                (logical_width, logical_height),
+                resample=Image.Resampling.LANCZOS
+            )
+            logger.info(f"Screenshot resized to logical dimensions: {screenshot.width}x{screenshot.height}")
+        return screenshot
+
+    @log_execution_time(logger)
     async def capture_and_process_screenshot(self) -> ScreenshotResult:
-        """Core method to capture and process screenshot, returning a ScreenshotResult object"""
+        """Core method to capture and process screenshot, returning a ScreenshotResult object
+        
+        Current Flow:
+        1. Take screenshot -> image
+        2. Get screen description (original image) -> string
+        3. Check for changes (original image) -> string
+        4. Rescale (image) -> image
+        5. Optimize (image) -> image
+        
+        TODO - Future Parallel Flow:
+        1. Sync: Take screenshot -> image
+        2. Async parallel:
+            - Get screen description (original image) -> string
+            - Check for changes (original image) -> string
+        3. Sync: Rescale (image) -> image
+        4. Sync: Optimize (image) -> image
+        
+        Returns:
+            ScreenshotResult: Contains base64 image, change detection, and screen description
+        """
         try:
-            logger.info("Capturing and processing screenshot")
-            screenshot = pyautogui.screenshot()
+            logger.info("Capturing screenshot")
+            screenshot = self._take_screenshot(use_logical_dimensions=True)
+            
+            description = None
+            if self._enable_screen_description and self.screen_parser:
+                # Run screen parsing on original screenshot before scaling
+                logger.info("Running light screen parsing on original image")
+                screen_data = ScreenData(
+                    image_data=self._image_to_base64(screenshot),
+                    elements=[],
+                    description=None
+                )
+                # Pass scaling factors to light_parse
+                parsed_data = self.screen_parser.light_parse(
+                    screen_data,
+                    x_scaling_factor=self._x_scaling_factor,
+                    y_scaling_factor=self._y_scaling_factor
+                )
+                description = parsed_data.description
+
+            has_changed = None
+            if self._enable_screenshot_comparison and self._last_screenshot is not None:
+                has_changed = screenshot.tobytes() != self._last_screenshot.tobytes()
+                logger.info(f"Screenshot comparison result: changed={has_changed}")
+            
+            if self._enable_screenshot_comparison:
+                self._last_screenshot = screenshot
             
             logger.info(f"Scaling screenshot from {self.width}x{self.height} to {self.scaled_width}x{self.scaled_height}")
             scaled_screenshot = screenshot.resize(
@@ -66,34 +125,7 @@ class BaseComputerAction(ABC):
                 method=Image.FASTOCTREE  # type: ignore
             )
             
-            has_changed = None
-            if self._enable_screenshot_comparison and self._last_screenshot is not None:
-                has_changed = optimized_screenshot.tobytes() != self._last_screenshot.tobytes()
-                logger.info(f"Screenshot comparison result: changed={has_changed}")
-            
-            if self._enable_screenshot_comparison:
-                self._last_screenshot = optimized_screenshot
-            
-            logger.info(f"Saving to memory buffer and encoding to base64")
-            buffer = io.BytesIO()
-            optimized_screenshot.save(
-                buffer,
-                format='PNG',
-                optimize=True
-            )
-            base64_result = base64.b64encode(buffer.getvalue()).decode()
-            
-            description = None
-            if self._enable_screen_description and self.screen_parser:
-                # Create ScreenData object and get description using light parse
-                logger.info("Running light screen parsing")
-                screen_data = ScreenData(
-                    image_data=base64_result,
-                    elements=[],
-                    description=None
-                )
-                parsed_data = self.screen_parser.light_parse(screen_data)
-                description = parsed_data.description
+            base64_result = self._image_to_base64(optimized_screenshot)
             
             return ScreenshotResult(
                 base64_image=base64_result,
@@ -110,6 +142,16 @@ class BaseComputerAction(ABC):
                 error=error_msg,
                 description=None
             )
+
+    def _image_to_base64(self, image: Image.Image) -> str:
+        """Helper method to convert PIL Image to base64 string"""
+        buffer = io.BytesIO()
+        image.save(
+            buffer,
+            format='PNG',
+            optimize=True
+        )
+        return base64.b64encode(buffer.getvalue()).decode()
 
     async def get_cursor_position(self) -> Tuple[int, int]:
         """Get the current cursor position and scale it."""
