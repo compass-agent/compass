@@ -22,7 +22,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "babel-loader": "^9.2.1",
-    "concurrently": "^9.1.0",
+    "concurrently": "^9.1.2",
     "css-loader": "^7.1.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
@@ -32,7 +32,7 @@
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.7.2",
-    "webpack": "^5.96.1",
+    "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0"
   },
