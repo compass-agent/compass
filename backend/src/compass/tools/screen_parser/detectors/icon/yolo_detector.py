@@ -22,7 +22,14 @@ class YOLOIconDetector(BaseIconDetector):
         self.model_path = config['icon_detection']['yolo']['model_path']
         self.conf_threshold = config['icon_detection']['yolo']['conf_threshold']
         self.iou_threshold = config['icon_detection']['yolo']['iou_threshold']
-        self.device = config['general']['device']
+        #self.device = config['general']['device']
+        # Set device based on availability
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
         self.model = YOLO(self.model_path)
         self.model.to(self.device)
         self.logger.info(f'YOLO model initialized on {self.device}')
