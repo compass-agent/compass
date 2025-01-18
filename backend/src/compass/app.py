@@ -1,75 +1,69 @@
+import eventlet
+import os
+
+# Configure eventlet for debugging
+if os.environ.get('FLASK_DEBUG') == '1':
+    eventlet.monkey_patch(all=True, thread=False, os=True)  # Don't patch threading in debug mode
+else:
+    eventlet.monkey_patch(all=True, thread=True, os=True)
+
 import signal
 import sys
-from flask import Flask
-from flask_socketio import SocketIO, emit # type: ignore
-from compass.agent.agent import AgentService
-from compass.services.state_manager import StateManager
-from compass.utils.utility import HistoryLogger
 import logging
 import asyncio
-from threading import Thread
-from compass.training_agent.training_agent import TrainingAgent
-import eventlet
 
-eventlet.monkey_patch()
-
+# Configure logging before other imports
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Flask and SocketIO imports
+from flask import Flask, request
+from flask_socketio import SocketIO, emit
+
+# Initialize Flask
 app = Flask(__name__)
 app.config.from_object('compass.config.config.Config')
 
-socketio = SocketIO(app, 
+# Initialize SocketIO with debug-specific settings
+socketio = SocketIO(
+    app, 
     cors_allowed_origins="*",
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
     ping_timeout=60,
     ping_interval=25,
-    debug=True)
+    debug=True,
+    async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True  # Disable async handlers in debug mode
+)
 
-# Create a new event loop for the background thread
-async_loop = asyncio.new_event_loop()
+# Now import application modules
+from compass.agent.agent import AgentService
+from compass.services.state_manager import StateManager
+from compass.utils.utility import HistoryLogger
+from compass.training_agent.training_agent import TrainingAgent
 
-def run_event_loop_in_thread(loop):
-    """Sets up and runs the event loop in a separate thread"""
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
+# Initialize services within a request context
+def init_services():
+    global training_agent, state_manager, agent_service
+    with app.app_context():
+        training_agent = TrainingAgent()
+        state_manager = StateManager(socketio)
+        agent_service = AgentService(state_manager)
 
-# Start the event loop in a background thread
-background_thread = Thread(target=run_event_loop_in_thread, args=(async_loop,), daemon=True)
-background_thread.start()
-training_agent = TrainingAgent()
-state_manager = StateManager(socketio)
-agent_service = AgentService(state_manager)
-
-def run_async(coro):
-    """Helper function to run coroutines in the background event loop"""
-    try:
-        future = asyncio.run_coroutine_threadsafe(coro, async_loop)
-        return future.result()
-    except Exception as e:
-        logger.error(f"Error in async execution: {e}", exc_info=True)
-        raise
+# Initialize services
+training_agent = None
+state_manager = None
+agent_service = None
 
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
     try:
-        async def cleanup_tasks():
-            tasks = asyncio.all_tasks(async_loop)
-            for task in tasks:
-                task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
-        
-        future = asyncio.run_coroutine_threadsafe(cleanup_tasks(), async_loop)
-        future.result(timeout=5.0)
-        
-        async_loop.call_soon_threadsafe(async_loop.stop)
-        background_thread.join(timeout=5.0)
+        socketio.stop()
     except Exception as e:
         logger.error(f"Error during cleanup: {e}", exc_info=True)
     finally:
-        socketio.stop()
         sys.exit(0)
 
 def signal_handler(sig, frame):
@@ -80,17 +74,28 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 @socketio.on('connect')
 def handle_connect():
-    logger.info('Client connected')
-    emit('status', {'data': 'Connected to server'})
+    global training_agent, state_manager, agent_service
+    if not training_agent:
+        init_services()
+    logger.info(f'Client connected with sid: {request.sid}')
+    emit('status', {'data': 'Connected to server', 'sid': request.sid})
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    logger.info('Client disconnected')
+    logger.info(f'Client disconnected with sid: {request.sid}')
 
 @socketio.on('message')
 def handle_message(data):
     try:
-        run_async(agent_service.process_message(data.get('text', '')))
+        logger.info("Handling new message")
+        # Remove the wrapper function and directly call process_message
+        with app.app_context():
+            # If process_message is async
+            if asyncio.iscoroutinefunction(agent_service.process_message):
+                eventlet.spawn(asyncio.run, agent_service.process_message(data.get('text', '')))
+            else:
+                # If process_message is sync
+                agent_service.process_message(data.get('text', ''))
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -99,16 +104,22 @@ def handle_message(data):
 def handle_control_update(data):
     logger.info(f'Control update received: {data}')
     try:
-        state_manager.update_state(data)
+        def update_wrapper():
+            with app.app_context():
+                return state_manager.update_state(data)
+        eventlet.spawn(update_wrapper)
     except Exception as e:
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
         emit('error', {'message': str(e)})
-        
+
 @socketio.on('execute_next_tool')
 def handle_execute_next_tool():
     logger.info('Received execute_next_tool request')
     try:
-        run_async(agent_service.execute_all_pending_tools())
+        def execute_wrapper():
+            with app.app_context():
+                return agent_service.execute_all_pending_tools()
+        eventlet.spawn(execute_wrapper)
     except Exception as e:
         logger.error(f"Error executing tool: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -117,7 +128,7 @@ def handle_execute_next_tool():
 def handle_generate_next_action():
     logger.info('Received generate_next_action request')
     try:
-        run_async(agent_service.process_next_action())
+        eventlet.spawn(agent_service.process_next_action)
     except Exception as e:
         logger.error(f"Error generating next action: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -129,15 +140,13 @@ def handle_execute_tool_and_generate_action():
         async def combined_operation():
             await agent_service.execute_all_pending_tools()
             await agent_service.process_next_action()
-            
-        run_async(combined_operation())
+        eventlet.spawn(combined_operation)
     except Exception as e:
         logger.error(f"Error in combined operation: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on('upload_screenshot')
 def handle_screenshot_upload(data):
-    """Handle screenshot upload for template training"""
     try:
         result = training_agent.process_screenshot(
             image_data=data['image'],
@@ -150,7 +159,6 @@ def handle_screenshot_upload(data):
 
 @socketio.on('save_template')
 def handle_save_template(data):
-    """Save labeled template to database"""
     try:
         training_agent.save_template(
             image_data=data['image'],
@@ -161,6 +169,10 @@ def handle_save_template(data):
     except Exception as e:
         logger.error(f"Error saving template: {e}", exc_info=True)
         emit('error', {'message': str(e)})
+
+@socketio.on('ping')
+def handle_ping():
+    emit('pong')
 
 @socketio.on_error()
 def error_handler(e):
@@ -174,10 +186,14 @@ def default_error_handler(e):
 
 if __name__ == '__main__':
     try:
+        # Initialize services before running
+        init_services()
+        
         socketio.run(app, 
-                    debug=True, 
-                    port=5001,
-                    use_reloader=False,
-                    log_output=True)
+            host='0.0.0.0',
+            debug=True, 
+            port=5001,
+            use_reloader=False,
+            log_output=True)
     except KeyboardInterrupt:
         cleanup() 

@@ -17,7 +17,7 @@ class ScreenshotAction(BaseComputerAction):
             scaled_height=scaled_height,
             state_manager=state_manager,
             enable_screenshot_comparison=True,
-            enable_screen_description=True
+            enable_screen_description=False
         )
 
     async def execute(self, **kwargs) -> ToolResult:

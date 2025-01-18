@@ -174,12 +174,19 @@ class AgentService:
                 self.state_manager.emit_response({
                     "type": "ai_response_stream",
                     "content": chunk,
-                    "is_final": True
+                    "is_final": False
                 })
                 logger.info(f"AI response stream: {chunk}")
             elif isinstance(chunk, ToolCall):
                 tool_calls.append(chunk)
                 logger.info(f"Tool call chunk: {chunk}")
+        
+        if text_response_content:
+            self.state_manager.emit_response({
+                "type": "ai_response_stream",
+                "content": "",
+                "is_final": True
+            })
         
         if tool_calls:
             tool_use_group = {
