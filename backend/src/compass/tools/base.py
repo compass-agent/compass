@@ -6,7 +6,7 @@ from enum import StrEnum
 from anthropic.types.beta import BetaToolUnionParam
 
 
-class BaseAnthropicTool(metaclass=ABCMeta):
+class BaseTool(metaclass=ABCMeta):
     """Abstract base class for Anthropic-defined tools."""
 
     @abstractmethod

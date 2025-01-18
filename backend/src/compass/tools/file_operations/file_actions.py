@@ -4,7 +4,7 @@ from collections import defaultdict
 import os
 from pathlib import Path
 
-from ...tools.base import BaseAnthropicTool, ToolResult, ToolError
+from ...tools.base import BaseTool, ToolResult, ToolError
 from ...constants import HOST_WORKING_DIR
 
 Command = Literal[
@@ -24,7 +24,7 @@ class FileState:
     content: str
     exists: bool
 
-class FileOperationsTool(BaseAnthropicTool):
+class FileOperationsTool(BaseTool):
     api_type: Literal["text_editor_20241022"] = "text_editor_20241022"
     name: Literal["str_replace_editor"] = "str_replace_editor"
 

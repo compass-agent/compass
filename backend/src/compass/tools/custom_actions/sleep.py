@@ -3,7 +3,7 @@ import logging
 from typing import Literal, TypedDict
 
 from anthropic.types.beta import BetaToolUnionParam
-from compass.tools.base import BaseAnthropicTool, ToolResult, ToolError
+from compass.tools.base import BaseTool, ToolResult, ToolError
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class SleepParams(TypedDict):
     action: Literal["sleep"]
     time: float
 
-class SleepAction(BaseAnthropicTool):
+class SleepAction(BaseTool):
     """A tool that allows the agent to pause execution for a specified duration."""
 
     name: Literal["custom_action"] = "custom_action"

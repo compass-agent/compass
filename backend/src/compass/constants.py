@@ -39,7 +39,7 @@ PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent
 
 # Define tool configurations for different agents
 AGENT_TOOLS = {
-    "OpenFoam": ["computer", "file", "bash"],
+    "OpenFoam": ["file", "bash"],
     "FreeCAD": ["computer"],
     "Generic": ["computer", "file", "bash"]
 }

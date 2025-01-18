@@ -1,7 +1,7 @@
 from typing import Literal
 from pathlib import Path
 from anthropic.types.beta import BetaToolUnionParam
-from ...tools.base import BaseAnthropicTool, ToolResult
+from ...tools.base import BaseTool, ToolResult
 import asyncio
 import logging
 from ...constants import DOCKER_CONTAINER_NAME, DOCKER_WORKING_DIR
@@ -11,7 +11,7 @@ import platform
 
 logger = logging.getLogger(__name__)
 
-class BashExecutor(BaseAnthropicTool):
+class BashExecutor(BaseTool):
     name: Literal["bash_run"] = "bash_run"
     
     def __init__(self):

@@ -5,7 +5,7 @@ from enum import StrEnum
 from compass.services.state_manager import StateManager
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
-from ..base import BaseAnthropicTool, ToolError
+from ..base import BaseTool, ToolError
 from compass.constants import SCREENSHOT_SCALE_FACTOR
 from .screenshot import ScreenshotAction
 from .cursor_position import CursorPositionAction
@@ -53,7 +53,7 @@ class ComputerToolOptions(TypedDict):
     display_width_px: int
 
 
-class ComputerTool(BaseAnthropicTool):
+class ComputerTool(BaseTool):
     """
     A tool that allows the agent to interact with the screen of the current computer (MacOS).
     Currently supports taking screenshots.

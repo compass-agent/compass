@@ -2,12 +2,12 @@ import logging
 from typing import Literal
 from pathlib import Path
 import time
-from ...tools.base import BaseAnthropicTool, ToolResult
+from ...tools.base import BaseTool, ToolResult
 from ...constants import HOST_WORKING_DIR
 
 logger = logging.getLogger(__name__)
 
-class ParaViewTool(BaseAnthropicTool):
+class ParaViewTool(BaseTool):
     name: Literal["paraview"] = "paraview"
     
     def __init__(self):
