@@ -6,7 +6,7 @@ from compass.services.state_manager import StateManager
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
 from ..base import BaseTool
-from compass.types.agent import ToolResult
+from compass.types.agent import ToolResult, ToolError
 from compass.constants import SCREENSHOT_SCALE_FACTOR
 from .screenshot import ScreenshotAction
 from .cursor_position import CursorPositionAction
@@ -58,9 +58,11 @@ class ToolParams(TypedDict):
 
 class ComputerTool(BaseTool):
     """
-    A tool that allows the agent to interact with the screen of the current computer (MacOS).
-    Currently supports taking screenshots.
-    Other actions are placeholders for future implementation.
+    A tool that allows the agent to interact with the computer's screen and input devices.
+    Supports the following actions:
+    - Screenshots: Capture the current screen state
+    - Mouse actions: Move cursor, click (left/right/middle/double), get cursor position
+    - Keyboard actions: Type text or send individual keystrokes
     """
 
     name: Literal["computer"] = "computer"
@@ -81,13 +83,18 @@ class ComputerTool(BaseTool):
         params: ToolParams = {
             "name": self.name,
             "type": self.api_type,
-            "description": """A tool for interacting with the computer screen and input devices.
-Supports taking screenshots, mouse movements/clicks, and keyboard input.
+            "description": """A comprehensive tool for computer interaction, supporting:
+- Screen capture: Take screenshots of the current display
+- Mouse control: Move cursor, perform clicks (left/right/middle/double), get cursor position
+- Keyboard input: Type text or send individual keystrokes
 
 Required parameters per action:
-- For 'key' or 'type' actions: requires 'text' parameter
-- For mouse actions (left_click, right_click, middle_click, double_click, mouse_move, cursor_position): requires 'coordinate' parameter [x, y]
-- For 'screenshot' action: no additional parameters required""",
+- 'screenshot': No additional parameters needed
+- 'cursor_position': Optional 'coordinate' [x, y] to validate position
+- 'mouse_move': Requires 'coordinate' [x, y] for cursor destination
+- 'left_click', 'right_click', 'middle_click', 'double_click': No additional paramater. DO NOT provide coordinates. Call mouse_move with coordinates first.
+- 'type': Requires 'text' parameter for typing full strings
+- 'key': Requires 'text' parameter for individual keystrokes""",
             "input_schema": {
                 "type": "object",
                 "properties": {
@@ -196,18 +203,26 @@ Required parameters per action:
         *,
         action: Action,
         text: str | None = None,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: tuple[int, int] | list[float | int] | None = None,
         **kwargs,
     ):
+        # Convert coordinate to proper integer tuple if provided
+        processed_coordinate = None
+        if coordinate is not None:
+            try:
+                processed_coordinate = (round(float(coordinate[0])), round(float(coordinate[1])))
+            except (IndexError, ValueError, TypeError) as e:
+                raise ToolError(f"Invalid coordinate format: {coordinate}. Error: {e}")
+
         if action == "screenshot":
             return await self.screenshot_action.execute()
         elif action in ("left_click", "right_click", "middle_click", "double_click"):
-            return await self.mouse_click_action.execute(action=action, coordinate=coordinate)
+            return await self.mouse_click_action.execute(action=action, coordinate=processed_coordinate)
         elif action in ("key", "type"):
             return await self.keyboard_input_action.execute(action=action, text=text)
         elif action == "mouse_move":
-            return await self.mouse_movement_action.execute(coordinate=coordinate)
+            return await self.mouse_movement_action.execute(coordinate=processed_coordinate)
         elif action == "cursor_position":
-            return await self.cursor_position_action.execute(coordinate=coordinate, text=text)
+            return await self.cursor_position_action.execute(coordinate=processed_coordinate, text=text)
         else:
             raise ToolError(f"Action '{action}' is not implemented yet.")
