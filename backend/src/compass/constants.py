@@ -44,7 +44,7 @@ AGENT_TOOLS = {
 }
 
 # LLM Provider Configuration
-LLM_PROVIDER = "google"  # Options: "anthropic" or "google"
+LLM_PROVIDER = "anthropic"  # Options: "anthropic" or "google"
 
 # Anthropic Model Configuration
 ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"

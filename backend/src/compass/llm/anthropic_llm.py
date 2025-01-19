@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Generator, Dict, Any, Union
+from typing import Generator, Dict, Any, Union, List
 from anthropic import Anthropic
 from anthropic.types.beta import (
     BetaMessageParam
@@ -23,11 +23,28 @@ from compass.utils.utility import log_execution_time
 logger = logging.getLogger(__name__)
 
 class AnthropicLLM(BaseLLMInterface):
-    def __init__(self, memory_manager: MemoryManager, tools_params: Dict[str, Any]):
+    def __init__(self, 
+                 memory_manager: MemoryManager, 
+                 tools_params: List[Dict[str, Any]], 
+                 manual_system_message: SystemMessage,
+                 auto_system_message: SystemMessage):
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
-        self.tools_params = tools_params
+        # Filter tools while keeping required parameters
+        self.tools_params = [
+            {
+                "type": tool["type"],
+                "name": tool["name"],
+                **({"display_width_px": tool["display_width_px"], 
+                    "display_height_px": tool["display_height_px"]} 
+                   if tool["type"] == "computer_20241022" else {})
+            }
+            if tool["type"] in ["computer_20241022", "text_editor_20241022"]
+            else tool
+            for tool in tools_params
+        ]
         self.memory_manager = memory_manager
         self.betas = [COMPUTER_USE_BETA_FLAG] + ([PROMPT_CACHING_BETA_FLAG] if PROMPT_CACHING else [])
+        # We don't need to store system messages as Anthropic handles them differently
 
     def preprocess_messages(self, messages: list[BetaMessageParam]) -> list[BetaMessageParam]:
         """Preprocess messages for manual mode by converting tool-related content to text"""
