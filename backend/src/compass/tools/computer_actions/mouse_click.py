@@ -8,8 +8,6 @@ from compass.services.state_manager import StateManager
 
 logger = logging.getLogger(__name__)
 
-COMPARE_WITH_PREVIOUS = True
-
 class MouseClickAction(BaseComputerAction):
     """Handles mouse click actions."""
 
@@ -21,7 +19,7 @@ class MouseClickAction(BaseComputerAction):
             scaled_height=scaled_height,
             state_manager=state_manager,
             enable_screenshot_comparison=True,
-            enable_screen_description=True
+            enable_screen_description=False
         )
 
     async def execute(self, 

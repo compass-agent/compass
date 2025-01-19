@@ -19,6 +19,7 @@ from compass.constants import (
 )
 from compass.key import ANTHROPIC_API_KEY
 from compass.utils.utility import log_execution_time
+from compass.utils.utility import TokenTracker
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class AnthropicLLM(BaseLLMInterface):
                  manual_system_message: SystemMessage,
                  auto_system_message: SystemMessage):
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
+        self.token_tracker = TokenTracker()
         # Filter tools while keeping required parameters
         self.tools_params = [
             {
@@ -100,15 +102,14 @@ class AnthropicLLM(BaseLLMInterface):
                     betas=self.betas,
                 )
                 response = raw_response.parse()
-                # Process each content block
+                self.token_tracker.track_usage(
+                    response.usage.input_tokens,
+                    response.usage.output_tokens
+                )
                 for block in response.content:
-                    logger.info(f"checkout point 1, block: {block}")
                     if block.type == "text":
-                        logger.info(f"checkout point 2, block: {block}")
                         yield block.text
                     elif block.type == "tool_use":
-                        logger.info(f"checkout point 3, block: {block}")
-                        # Convert to our custom ToolCall type
                         tool_call = ToolCall(
                             name=block.name,
                             args=block.input, # type: ignore
