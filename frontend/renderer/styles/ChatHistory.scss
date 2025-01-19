@@ -1,3 +1,5 @@
+@use 'variables' as *;
+
 .chat-history {
   width: 100%;
   height: 100%;
@@ -196,11 +198,39 @@
       font-size: 0.9em;
     }
 
+    .tool-input-row {
+      display: flex; 
+      align-items: center; /* Center vertically */
+      justify-content: space-between; /* Ensure spacing between elements */
+      gap: 10px; /* Add some space between the text and the button */
+    }
+
     .tool-input-value {
       color: #e0e0e0;
       margin-bottom: 6px;
       font-family: monospace;
       font-size: 0.9em;
+      flex-grow: 1; /* Allow the text to take up the remaining space */
+    }
+
+    .popup-open-btn {
+      background-color: $button-background-color;
+      // color: $button-color;
+      border: none;
+      border-radius: 4px;
+      width: $button-size-small;
+      height: $button-size-small;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: flex; /* Align the icon properly */
+      align-items: center; /* Center icon vertically */
+      justify-content: center;
+      margin-right: 6px;
+  
+      &:hover {
+        background-color: #cccccc;
+      }
     }
 
     .tool-command-block {

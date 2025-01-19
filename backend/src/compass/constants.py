@@ -32,4 +32,4 @@ HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
 # HOST_WORKING_DIR = "/Users/kazem/openfoam/run/"
 
 # Screenshot configuration
-PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent
+PRE_RUN_SCREENSHOTS = False    # Take screenshots before running the agent

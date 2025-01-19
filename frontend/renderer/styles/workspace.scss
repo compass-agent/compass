@@ -1,0 +1,175 @@
+@use 'variables' as *;
+
+
+.file-editor-panel {
+  position: fixed;
+  top: $buttons-bar-height;
+  right: 0;
+  height: 100%;
+  max-width: 75%;
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid #444;
+
+  .file-editor-header {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+    padding: 10px;
+
+    &-top {
+      display: flex;
+      justify-content: end;
+      align-items: center;
+      margin-bottom: 5px;
+      gap: 16px;
+      
+      .file-editor-btn {
+        background: none;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        &:hover {
+          color: #f0f0f0;
+        }
+      }
+    }
+  }
+
+  .file-editor-tabs {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    height: calc($buttons-bar-height - 1px); //  border-bottom: 1px 
+    padding-left: 5px;
+
+      .tab {
+        padding: 10px 12px;
+        background: #1e1e1e;
+        color: white;
+        border: 1px solid #444;
+        cursor: pointer;
+        height: 100%;
+        width: 100px;
+        white-space: nowrap; /* Prevent text wrapping */
+        text-overflow: ellipsis;
+
+        &:hover {
+          background-color: #333;
+        }
+
+        &.active {
+          background-color: #2c2c2c;
+          border-color: #444;
+          border-bottom: 1px solid #2c2c2c; // Seamless bottom border with header
+          font-weight: bold;
+        }
+        .tab-content {
+          display: flex;
+          align-items: center;
+          width: 100%;
+
+          .tab-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 3px;
+          }
+          
+          .close-tab-btn {
+            background: none;
+            border: none;
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+
+          }
+          
+          .unsaved-indicator {
+            color: transparent;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+
+            &:hover {
+              background-color: transparent;
+              color: white;
+              font-size: 14px;
+            }
+          }
+        }
+
+      }
+
+      .file-editor-btn {
+        background: none;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        &:hover {
+          //background-color: #333;
+        }
+      }
+
+      .add-tab-btn {
+        height: 100%;
+        width: $buttons-bar-height;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 10px;
+        background-color: #1e1e1e;
+        color: white;
+        cursor: pointer;
+        }
+  }
+  .tab-panels {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .tab-panel {
+      flex-grow: 1; /* Allow it to grow to fit the space */
+      display: flex;
+    }
+  }
+
+    .file-editor-resize-handle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      cursor: ew-resize;
+      background-color: rgba(255, 255, 255, 0.1);
+      z-index: 10;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+    }
+}
+
+

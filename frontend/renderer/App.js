@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import "./styles/common.scss";
 import "./styles/App.scss";
 import ChatHistory from "./components/ChatHistory";
@@ -16,6 +17,7 @@ function AppContent() {
   const { connection, chat, agent } = state;
   const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
   const isAutoMode = agent.mode === AgentMode.AUTO;
+  const [editorWidth, setEditorWidth] = useState(0);
   // Use custom hooks
   useUpdateContainerHeight(chatHistoryRef);
   useScrollToBottom(chatHistoryRef, chat.messages);
@@ -25,19 +27,32 @@ function AppContent() {
       <div className="header-wrapper">
         <Header />
       </div>
-      <div className="content">
+      <div
+        className="content"
+         style={{ width: `calc(100% - ${editorWidth}px)` }}
+      >
         {connection.error && (
           <div className="error-banner">{connection.error}</div>
         )}
         <div className="history-container">
           <div className="chat-history-wrapper" ref={chatHistoryRef}>
-            <ChatHistory />
+            <ChatHistory
+              onEditorWidthChange={(newWidth) => {
+              setEditorWidth(newWidth)
+              }} // Callback to update editor width
+            />
           </div>
           <div className="control-panel-wrapper">
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper" style={{ display: (isAutoMode && agent.status !== AgentStatus.STOPPED  ) ? 'none' : '' }}> 
+        <div
+          className="input-box-wrapper"
+          style={{
+            display:
+              isAutoMode && agent.status !== AgentStatus.STOPPED ? "none" : "",
+          }}
+        >
           <MessageInput />
         </div>
       </div>
@@ -49,7 +64,12 @@ function AppContent() {
 function App() {
   return (
     <AppProvider>
-      <AppContent />
+      <Router>
+        <Routes>
+          {/* Main App */}
+          <Route path="/" element={<AppContent />} />
+        </Routes>
+      </Router>
     </AppProvider>
   );
 }

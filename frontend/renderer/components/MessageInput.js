@@ -122,7 +122,6 @@ function MessageInput() {
   };
 
   const handleStop = () => {
-    //console.log("MessageInput - Stopping the agent");
     dispatch({
       type: "STOP_PROCESSING",
       payload: "",
@@ -133,18 +132,10 @@ function MessageInput() {
   
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      //console.log("MessageInput - Enter key pressed");
       e.preventDefault();
       handleSubmit();
     }
   };
-
-  // const playState = getPlayState();
-  // console.log("MessageInput - Render:", {
-  //   playState,
-  //   message,
-  //   isDisabled: agent.status !== AgentStatus.STOPPED,
-  // });
 
   const isInputEnabled = agent.status === AgentStatus.STOPPED;
 

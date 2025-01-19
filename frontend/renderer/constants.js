@@ -34,4 +34,9 @@ const ActionTypes = {
   SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
 };
 
-module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode };
+const EditorWindowConf = {
+  MIN_EDITOR_WIN_WIDTH: 300,
+  MAX_EDITOR_WIN_WIDTH: 800,
+}
+
+module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, EditorWindowConf };

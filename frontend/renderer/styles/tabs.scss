@@ -1,0 +1,35 @@
+
+.tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .tab {
+    padding: 6px 12px;
+    background-color: #444;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .tab.active {
+    background-color: #1e1e1e;
+    font-weight: bold;
+  }
+  
+  .close-tab-btn {
+    margin-left: 8px;
+    cursor: pointer;
+    color: #fff;
+  }
+  
+  .add-tab-btn {
+    padding: 6px 12px;
+    background-color: #444;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }

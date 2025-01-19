@@ -6,6 +6,8 @@ const getFileName = (filepath) => {
   return filepath.split('/').pop().split('\\').pop();
 };
 
+export const FILE_EDIT_TOOLS_NAME = ['bash_run', 'view', 'create', 'str_replace', 'insert', 'undo_edit'];
+
 export const TOOL_ACTION_MAPPING = {
   // Bash script execution
   bash_run: {
@@ -50,9 +52,9 @@ export const TOOL_ACTION_MAPPING = {
         component: (
           <div style={{ fontFamily: 'monospace' }}>
             <strong>Path:</strong> {tool.input.path}
-            <br />
+            {/* <br />
             <strong>Content:</strong>
-            <pre>{tool.input.content}</pre>
+            <pre>{tool.input.content}</pre> */}
           </div>
         )
       };
@@ -87,9 +89,9 @@ export const TOOL_ACTION_MAPPING = {
             <strong>Path:</strong> {tool.input.path}
             <br />
             <strong>At line:</strong> {tool.input.insert_line}
-            <br />
+            {/* <br />
             <strong>Content:</strong>
-            <pre>{tool.input.new_str}</pre>
+            <pre>{tool.input.new_str}</pre> */}
           </div>
         )
       };
@@ -190,9 +192,9 @@ export const TOOL_ACTION_MAPPING = {
           component: (
             <div style={{ fontFamily: 'monospace' }}>
               <strong>Path:</strong> {tool.input.path}
-              <br />
+              {/* <br />
               <strong>Content:</strong>
-              <pre>{tool.input.file_text}</pre>
+              <pre>{tool.input.file_text}</pre> */}
             </div>
           )
         },
@@ -215,9 +217,9 @@ export const TOOL_ACTION_MAPPING = {
               <strong>Path:</strong> {tool.input.path}
               <br />
               <strong>At line:</strong> {tool.input.insert_line}
-              <br />
+              {/* <br />
               <strong>Content:</strong>
-              <pre>{tool.input.new_str}</pre>
+              <pre>{tool.input.new_str}</pre> */}
             </div>
           )
         },

@@ -1,11 +1,11 @@
-const { app, BrowserWindow, ipcMain, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const {
   default: installExtension,
   REACT_DEVELOPER_TOOLS,
 } = require("electron-devtools-installer");
-const { handleCoordinatePreview } = require('./coordinatePreview');
-
+const { handleCoordinatePreview } = require("./coordinatePreview");
 require("dotenv").config();
 
 const WINDOW_CONFIG = {
@@ -78,8 +78,6 @@ app.on("activate", () => {
   }
 });
 
-// Handle window actions from the renderer process
-
 let previousBounds = null; // To store the previous window bounds
 
 ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
@@ -105,10 +103,10 @@ ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
   }
 });
 
-
 ipcMain.on("move-to-bottom-right", () => {
   if (!mainWindow) return;
-  const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
+  const { width, height } =
+    require("electron").screen.getPrimaryDisplay().workAreaSize;
   mainWindow.setBounds({
     x: width - mainWindow.getBounds().width,
     y: height - mainWindow.getBounds().height,
@@ -124,7 +122,7 @@ ipcMain.on("minimize-window", () => {
   if (mainWindow) mainWindow.minimize();
 });
 
-ipcMain.on('restore-window', (event) => {
+ipcMain.on("restore-window", (event) => {
   if (mainWindow) {
     mainWindow.restore();
   }
@@ -140,3 +138,70 @@ ipcMain.on("maximize-window", () => {
     }
   }
 });
+
+ipcMain.handle("save-file", async (event, { filePath, content }) => {
+  try {
+
+    fs.writeFileSync(filePath, content, "utf-8");
+    console.log("Main Process: File saved successfully");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Main Process: Failed to save file:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+
+ipcMain.handle("open-file-dialog", async () => {
+  try {
+    // Temporarily disable alwaysOnTop
+    mainWindow.setAlwaysOnTop(false);
+    const result = await dialog.showOpenDialog({
+      properties: ["openFile"],
+      filters: [
+        { name: "Text Files", extensions: ["txt"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    if (result.canceled) {
+      return { success: false, error: "File selection was canceled" };
+    } else {
+      const filePath = result.filePaths[0];
+      const fileName = path.basename(filePath);
+      const content = fs.readFileSync(filePath, "utf-8");
+      return { success: true, filePath, fileName, content };
+    }
+    mainWindow.setAlwaysOnTop(true);
+  } catch (error) {
+    console.error("Main Process: Failed to open file dialog:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("save-file-dialog", async (event, content) => {
+  try {
+    // Temporarily disable alwaysOnTop
+    mainWindow.setAlwaysOnTop(false);
+    const result = await dialog.showSaveDialog({
+      title: "Save File",
+      defaultPath: path.join(app.getPath("documents"), "untitled.txt"),
+      filters: [
+        { name: "Text Files", extensions: ["txt"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    if (result.canceled) {
+      return { success: false, error: "Save was canceled" };
+    } else {
+      const filePath = result.filePath;
+      fs.writeFileSync(filePath, content, "utf-8");
+      return { success: true, filePath };
+    }
+    mainWindow.setAlwaysOnTop(true);
+  } catch (error) {
+    console.error("Main Process: Failed to save file:", error);
+    return { success: false, error: error.message };
+  }
+});
+
