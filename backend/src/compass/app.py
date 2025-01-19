@@ -43,18 +43,10 @@ from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
 from compass.training_agent.training_agent import TrainingAgent
 
-# Initialize services within a request context
-def init_services():
-    global training_agent, state_manager, agent_service
-    with app.app_context():
-        training_agent = TrainingAgent()
-        state_manager = StateManager(socketio)
-        agent_service = AgentService(state_manager)
-
 # Initialize services
-training_agent = None
-state_manager = None
-agent_service = None
+training_agent = TrainingAgent()
+state_manager = StateManager(socketio)
+agent_service = AgentService(state_manager)
 
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
@@ -74,28 +66,19 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 @socketio.on('connect')
 def handle_connect():
-    global training_agent, state_manager, agent_service
-    if not training_agent:
-        init_services()
-    logger.info(f'Client connected with sid: {request.sid}')
-    emit('status', {'data': 'Connected to server', 'sid': request.sid})
+    logger.info(f'Client connected with sid: {request.sid}')  # type: ignore
+    emit('status', {'data': 'Connected to server', 'sid': request.sid})  # type: ignore
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    logger.info(f'Client disconnected with sid: {request.sid}')
+    logger.info(f'Client disconnected with sid: {request.sid}')  # type: ignore
 
 @socketio.on('message')
 def handle_message(data):
     try:
         logger.info("Handling new message")
-        # Remove the wrapper function and directly call process_message
         with app.app_context():
-            # If process_message is async
-            if asyncio.iscoroutinefunction(agent_service.process_message):
-                eventlet.spawn(asyncio.run, agent_service.process_message(data.get('text', '')))
-            else:
-                # If process_message is sync
-                agent_service.process_message(data.get('text', ''))
+            eventlet.spawn(asyncio.run, agent_service.process_message(data.get('text', '')))
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -104,10 +87,8 @@ def handle_message(data):
 def handle_control_update(data):
     logger.info(f'Control update received: {data}')
     try:
-        def update_wrapper():
-            with app.app_context():
-                return state_manager.update_state(data)
-        eventlet.spawn(update_wrapper)
+        with app.app_context():
+            state_manager.update_state(data)
     except Exception as e:
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -116,10 +97,8 @@ def handle_control_update(data):
 def handle_execute_next_tool():
     logger.info('Received execute_next_tool request')
     try:
-        def execute_wrapper():
-            with app.app_context():
-                return agent_service.execute_all_pending_tools()
-        eventlet.spawn(execute_wrapper)
+        with app.app_context():
+            eventlet.spawn(asyncio.run, agent_service.execute_all_pending_tools())
     except Exception as e:
         logger.error(f"Error executing tool: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -128,7 +107,8 @@ def handle_execute_next_tool():
 def handle_generate_next_action():
     logger.info('Received generate_next_action request')
     try:
-        eventlet.spawn(agent_service.process_next_action)
+        with app.app_context():
+            eventlet.spawn(asyncio.run, agent_service.process_next_action())
     except Exception as e:
         logger.error(f"Error generating next action: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -140,7 +120,9 @@ def handle_execute_tool_and_generate_action():
         async def combined_operation():
             await agent_service.execute_all_pending_tools()
             await agent_service.process_next_action()
-        eventlet.spawn(combined_operation)
+            
+        with app.app_context():
+            eventlet.spawn(asyncio.run, combined_operation())
     except Exception as e:
         logger.error(f"Error in combined operation: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -186,9 +168,6 @@ def default_error_handler(e):
 
 if __name__ == '__main__':
     try:
-        # Initialize services before running
-        init_services()
-        
         socketio.run(app, 
             host='0.0.0.0',
             debug=True, 

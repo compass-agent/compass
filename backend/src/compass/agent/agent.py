@@ -6,7 +6,7 @@ from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperat
 from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
-from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
+from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
 from compass.llm.anthropic_llm import AnthropicLLM
 from compass.llm.memory_management import MemoryManager
 from compass.agent.prompt import get_prompt_handler
@@ -172,21 +172,21 @@ class AgentService:
             if isinstance(chunk, str):
                 text_response_content.append(chunk)
                 self.state_manager.emit_response({
-                    "type": "ai_response_stream",
+                    "type": "ai_response",
                     "content": chunk,
-                    "is_final": False
+                    #"is_final": False
                 })
                 logger.info(f"AI response stream: {chunk}")
             elif isinstance(chunk, ToolCall):
                 tool_calls.append(chunk)
                 logger.info(f"Tool call chunk: {chunk}")
         
-        if text_response_content:
-            self.state_manager.emit_response({
-                "type": "ai_response_stream",
-                "content": "",
-                "is_final": True
-            })
+        # if text_response_content:
+        #     self.state_manager.emit_response({
+        #         "type": "ai_response_stream",
+        #         "content": "",
+        #         "is_final": True
+        #     })
         
         if tool_calls:
             tool_use_group = {

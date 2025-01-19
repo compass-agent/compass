@@ -2,8 +2,9 @@ import logging
 from typing import Literal
 from pathlib import Path
 import time
-from ...tools.base import BaseTool, ToolResult
-from ...constants import HOST_WORKING_DIR
+from compass.tools.base import BaseTool
+from compass.types.agent import ToolResult, ToolError
+from compass.constants import HOST_WORKING_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -60,12 +61,12 @@ class ParaViewTool(BaseTool):
                 )
             
             return ToolResult(
-                output=stdout.decode(),
+                text=stdout.decode(),
                 system=f"Execution time: {execution_time:.2f}s"
             )
             
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     def to_params(self) -> dict:
         return {

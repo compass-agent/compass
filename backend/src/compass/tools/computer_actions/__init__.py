@@ -110,7 +110,7 @@ class ComputerTool(BaseTool):
         
         if not (self.width and self.height):
             logger.error("Could not determine screen dimensions, thus quitting") 
-            raise ToolError("Could not determine screen dimensions")
+            raise RuntimeError("Could not determine screen dimensions")
 
     def _find_best_standard_dimension(self) -> None:
         """

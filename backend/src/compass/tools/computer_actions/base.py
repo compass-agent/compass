@@ -1,16 +1,14 @@
 import pyautogui
-from PIL import Image # type: ignore
+from PIL import Image
 import io
 import base64
 from abc import ABC, abstractmethod
 from typing import Tuple
 import logging
-import asyncio
 from dataclasses import dataclass
 
 from compass.types.agent import ToolResult, ScalingSource
 from compass.services.state_manager import StateManager
-from compass.constants import SCREENSHOT_OPTIMIZATION
 from compass.tools.screen_parser.screen_parser import ScreenParser
 from compass.tools.screen_parser.models import ScreenData
 from compass.utils.utility import log_execution_time
@@ -166,7 +164,7 @@ class BaseComputerAction(ABC):
             if x > self.scaled_width or y > self.scaled_height:
                 message = f"Coordinates {x}, {y} are out of bounds ({self.scaled_width}, {self.scaled_height})"
                 logger.error(message)
-                raise ToolError(message)
+                raise ValueError(message)
             return round(x / self._x_scaling_factor), round(y / self._y_scaling_factor)
         else:
             return round(x * self._x_scaling_factor), round(y * self._y_scaling_factor)

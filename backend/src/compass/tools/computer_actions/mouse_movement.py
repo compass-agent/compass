@@ -2,7 +2,7 @@ import pyautogui
 import logging
 from typing import Optional, Tuple, Literal
 
-from compass.types.agent import ToolResult, ScalingSource
+from compass.types.agent import ToolResult, ScalingSource, ToolError
 from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
@@ -33,4 +33,4 @@ class MouseMovementAction(BaseComputerAction):
         else:
             pyautogui.moveTo(x, y, duration=0)
 
-        return ToolResult(output=None, error=None)
+        return ToolResult(text="Successfully moved mouse to the specified coordinates", error=None)

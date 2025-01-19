@@ -86,7 +86,7 @@ class BashExecutor(BaseTool):
                 )
             
             return ToolResult(
-                output=stdout.decode(),
+                text=stdout.decode(),
                 system=f"Script executed in {runtime}: {script}" if stderr.decode() else None
             )
             

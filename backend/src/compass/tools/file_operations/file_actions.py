@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from compass.tools.base import BaseTool
-from compass.types.agent import ToolResult
+from compass.types.agent import ToolResult, ToolError
 from compass.constants import HOST_WORKING_DIR
 
 Command = Literal[
@@ -55,22 +55,22 @@ class FileOperationsTool(BaseTool):
             return await self._view(_path, view_range)
         elif command == "create":
             if file_text is None:
-                return ToolResult(error="Parameter `file_text` is required for command: create")
+                raise ToolError("Parameter `file_text` is required for command: create")
             return await self._create(_path, file_text)
         elif command == "str_replace":
             if old_str is None:
-                return ToolResult(error="Parameter `old_str` is required for command: str_replace")
+                raise ToolError("Parameter `old_str` is required for command: str_replace")
             return await self._str_replace(_path, old_str, new_str)
         elif command == "insert":
             if insert_line is None:
-                return ToolResult(error="Parameter `insert_line` is required for command: insert")
+                raise ToolError("Parameter `insert_line` is required for command: insert")
             if new_str is None:
-                return ToolResult(error="Parameter `new_str` is required for command: insert")
+                raise ToolError("Parameter `new_str` is required for command: insert")
             return await self._insert(_path, insert_line, new_str)
         elif command == "undo_edit":
             return await self._undo_edit(_path)
             
-        return ToolResult(error=f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}')
+        raise ToolError(f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}')
 
     def validate_path(self, command: str, path: Path):
         """Check that the path/command combination is valid."""
@@ -81,21 +81,20 @@ class FileOperationsTool(BaseTool):
         # Special handling for create command
         if command == "create":
             if path.exists():
-                return ToolResult(error=f"File already exists at: {path}. Cannot overwrite files using command `create`.")
+                raise ToolError(f"File already exists at: {path}. Cannot overwrite files using command `create`.")
             # Ensure parent directory exists
             os.makedirs(path.parent, exist_ok=True)
             return
 
         if not path.exists():
-            return ToolResult(error=f"The path {path} does not exist. Please provide a valid path.")
+            raise ToolError(f"The path {path} does not exist. Please provide a valid path.")
         if path.is_dir() and command != "view":
-            return ToolResult(error=f"The path {path} is a directory and only the `view` command can be used on directories")
+            raise ToolError(f"The path {path} is a directory and only the `view` command can be used on directories")
 
-        # Ensure the path is within the allowed working directory
         try:
             path.relative_to(self.base_path)
         except ValueError:
-            return ToolResult(error=f"Access denied: {path} is outside the working directory")
+            raise ToolError(f"Access denied: {path} is outside the working directory")
 
     # Update method signatures to match the new __call__ parameters
     async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
@@ -105,8 +104,8 @@ class FileOperationsTool(BaseTool):
                 path = self.base_path / path
                 
             if not path.exists():
-                return ToolResult(error=f"Path not found: {path}")
-            
+                raise ToolError(f"Path not found: {path}")
+
             if path.is_dir():
                 # Show directory structure using tree-like format
                 tree_content = []
@@ -132,7 +131,7 @@ class FileOperationsTool(BaseTool):
                     
                 return ToolResult(text=content)
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     async def _create(self, path: Path, content: str) -> ToolResult:
         """Create a new file with content"""
@@ -148,7 +147,7 @@ class FileOperationsTool(BaseTool):
             self._file_history[path].append(content)
             return ToolResult(text=f"Created file: {path}")
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     async def _str_replace(self, path: Path, old_str: str, new_str: str | None) -> ToolResult:
         """Replace text in a file"""
@@ -166,7 +165,7 @@ class FileOperationsTool(BaseTool):
                 
             return ToolResult(text=f"Replaced text in {path}")
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     async def _insert(self, path: Path, line_number: int, content: str) -> ToolResult:
         """Insert text at specific line number"""
@@ -177,7 +176,7 @@ class FileOperationsTool(BaseTool):
             self._file_history[path].append(''.join(lines))
             
             if line_number < 1 or line_number > len(lines) + 1:
-                return ToolResult(error=f"Invalid line number: {line_number}")
+                raise ToolError(f"Invalid line number: {line_number}")
             
             lines.insert(line_number - 1, content + '\n')
             
@@ -186,13 +185,13 @@ class FileOperationsTool(BaseTool):
                 
             return ToolResult(text=f"Inserted text at line {line_number} in {path}")
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     async def _undo_edit(self, path: Path) -> ToolResult:
         """Undo last edit operation"""
         try:
             if not self._file_history[path]:
-                return ToolResult(error=f"No edit history found for: {path}")
+                raise ToolError(f"No edit history found for: {path}")
             
             previous_content = self._file_history[path].pop()
             with open(path, 'w') as f:
@@ -200,7 +199,7 @@ class FileOperationsTool(BaseTool):
                 
             return ToolResult(text=f"Undid last change to {path}")
         except Exception as e:
-            return ToolResult(error=str(e))
+            raise ToolError(str(e))
 
     def to_params(self):
         """Return tool parameters as defined by Anthropic"""

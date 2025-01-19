@@ -3,7 +3,7 @@ import logging
 from typing import Literal, TypedDict
 
 from anthropic.types.beta import BetaToolUnionParam
-from compass.types.agent import ToolResult
+from compass.types.agent import ToolResult, ToolError
 from compass.tools.base import BaseTool
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,7 @@ class SleepAction(BaseTool):
     async def __call__(self, *, action: Literal["sleep"], time: float) -> ToolResult:
         if action != "sleep":
             logger.error(f"Invalid action '{action}' for custom_action tool")
-            return ToolResult(error=f"Invalid action '{action}' for custom_action tool")
-        
+            raise ToolError(f"Invalid action '{action}' for custom_action tool")
         try:
             logger.info(f"Sleeping for {time} seconds")
             await asyncio.sleep(time)
@@ -49,4 +48,4 @@ class SleepAction(BaseTool):
         except Exception as e:
             error_msg = f"Error during sleep: {str(e)}"
             logger.error(error_msg)
-            return ToolResult(error=error_msg) 
+            raise ToolError(error_msg) 
