@@ -10,8 +10,8 @@ from compass.llm.base import BaseLLMInterface
 from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
 from compass.llm.memory_management import MemoryManager
 from compass.constants import (
-    MODEL_NAME_MANUAL,
-    MODEL_NAME_AUTO,
+    ANTHROPIC_MODEL_NAME_MANUAL,
+    ANTHROPIC_MODEL_NAME_AUTO,
     MAX_TOKENS,
     COMPUTER_USE_BETA_FLAG,
     PROMPT_CACHING_BETA_FLAG,
@@ -68,7 +68,7 @@ class AnthropicLLM(BaseLLMInterface):
                 with self.client.messages.stream(
                     max_tokens=MAX_TOKENS,
                     messages=formatted_messages, # type: ignore
-                    model=MODEL_NAME_MANUAL,
+                    model=ANTHROPIC_MODEL_NAME_MANUAL,
                     system=system_message.content
                 ) as stream:
                     for text in stream.text_stream:
@@ -77,7 +77,7 @@ class AnthropicLLM(BaseLLMInterface):
                 raw_response = self.client.beta.messages.with_raw_response.create(
                     max_tokens=MAX_TOKENS,
                     messages=formatted_messages, # type: ignore
-                    model=MODEL_NAME_AUTO,
+                    model=ANTHROPIC_MODEL_NAME_AUTO,
                     system=system_message.content,
                     tools=self.tools_params, # type: ignore
                     betas=self.betas,

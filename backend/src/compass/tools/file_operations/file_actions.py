@@ -206,4 +206,42 @@ class FileOperationsTool(BaseTool):
         return {
             "type": self.api_type,
             "name": self.name,
+            "description": """A text editor tool that can view, create, edit, and undo changes to files.
+Supports operations like viewing file contents, creating new files, replacing text, and inserting lines.""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "enum": ["view", "create", "str_replace", "insert", "undo_edit"],
+                        "description": "The operation to perform on the file"
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Path to the file to operate on"
+                    },
+                    "file_text": {
+                        "type": "string",
+                        "description": "Content to write when creating a new file"
+                    },
+                    "view_range": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Optional line range to view [start, end]"
+                    },
+                    "old_str": {
+                        "type": "string",
+                        "description": "Text to replace when using str_replace command"
+                    },
+                    "new_str": {
+                        "type": "string",
+                        "description": "Replacement text for str_replace command or new content for insert command"
+                    },
+                    "insert_line": {
+                        "type": "integer",
+                        "description": "Line number where to insert new content"
+                    }
+                },
+                "required": ["command", "path"]
+            }
         } 

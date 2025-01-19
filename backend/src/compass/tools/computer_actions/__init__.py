@@ -1,5 +1,5 @@
 import pyautogui
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Union, Any, List, Dict
 import logging
 from enum import StrEnum
 from compass.services.state_manager import StateManager
@@ -49,6 +49,13 @@ class ComputerToolOptions(TypedDict):
     display_width_px: int
 
 
+class ToolParams(TypedDict):
+    name: str
+    type: str
+    description: str
+    input_schema: dict[str, Any]
+
+
 class ComputerTool(BaseTool):
     """
     A tool that allows the agent to interact with the screen of the current computer (MacOS).
@@ -70,8 +77,50 @@ class ComputerTool(BaseTool):
             "display_height_px": self.scaled_height,
         }
 
-    def to_params(self) -> BetaToolComputerUse20241022Param:
-        return {"name": self.name, "type": self.api_type, **self.options}
+    def to_params(self) -> Union[BetaToolComputerUse20241022Param, ToolParams]:
+        params: ToolParams = {
+            "name": self.name,
+            "type": self.api_type,
+            "description": """A tool for interacting with the computer screen and input devices.
+Supports taking screenshots, mouse movements/clicks, and keyboard input.
+
+Required parameters per action:
+- For 'key' or 'type' actions: requires 'text' parameter
+- For mouse actions (left_click, right_click, middle_click, double_click, mouse_move, cursor_position): requires 'coordinate' parameter [x, y]
+- For 'screenshot' action: no additional parameters required""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "screenshot",
+                            "left_click",
+                            "right_click",
+                            "middle_click",
+                            "double_click",
+                            "key",
+                            "type",
+                            "mouse_move",
+                            "cursor_position"
+                        ],
+                        "description": "The type of computer interaction to perform"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Text to type or key to press for keyboard actions"
+                    },
+                    "coordinate": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Screen coordinates as [x, y] array with two integer values for mouse actions"
+                    }
+                },
+                "required": ["action"]
+            },
+            **self.options
+        } # type: ignore
+        return params
 
     def __init__(self, state_manager: StateManager):
         super().__init__()

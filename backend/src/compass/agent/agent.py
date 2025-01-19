@@ -3,14 +3,13 @@ import asyncio
 from typing import Any, cast, Union
 
 from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool
-from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS
+from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS, LLM_PROVIDER
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
-from compass.llm.anthropic_llm import AnthropicLLM
-from compass.llm.memory_management import MemoryManager
+from compass.llm.factory import LLMFactory
 from compass.agent.prompt import get_prompt_handler
-
+from compass.llm.memory_management import MemoryManager
 logger = logging.getLogger(__name__)
 
 class AgentService:
@@ -22,23 +21,25 @@ class AgentService:
         self.messages: list[Union[SystemMessage, HumanMessage, AIMessage]] = []
         self.history_tracker = HistoryLogger()
         self.memory_manager = MemoryManager(self.history_tracker)
-        self.tool_collection = ToolCollection(
-            ComputerTool(state_manager), 
-            FileOperationsTool(), 
-            BashExecutor()
-        )
         self.system_prompt = get_prompt_handler(AGENT_NAME)
-        # TODO: pass in system message and tools params
-        self.llm = AnthropicLLM(self.memory_manager, self.tool_collection.to_params())
-
+        
+        # Get both manual and auto system prompts
+        manual_system_message = self.system_prompt.get_system_prompt(
+            manual_mode=True,
+            highlight_mode=False
+        )
+        auto_system_message = self.system_prompt.get_system_prompt(
+            manual_mode=False,
+            highlight_mode=False
+        )
+        
         self.pending_tool_queue = []
         self.recording_iteration = 0
         logger.info("Agent successfully initialized")
-        # self._mock_enabled = False
 
         # Configure tools based on agent type
         tools = []
-        agent_tool_config = AGENT_TOOLS.get(AGENT_NAME, ["computer", "file", "bash"])  # Default to all tools
+        agent_tool_config = AGENT_TOOLS.get(AGENT_NAME, ["computer", "file", "bash"])
         
         if "computer" in agent_tool_config:
             tools.append(ComputerTool(state_manager))
@@ -48,6 +49,12 @@ class AgentService:
             tools.append(BashExecutor())
         
         self.tool_collection = ToolCollection(*tools)
+        self.llm = LLMFactory.create_llm(
+            memory_manager=self.memory_manager, 
+            tools_params=self.tool_collection.to_params(),
+            manual_system_message=manual_system_message,
+            auto_system_message=auto_system_message
+        )
 
 
     async def process_message(self, message: str) -> None:
@@ -66,7 +73,7 @@ class AgentService:
         self.stop_event.clear()
 
         logger.info("Taking screenshot and cursor position before calling AI")
-        if PRE_RUN_SCREENSHOTS:
+        if PRE_RUN_SCREENSHOTS and "computer" in AGENT_TOOLS.get(AGENT_NAME, []):
             await self._take_screenshot()
 
         if self.state_manager.mode == AgentMode.AUTO:
@@ -171,22 +178,22 @@ class AgentService:
         for chunk in response:
             if isinstance(chunk, str):
                 text_response_content.append(chunk)
-                self.state_manager.emit_response({
-                    "type": "ai_response",
-                    "content": chunk,
-                    #"is_final": False
-                })
+                # self.state_manager.emit_response({
+                #     "type": "ai_response",
+                #     "content": chunk,
+                #     "is_final": False
+                # })
                 logger.info(f"AI response stream: {chunk}")
             elif isinstance(chunk, ToolCall):
                 tool_calls.append(chunk)
                 logger.info(f"Tool call chunk: {chunk}")
         
-        # if text_response_content:
-        #     self.state_manager.emit_response({
-        #         "type": "ai_response_stream",
-        #         "content": "",
-        #         "is_final": True
-        #     })
+        # FIXME: this is a hack to get the final response to the frontend
+        self.state_manager.emit_response({
+                    "type": "ai_response",
+                    "content": "".join(text_response_content),
+                })
+
         
         if tool_calls:
             tool_use_group = {

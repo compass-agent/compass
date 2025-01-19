@@ -1,8 +1,7 @@
 import os
 
-RESPONSE_STREAM_MODE  =  False # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
-MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
-MODEL_NAME_AUTO  =  "claude-3-5-sonnet-latest"
+RESPONSE_STREAM_MODE  =  True # claude-3-5-sonnet-latest or claude-3-5-haiku-latest
+
 MAX_ITERATIONS = 20
 MAX_TOKENS = 512
 PROMPT_CACHING = True
@@ -39,7 +38,17 @@ PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent
 
 # Define tool configurations for different agents
 AGENT_TOOLS = {
-    "OpenFoam": ["file", "bash"],
+    "OpenFoam": ["bash", "file"],
     "FreeCAD": ["computer"],
     "Generic": ["computer", "file", "bash"]
 }
+
+# LLM Provider Configuration
+LLM_PROVIDER = "google"  # Options: "anthropic" or "google"
+
+# Anthropic Model Configuration
+ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
+ANTHROPIC_MODEL_NAME_AUTO = "claude-3-5-sonnet-latest"
+
+# Google Model Configuration
+GOOGLE_MODEL_NAME = "gemini-2.0-flash-exp"
