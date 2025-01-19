@@ -3,17 +3,13 @@ import logging
 from typing import Generator, Dict, Any, Union
 from anthropic import Anthropic
 from anthropic.types.beta import (
-    BetaMessage,
-    BetaMessageParam,
-    BetaTextBlock,
-    BetaTextBlockParam,
-    BetaToolUseBlockParam
+    BetaMessageParam
 )
 
-from .base import BaseLLMInterface
-from ..types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
-from .memory_management import MemoryManager
-from ..constants import (
+from compass.llm.base import BaseLLMInterface
+from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
+from compass.llm.memory_management import MemoryManager
+from compass.constants import (
     MODEL_NAME_MANUAL,
     MODEL_NAME_AUTO,
     MAX_TOKENS,
@@ -22,7 +18,7 @@ from ..constants import (
     PROMPT_CACHING
 )
 from compass.key import ANTHROPIC_API_KEY
-from ..utils.utility import log_execution_time
+from compass.utils.utility import log_execution_time
 
 logger = logging.getLogger(__name__)
 
@@ -33,19 +29,7 @@ class AnthropicLLM(BaseLLMInterface):
         self.memory_manager = memory_manager
         self.betas = [COMPUTER_USE_BETA_FLAG] + ([PROMPT_CACHING_BETA_FLAG] if PROMPT_CACHING else [])
 
-    async def _response_to_params(
-        self,
-        response: BetaMessage,
-    ) -> list[BetaTextBlockParam | BetaToolUseBlockParam]:
-        res: list[BetaTextBlockParam | BetaToolUseBlockParam] = []
-        for block in response.content:
-            if isinstance(block, BetaTextBlock):
-                res.append({"type": "text", "text": block.text})
-            else:
-                res.append(block.model_dump())
-        return res
-
-    def preprocess_messages(self, messages: list[dict]) -> list[dict]:
+    def preprocess_messages(self, messages: list[BetaMessageParam]) -> list[BetaMessageParam]:
         """Preprocess messages for manual mode by converting tool-related content to text"""
         processed = []
         for message in messages:
@@ -53,12 +37,12 @@ class AnthropicLLM(BaseLLMInterface):
             new_content = []
             
             for content_item in message["content"]:
-                if content_item["type"] == "tool_result":
+                if content_item["type"] == "tool_result": # type: ignore
                     # Flatten tool_result content directly into the message
-                    new_content.extend(content_item["content"])
-                elif content_item["type"] == "tool_use":
+                    new_content.extend(content_item["content"]) # type: ignore
+                elif content_item["type"] == "tool_use": # type: ignore
                     # Convert tool_use to text format
-                    tool_text = f"Tool Use - Name: {content_item['name']}, Input: {json.dumps(content_item['input'])}"
+                    tool_text = f"Tool Use - Name: {content_item['name']}, Input: {json.dumps(content_item['input'])}" # type: ignore
                     new_content.append({
                         "type": "text",
                         "text": tool_text
@@ -67,14 +51,14 @@ class AnthropicLLM(BaseLLMInterface):
                     # Keep other content types (text, image) as is
                     new_content.append(content_item)
             
-            new_message["content"] = new_content
+            new_message["content"] = new_content # type: ignore
             processed.append(new_message)
         return processed
 
     @log_execution_time(logger)
     def stream_call(self, system_message: SystemMessage, manual_mode: bool = False) -> Generator[Union[str, ToolCall], None, None]:
         messages = self.memory_manager.memory
-        #messages = self.memory_manager.optimize_messages(messages)
+        messages = self.memory_manager.optimize_messages(messages)
         formatted_messages = self.format_messages_for_llm(messages)
 
         try:
@@ -83,7 +67,7 @@ class AnthropicLLM(BaseLLMInterface):
                 formatted_messages = self.preprocess_messages(formatted_messages)
                 with self.client.messages.stream(
                     max_tokens=MAX_TOKENS,
-                    messages=formatted_messages,
+                    messages=formatted_messages, # type: ignore
                     model=MODEL_NAME_MANUAL,
                     system=system_message.content
                 ) as stream:
@@ -92,10 +76,10 @@ class AnthropicLLM(BaseLLMInterface):
             else:
                 raw_response = self.client.beta.messages.with_raw_response.create(
                     max_tokens=MAX_TOKENS,
-                    messages=formatted_messages,
+                    messages=formatted_messages, # type: ignore
                     model=MODEL_NAME_AUTO,
                     system=system_message.content,
-                    tools=self.tools_params,
+                    tools=self.tools_params, # type: ignore
                     betas=self.betas,
                 )
                 response = raw_response.parse()
@@ -110,7 +94,7 @@ class AnthropicLLM(BaseLLMInterface):
                         # Convert to our custom ToolCall type
                         tool_call = ToolCall(
                             name=block.name,
-                            args=block.input,
+                            args=block.input, # type: ignore
                             tool_call_id=block.id
                         )
                         yield tool_call
@@ -139,7 +123,7 @@ class AnthropicLLM(BaseLLMInterface):
                             "media_type": "image/png",
                             "data": message.image_data
                         }
-                    })
+                    }) # type: ignore
                 formatted_messages.append({"role": "user", "content": content})
             elif isinstance(message, AIMessage):
                 if message.content:

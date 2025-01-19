@@ -3,6 +3,7 @@ from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolResu
 from compass.utils.utility import HistoryLogger
 import logging
 import json
+from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
@@ -26,32 +27,21 @@ class MemoryManager:
         logger.info(f"Saved messages for iteration {self.recording_iteration} as a json file")
         self.recording_iteration += 1
 
-    def _remove_old_screenshots(self, messages: List[Dict], images_to_keep: int | None = 1) -> List[Dict]:
+    def _remove_old_screenshots(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]], images_to_keep: int | None = 1) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:
         """Remove all but the final `images_to_keep` tool_result images"""
         if images_to_keep is None:
             return messages
-
-        kept_images = 0
-        for message in reversed(messages):
-            content = message.get("content", [])
-            new_content = []
-            for content_block in reversed(content):
-                if isinstance(content_block, dict) and content_block.get("type") == "tool_result":
-                    tool_content = content_block.get("content", [])
-                    filtered_tool_content = []
-                    for item in tool_content:
-                        if isinstance(item, dict) and item.get("type") == "image":
-                            if kept_images < images_to_keep:
-                                kept_images += 1
-                                filtered_tool_content.append(item)
-                        else:
-                            filtered_tool_content.append(item)
-                    content_block["content"] = filtered_tool_content
-                new_content.append(content_block)
-            message["content"] = list(reversed(new_content))
+            
+        image_count = 0
+        for msg in reversed(messages):  # Process messages in reverse to keep most recent
+            if isinstance(msg, ToolResult) and msg.image:
+                if image_count >= images_to_keep:
+                    msg.image = None
+                image_count += 1
+                
         return messages
 
-    def _filter_tool_pairs(self, messages: List[Dict], offset: int = 10) -> List[Dict]:
+    def _filter_tool_pairs(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]], offset: int = 10) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:
         """Filter out old tool use/result pairs while preserving recent ones"""
         if offset >= len(messages):
             return messages
@@ -67,54 +57,51 @@ class MemoryManager:
             
             current = messages[i]
             is_tool_use = (
-                current.get("role") == "assistant"
-                and len(current.get("content", [])) == 1
-                and current.get("content", [{}])[0].get("type") == "tool_use"
+                isinstance(current, AIMessage) 
+                and current.tool_calls is not None 
+                and len(current.tool_calls) > 0
             )
             
             if not is_tool_use:
                 filtered.append(current)
                 i += 1
                 continue
-            
+            # TODO: QAE: Check if this is sufficient. Currently it is expecting the tool result comes right after the tool use
             if i + 1 < len(messages):
                 next_msg = messages[i + 1]
                 is_tool_result = (
-                    next_msg.get("role") == "user"
-                    and len(next_msg.get("content", [])) == 1
-                    and next_msg.get("content", [{}])[0].get("type") == "tool_result"
+                    isinstance(next_msg, ToolResult) 
+                    and next_msg.tool_call_id is not None
+                    and any(tc.tool_call_id == next_msg.tool_call_id for tc in current.tool_calls)
                 )
                 
-                if not is_tool_result:
+                if is_tool_result:
+                    i += 2  # Skip both tool use and result
+                else:
                     filtered.append(current)
-                i += 2
+                    i += 1
             else:
                 filtered.append(current)
                 i += 1
             
         return filtered
 
-    def _truncate_tool_results(self, messages: List[Dict], max_chars: int = 50, offset: int = 4) -> List[Dict]:
+    def _truncate_tool_results(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]], max_chars: int = 50, offset: int = 4) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:
         """Truncate text content in tool_results that are older than the offset"""
         if offset >= len(messages):
             return messages
-
         messages_to_process = len(messages) - offset
-        
         for i in range(messages_to_process):
-            content = messages[i].get("content", [])
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_result":
-                    tool_content = block.get("content", [])
-                    for item in tool_content:
-                        if isinstance(item, dict) and item.get("type") == "text" and len(item.get("text", "")) > max_chars:
-                            item["text"] = item["text"][:max_chars] + "..."
+            msg = messages[i]
+            if isinstance(msg, ToolResult) and msg.text and len(msg.text) > max_chars:
+                msg.text = msg.text[:max_chars] + "..."
 
         return messages
 
-    def optimize_messages(self, messages: List[Dict]) -> List[Dict]:
+    def optimize_messages(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:
         """Apply all message optimization strategies"""
-        messages = self._remove_old_screenshots(messages)
-        messages = self._filter_tool_pairs(messages)
-        messages = self._truncate_tool_results(messages)
-        return messages
+        messages_copy = deepcopy(messages)
+        messages_copy = self._remove_old_screenshots(messages_copy)
+        messages_copy = self._filter_tool_pairs(messages_copy)
+        messages_copy = self._truncate_tool_results(messages_copy)
+        return messages_copy
