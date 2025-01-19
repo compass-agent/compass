@@ -4,8 +4,9 @@ from collections import defaultdict
 import os
 from pathlib import Path
 
-from ...tools.base import BaseTool, ToolResult, ToolError
-from ...constants import HOST_WORKING_DIR
+from compass.tools.base import BaseTool
+from compass.types.agent import ToolResult
+from compass.constants import HOST_WORKING_DIR
 
 Command = Literal[
     "view",
@@ -54,24 +55,22 @@ class FileOperationsTool(BaseTool):
             return await self._view(_path, view_range)
         elif command == "create":
             if file_text is None:
-                raise ToolError("Parameter `file_text` is required for command: create")
+                return ToolResult(error="Parameter `file_text` is required for command: create")
             return await self._create(_path, file_text)
         elif command == "str_replace":
             if old_str is None:
-                raise ToolError("Parameter `old_str` is required for command: str_replace")
+                return ToolResult(error="Parameter `old_str` is required for command: str_replace")
             return await self._str_replace(_path, old_str, new_str)
         elif command == "insert":
             if insert_line is None:
-                raise ToolError("Parameter `insert_line` is required for command: insert")
+                return ToolResult(error="Parameter `insert_line` is required for command: insert")
             if new_str is None:
-                raise ToolError("Parameter `new_str` is required for command: insert")
+                return ToolResult(error="Parameter `new_str` is required for command: insert")
             return await self._insert(_path, insert_line, new_str)
         elif command == "undo_edit":
             return await self._undo_edit(_path)
             
-        raise ToolError(
-            f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}'
-        )
+        return ToolResult(error=f'Unrecognized command {command}. The allowed commands for the {self.name} tool are: {", ".join(get_args(Command))}')
 
     def validate_path(self, command: str, path: Path):
         """Check that the path/command combination is valid."""
@@ -82,21 +81,21 @@ class FileOperationsTool(BaseTool):
         # Special handling for create command
         if command == "create":
             if path.exists():
-                raise ToolError(f"File already exists at: {path}. Cannot overwrite files using command `create`.")
+                return ToolResult(error=f"File already exists at: {path}. Cannot overwrite files using command `create`.")
             # Ensure parent directory exists
             os.makedirs(path.parent, exist_ok=True)
             return
 
         if not path.exists():
-            raise ToolError(f"The path {path} does not exist. Please provide a valid path.")
+            return ToolResult(error=f"The path {path} does not exist. Please provide a valid path.")
         if path.is_dir() and command != "view":
-            raise ToolError(f"The path {path} is a directory and only the `view` command can be used on directories")
+            return ToolResult(error=f"The path {path} is a directory and only the `view` command can be used on directories")
 
         # Ensure the path is within the allowed working directory
         try:
             path.relative_to(self.base_path)
         except ValueError:
-            raise ToolError(f"Access denied: {path} is outside the working directory")
+            return ToolResult(error=f"Access denied: {path} is outside the working directory")
 
     # Update method signatures to match the new __call__ parameters
     async def _view(self, path: Path, view_range: list[int] | None = None) -> ToolResult:
@@ -119,7 +118,7 @@ class FileOperationsTool(BaseTool):
                     for f in files:
                         tree_content.append(f"{subindent}📄 {f}")
                 
-                return ToolResult(output="\n".join(tree_content))
+                return ToolResult(text="\n".join(tree_content))
             else:
                 # Handle file content as before
                 with open(path, 'r') as f:
@@ -131,7 +130,7 @@ class FileOperationsTool(BaseTool):
                     skipped_chars = len(content) - (MAX_PREFIX_CHARS + MAX_SUFFIX_CHARS)
                     content = f"[Showing first {MAX_PREFIX_CHARS} and last {MAX_SUFFIX_CHARS} characters. Skipping {skipped_chars} characters in the middle...]\n\n{prefix}\n\n[...]\n\n{suffix}"
                     
-                return ToolResult(output=content)
+                return ToolResult(text=content)
         except Exception as e:
             return ToolResult(error=str(e))
 
@@ -147,7 +146,7 @@ class FileOperationsTool(BaseTool):
                 f.write(content)
             
             self._file_history[path].append(content)
-            return ToolResult(output=f"Created file: {path}")
+            return ToolResult(text=f"Created file: {path}")
         except Exception as e:
             return ToolResult(error=str(e))
 
@@ -165,7 +164,7 @@ class FileOperationsTool(BaseTool):
             with open(path, 'w') as f:
                 f.write(new_content)
                 
-            return ToolResult(output=f"Replaced text in {path}")
+            return ToolResult(text=f"Replaced text in {path}")
         except Exception as e:
             return ToolResult(error=str(e))
 
@@ -185,7 +184,7 @@ class FileOperationsTool(BaseTool):
             with open(path, 'w') as f:
                 f.writelines(lines)
                 
-            return ToolResult(output=f"Inserted text at line {line_number} in {path}")
+            return ToolResult(text=f"Inserted text at line {line_number} in {path}")
         except Exception as e:
             return ToolResult(error=str(e))
 
@@ -199,7 +198,7 @@ class FileOperationsTool(BaseTool):
             with open(path, 'w') as f:
                 f.write(previous_content)
                 
-            return ToolResult(output=f"Undid last change to {path}")
+            return ToolResult(text=f"Undid last change to {path}")
         except Exception as e:
             return ToolResult(error=str(e))
 

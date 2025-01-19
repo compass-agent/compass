@@ -9,6 +9,9 @@ import logging
 import asyncio
 from threading import Thread
 from compass.training_agent.training_agent import TrainingAgent
+import eventlet
+
+eventlet.monkey_patch()
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +20,12 @@ app.config.from_object('compass.config.config.Config')
 
 socketio = SocketIO(app, 
     cors_allowed_origins="*",
-    async_mode='threading',  # Back to threading mode
-    logger=False,
-    engineio_logger=False,
-    debug=False)
+    async_mode='eventlet',
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25,
+    debug=True)
 
 # Create a new event loop for the background thread
 async_loop = asyncio.new_event_loop()
@@ -103,7 +108,7 @@ def handle_control_update(data):
 def handle_execute_next_tool():
     logger.info('Received execute_next_tool request')
     try:
-        run_async(agent_service.execute_next_pending_tool())
+        run_async(agent_service.execute_all_pending_tools())
     except Exception as e:
         logger.error(f"Error executing tool: {e}", exc_info=True)
         emit('error', {'message': str(e)})
@@ -122,7 +127,7 @@ def handle_execute_tool_and_generate_action():
     logger.info('Received execute_tool_and_generate_action request')
     try:
         async def combined_operation():
-            await agent_service.execute_next_pending_tool()
+            await agent_service.execute_all_pending_tools()
             await agent_service.process_next_action()
             
         run_async(combined_operation())
@@ -156,6 +161,16 @@ def handle_save_template(data):
     except Exception as e:
         logger.error(f"Error saving template: {e}", exc_info=True)
         emit('error', {'message': str(e)})
+
+@socketio.on_error()
+def error_handler(e):
+    logger.error(f"SocketIO error: {str(e)}")
+    emit('error', {'message': str(e)})
+
+@socketio.on_error_default
+def default_error_handler(e):
+    logger.error(f"SocketIO default error: {str(e)}")
+    emit('error', {'message': str(e)})
 
 if __name__ == '__main__':
     try:

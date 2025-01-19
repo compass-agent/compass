@@ -1,87 +1,35 @@
 import logging
 import asyncio
-from typing import Any, cast
+from typing import Any, cast, Union
 
-from anthropic.types.beta import (
-    BetaImageBlockParam,
-    BetaMessageParam,
-    BetaTextBlockParam,
-    BetaToolResultBlockParam,
-    BetaToolUseBlockParam,
-)
-
-from compass.tools import ComputerTool, ToolCollection, ToolResult, FileOperationsTool, BashExecutor
-from compass.constants import MAX_ITERATIONS, RESPONSE_STREAM_MODE, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS
+from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool
+from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
-from compass.agent.llm import LLM
+from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
+from compass.llm.anthropic_llm import AnthropicLLM
+from compass.llm.memory_management import MemoryManager
+from compass.agent.prompt import get_prompt_handler
 
 logger = logging.getLogger(__name__)
-
-
-def _make_api_tool_result(
-    result: ToolResult, tool_use_id: str
-) -> BetaToolResultBlockParam:
-    """Convert an agent ToolResult to an API ToolResultBlockParam."""
-    tool_result_content: list[BetaTextBlockParam | BetaImageBlockParam] = []
-    is_error = False
-    
-    if result.error:
-        is_error = True
-        formatted_error = _maybe_prepend_system_tool_result(result, result.error)
-        tool_result_content = [{
-            "type": "text",
-            "text": formatted_error
-        }]
-    else:
-        if result.output:
-            tool_result_content.append(
-                {
-                    "type": "text",
-                    "text": _maybe_prepend_system_tool_result(result, result.output),
-                }
-            )
-        if result.base64_image:
-            tool_result_content.append(
-                {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/png",
-                        "data": result.base64_image,
-                    },
-                }
-            )
-    return {
-        "type": "tool_result",
-        "content": tool_result_content,
-        "tool_use_id": tool_use_id,
-        "is_error": is_error,
-    }
-
-
-def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
-    if result.system:
-        result_text = f"<system>{result.system}</system>\n{result_text}"
-    return result_text
-
 
 class AgentService:
     def __init__(self, state_manager: StateManager):
         logger.info("Initializing Agent")
         self.state_manager = state_manager
-
         self.processing_task = None
         self.stop_event = asyncio.Event()
-        self.messages: list[BetaMessageParam] = []
-
+        self.messages: list[Union[SystemMessage, HumanMessage, AIMessage]] = []
         self.history_tracker = HistoryLogger()
+        self.memory_manager = MemoryManager(self.history_tracker)
         self.tool_collection = ToolCollection(
             ComputerTool(state_manager), 
             FileOperationsTool(), 
             BashExecutor()
         )
-        self.llm = LLM(self.tool_collection.to_params())
+        self.system_prompt = get_prompt_handler(AGENT_NAME)
+        # TODO: pass in system message and tools params
+        self.llm = AnthropicLLM(self.memory_manager, self.tool_collection.to_params())
 
         self.pending_tool_queue = []
         self.recording_iteration = 0
@@ -101,14 +49,6 @@ class AgentService:
         
         self.tool_collection = ToolCollection(*tools)
 
-    def _append_message(self, message: BetaMessageParam) -> None:
-        """Helper method to append message and save messages state"""
-        self.messages.append(message)
-        self.history_tracker.save_messages(self.messages, self.recording_iteration)
-        logger.info(
-            f"Saved messages for iteration {self.recording_iteration} as a json file"
-        )
-        self.recording_iteration += 1
 
     async def process_message(self, message: str) -> None:
         """Process message with iteration loop based on auto mode"""
@@ -119,8 +59,8 @@ class AgentService:
         if not message:
             logger.info("Skipping empty user message since last message was from user")
         else:
-            self._append_message(
-                {"role": "user", "content": [{"type": "text", "text": message}]}
+            self.memory_manager.add_message(
+                HumanMessage(content=message)
             )
         self.state_manager.set_status(AgentStatus.RUNNING, message)
         self.stop_event.clear()
@@ -132,23 +72,17 @@ class AgentService:
         if self.state_manager.mode == AgentMode.AUTO:
             self.processing_task = asyncio.create_task(self._process_message_loop())
         else:
-            self.processing_task = asyncio.create_task(
-                self._process_message_single_mode()
-            )
+            self.processing_task = asyncio.create_task(self._process_message_single_mode())
 
     async def _process_message_single_mode(self, *args, **kwargs) -> None:
         try:
-            response_params = await self._next_step_proposal()
-            if self.state_manager.mode == AgentMode.MANUAL:
-                response_params = [
-                    block for block in response_params if block["type"] == "text"
-                ]
-                logger.info(f"Skipping tool proposals since in highlight mode")
-            else:
-                logger.info(
-                    f"Storing {len(response_params) - 1} tool proposals in queue"
-                )
-                self._store_pending_tool_proposals(response_params)
+            tool_calls = await self._next_step_proposal()
+            for tool_call in tool_calls:
+                self.pending_tool_queue.append(tool_call)
+            self.state_manager.set_pending_tools(len(self.pending_tool_queue))
+            logger.info(f"Pending tool queue: {self.pending_tool_queue}")
+        except Exception as e: # FIXME: handle this better
+            logger.error(f"Error in _process_message_single_mode: {e}")
         finally:
             logger.info(
                 "Setting status to STOPPED, clearing stop event, and cleaning up task"
@@ -169,19 +103,11 @@ class AgentService:
                 and self.state_manager.status == AgentStatus.RUNNING.value
             ):
                 logger.debug(f"Processing iteration {iteration}/{MAX_ITERATIONS}")
-                logger.info(
-                    f"Processing iteration {iteration} status {self.state_manager.status}"
-                )
-                response_params = await self._next_step_proposal()
-
-                tool_blocks = [
-                    cast(BetaToolUseBlockParam, block) 
-                    for block in response_params 
-                    if block["type"] == "tool_use"
-                ]
-                if not tool_blocks:
+                logger.info(f"Processing iteration {iteration} status {self.state_manager.status}")
+                tool_calls = await self._next_step_proposal()
+                if not tool_calls:
                     break
-                await self._execute_tools(tool_blocks)
+                await self._execute_tools(tool_calls)
                 iteration += 1
         except asyncio.CancelledError:
             logger.info("Message processing loop was cancelled")
@@ -194,82 +120,38 @@ class AgentService:
             self.processing_task = None
             logger.info("Message processing loop completed and cleaned up")
 
-    def _store_pending_tool_proposals(self, response_params):
-        """Store tool proposals for later execution"""
-        for block in response_params:
-            if block["type"] == "tool_use":
-                logger.info(f"Tool action: {block['name']} with input: {block['input']}")
-                self.pending_tool_queue.append(block)
-        self.state_manager.set_pending_tools(len(self.pending_tool_queue))
-
     @log_execution_time(logger)
-    async def _execute_tools(
-        self, tool_blocks: list[BetaToolUseBlockParam]
+    async def _execute_tools( 
+        self, tool_calls: list[ToolCall]
     ):
         """Common method to execute a list of tools and collect results"""
-        #tool_result_content: list[BetaToolResultBlockParam] = []
-        # log the list of tool blocks expected to be executed:
-        for content_block in tool_blocks:
-            logger.info(
-                f"Expected to execute tool: {content_block['name']} with input: {content_block['input']}"
-            )
-        for content_block in tool_blocks: 
-            logger.info(
-                f"Executing tool: {content_block['name']} with input: {content_block['input']}"
-            )
-            # Properly type the tool_use_block as BetaMessageParam
-            tool_use_block: BetaMessageParam = {
-                "role": "assistant",
-                "content": [
-                    {
-                        "type": "tool_use",
-                        "name": content_block["name"],
-                        "id": content_block["id"],
-                        "input": content_block["input"]
-                    }
-                ]
-            }
-            result = await self.tool_collection.run(
-                name=content_block["name"],
-                tool_input=cast(dict[str, Any], content_block["input"]),
-            )
+        for tool_call in tool_calls:
+            logger.info(f"Expected to execute tool: {tool_call.name} with input: {tool_call.args}")
+        for tool_call in tool_calls: 
+            logger.info(f"Executing tool: {tool_call.name} with input: {tool_call.args}")
+            tool_result = await self.tool_collection.run(tool_call)
+            self.memory_manager.add_message(AIMessage(tool_calls=[tool_call]))
+            self.memory_manager.add_message(tool_result)
+            self.state_manager.emit_response({
+                "type": "tool_result",
+                "toolUseId": tool_call.tool_call_id,
+                "content": tool_result.text,
+                "isError": tool_result.error is not None
+            })
 
-            tool_result = _make_api_tool_result(result, content_block["id"])
-
-            # Add type checking for tool_result
-            if (isinstance(tool_result, dict) and 
-                "content" in tool_result):
-                self._append_message(tool_use_block)
-                self._append_message({
-                    "role": "user", 
-                    "content": [cast(BetaToolResultBlockParam, tool_result)]
-                })
-                logger.debug(f"Emitting tool result: {tool_result}")
-                self.state_manager.emit_response({
-                    "type": "tool_result",
-                    "toolUseId": content_block["id"],
-                    "content": tool_result["content"],
-                    "isError": tool_result["is_error"]
-                })
-
-        return
-
-    async def execute_next_pending_tool(self):
+    async def execute_all_pending_tools(self):
         if not self.pending_tool_queue:
             logger.info("No pending tools to execute")
             return
-
         self.state_manager.set_status(AgentStatus.RUNNING)
         try:
             await self._execute_tools(self.pending_tool_queue)
             self.pending_tool_queue.clear()
-
         finally:
             self.state_manager.set_status(AgentStatus.STOPPED)
             self.state_manager.set_pending_tools(0)
 
-    async def process_next_action(self):
-        """Generate the next action without executing tools"""
+    async def process_next_action(self): # TBR
         if not self.processing_task or self.processing_task.done():
             self.processing_task = asyncio.create_task(
                 self._process_message_single_mode(None)
@@ -277,62 +159,43 @@ class AgentService:
         else:
             logger.info("Agent is already processing")
 
-    async def _next_step_proposal(self):
-        if self.state_manager.mode == AgentMode.MANUAL:
-            if RESPONSE_STREAM_MODE:
-                response = self.llm.call_llm_wo_tools_stream(self.messages)
-                full_response = ""
-                async for content_token in response: # type: ignore
-                    self.state_manager.emit_response({
-                        "type": "ai_response_stream",
-                        "content": content_token,
-                        "is_final": False
-                    })
-                    full_response += content_token
-            else:
-                full_response = await self.llm.call_llm_wo_tools(self.messages)
+    async def _next_step_proposal(self) -> list[ToolCall]:
+        system_message = self.system_prompt.get_system_prompt(
+            manual_mode=self.state_manager.mode == AgentMode.MANUAL, 
+            highlight_mode=False)
+        
+        response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
+        text_response_content = []
+        tool_calls = []
+        
+        for chunk in response:
+            if isinstance(chunk, str):
+                text_response_content.append(chunk)
                 self.state_manager.emit_response({
-                    "type": "ai_response",
-                    "content": full_response
+                    "type": "ai_response_stream",
+                    "content": chunk,
+                    "is_final": True
                 })
-                
-            response_params = [{"type": "text", "text": full_response, "cache_control": None}]
-            self._append_message({"role": "assistant", "content": response_params}) # type: ignore
-            return response_params
-        else:
-            # Handle regular response
-            response_params = await self.llm.call_llm_with_tools(self.messages)
-            text_blocks = []
-            tool_blocks = []
-            
-            # Separate text and tool blocks
-            for content_block in response_params:
-                if content_block["type"] == "text":
-                    self.state_manager.emit_response({
-                        "type": "ai_response",
-                        "content": content_block["text"]
-                    })
-                    text_blocks.append(content_block)
-                elif content_block["type"] == "tool_use":
-                    tool_blocks.append({
-                        "id": content_block["id"],
-                        "name": content_block["name"],
-                        "input": content_block["input"]
-                    })
-            
-            # Emit all tool blocks together if there are any
-            if tool_blocks:
-                self.state_manager.emit_response({
-                    "type": "tool_use_group",
-                    "tools": tool_blocks
-                })
-            # log info about what being emitted
-            logger.info(f"Emitting tool use group: {tool_blocks}")
-            # Append text blocks to message history if they exist
-            if text_blocks:
-                self._append_message({"role": "assistant", "content": text_blocks})
-            
-            return response_params
+                logger.info(f"AI response stream: {chunk}")
+            elif isinstance(chunk, ToolCall):
+                tool_calls.append(chunk)
+                logger.info(f"Tool call chunk: {chunk}")
+        
+        if tool_calls:
+            tool_use_group = {
+                "type": "tool_use_group",
+                "tools": [{
+                    "id": tool.tool_call_id,
+                    "name": tool.name,
+                    "input": tool.args
+                } for tool in tool_calls]
+            }
+            logger.info(f"Emitting tool use group: {tool_use_group}")
+            self.state_manager.emit_response(tool_use_group)
+        
+        self.memory_manager.add_message(AIMessage(content="".join(text_response_content)))
+        return tool_calls
+    
 
     async def stop_processing(self) -> None:
         """Stop current processing loop"""
@@ -355,33 +218,10 @@ class AgentService:
     async def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
         try:
-            self._append_message(
-                {
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "type": "tool_use",
-                            "name": "computer",
-                            "id": f"tool_screenshot_{len(self.messages)}",
-                            "input": {"action": "screenshot"},
-                        }
-                    ],
-                }
-            )
-
-            result = await self.tool_collection.run(
-                name="computer", tool_input={"action": "screenshot"}
-            )
-
-            # Ensure each tool_result is appended separately
-            tool_results = _make_api_tool_result(
-                result=result, tool_use_id=f"tool_screenshot_{len(self.messages)-1}"
-            )
-
-            self._append_message({"role": "user", "content": [tool_results]})
-
-            logger.info("Screenshot with cursor position captured and added to message history")
+            tool_call = ToolCall(name="computer", args={"action": "screenshot"}, tool_call_id=f"tool_screenshot_{len(self.messages)}")
+            tool_result = await self.tool_collection.run(tool_call)
+            self.memory_manager.add_message(AIMessage(tool_calls=[tool_call]))
+            self.memory_manager.add_message(tool_result)
+            logger.info("Taking auto screenshot")
         except Exception as e:
-            logger.error(
-                f"Failed to take initial screenshot due to the following error, skipping this step: {e}"
-            )
+            logger.error(f"Failed to take initial screenshot [skipping]: {e}")

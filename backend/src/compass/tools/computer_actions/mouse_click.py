@@ -2,7 +2,7 @@ import pyautogui
 import logging
 from typing import Optional, Tuple, Literal
 
-from ..base import ToolResult, ToolError
+from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 from compass.services.state_manager import StateManager
 
@@ -32,7 +32,8 @@ class MouseClickAction(BaseComputerAction):
         try:
             logger.info(f"Executing click action: {action}")
             if coordinate is not None:
-                raise ToolError(f"coordinate is not accepted for {action}")
+                logger.error(f"coordinate is not accepted for {action}")
+                return ToolResult(error=f"coordinate is not accepted for {action}")
             
             # Execute click actions
             if action == "double_click":
@@ -60,10 +61,9 @@ class MouseClickAction(BaseComputerAction):
                 output_parts.append(screenshot_result.description)
             
             return ToolResult(
-                output="\n".join(output_parts), 
-                error=None, 
-                base64_image=screenshot_result.base64_image
+                text="\n".join(output_parts), 
+                image=screenshot_result.base64_image
             ) 
         except Exception as e:
             logger.error(f"Error in MouseClickAction.execute: {e}", exc_info=True)
-            raise ToolError(f"Error executing MouseClickAction: {e}")
+            return ToolResult(error=f"Error executing MouseClickAction: {e}")

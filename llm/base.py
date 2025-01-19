@@ -12,5 +12,5 @@ class BaseLLMInterface(ABC):
             self.messages.append(system_message)
 
     @abstractmethod
-    def stream_call(self, message: HumanMessage)  -> Generator[Union[str, dict], None, None]:
+    def stream_call(self)  -> Generator[Union[str, dict], None, None]:
         pass 

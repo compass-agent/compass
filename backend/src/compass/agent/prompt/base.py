@@ -1,16 +1,17 @@
 from abc import ABC, abstractmethod
 from compass.constants import PROMPT_CACHING
+from compass.types.agent import SystemMessage
 
 class BasePrompt(ABC):
     @abstractmethod
-    def get_manual_mode_highlight_off_prompt(self) -> str:
+    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
         pass
 
     @abstractmethod
-    def get_tool_mode_prompt(self) -> str:
+    def get_tool_mode_prompt(self) -> SystemMessage:
         pass
 
-    def get_system_prompt(self, manual_mode: bool = True, highlight_mode: bool = False):
+    def get_system_prompt(self, manual_mode: bool = True, highlight_mode: bool = False) -> SystemMessage:
         """Returns the appropriate system prompt based on the highlight mode"""
         if manual_mode:
             if not highlight_mode:
@@ -23,8 +24,4 @@ class BasePrompt(ABC):
             else:
                 system_prompt = self.get_tool_mode_prompt()
 
-        return {
-            "type": "text",
-            "text": system_prompt,
-            "cache_control": {"type": "ephemeral"} if PROMPT_CACHING else None
-        } 
+        return system_prompt

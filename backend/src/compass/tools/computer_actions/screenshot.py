@@ -1,6 +1,6 @@
 import logging
 
-from ..base import ToolResult, ToolError
+from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 from compass.services.state_manager import StateManager
 
@@ -35,10 +35,11 @@ class ScreenshotAction(BaseComputerAction):
                 output_parts.append(screenshot_result.description)
 
             return ToolResult(
-                output="\n".join(output_parts),
-                error=None,
-                base64_image=screenshot_result.base64_image
+                text="\n".join(output_parts),
+                image=screenshot_result.base64_image
             )
         except Exception as e:
             logger.error(f"Screenshot failed: {str(e)}")
-            raise ToolError(f"Failed to take screenshot: {str(e)}") 
+            return ToolResult(
+                error=f"Failed to take screenshot: {str(e)}"
+            )

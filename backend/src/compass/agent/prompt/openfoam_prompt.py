@@ -1,14 +1,15 @@
 from .base import BasePrompt
 from compass.constants import DOCKER_CONTAINER_NAME, DOCKER_WORKING_DIR, HOST_WORKING_DIR
+from compass.types.agent import SystemMessage
 
 class OpenFoamPrompt(BasePrompt):
 
-    def _get_user_setup_context(self) -> str:
+    def _get_user_setup_context(self) -> SystemMessage:
         """
         Provides detailed context about the user's setup running OpenFOAM on macOS via Docker.
         Based on the official OpenFOAM 8 macOS setup guide.
         """
-        return f"""
+        return SystemMessage(content=f"""
 The user is running OpenFOAM 8 on macOS using Docker with the following setup:
 
 1. System Architecture:
@@ -33,10 +34,10 @@ IMPORTANT NOTES: When suggesting file paths or commands:
 - Use container paths ({DOCKER_WORKING_DIR}...) for OpenFOAM commands
 - Use 'paraFoam' in docker environment for visualization to launch ParaView GUI
 - Guide users through interactive ParaView operations using the GUI and by reviewing the screen.
-"""
+""")
 
-    def _get_openfoam_base_prompt(self) -> str:
-        return f"""You are an expert OpenFOAM simulation assistant, helping users set up, run, and visualize their CFD simulations. 
+    def _get_openfoam_base_prompt(self) -> SystemMessage:
+        return SystemMessage(content=f"""You are an expert OpenFOAM simulation assistant, helping users set up, run, and visualize their CFD simulations. 
 {self._get_user_setup_context()}
 
 Your role is to guide users through the complete OpenFOAM workflow:
@@ -102,10 +103,10 @@ Example commands:
         "script": "cd {DOCKER_WORKING_DIR}myCase && paraFoam"
     }}
 }}
-"""
+""")
 
-    def get_manual_mode_highlight_off_prompt(self) -> str:
+    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
         return self._get_openfoam_base_prompt()
 
-    def get_tool_mode_prompt(self) -> str:
+    def get_tool_mode_prompt(self) -> SystemMessage:
         return self._get_openfoam_base_prompt() 

@@ -1,12 +1,13 @@
 from datetime import datetime
 from .base import BasePrompt
+from compass.types.agent import SystemMessage
 
 class GenericPrompt(BasePrompt):
-    def get_manual_mode_highlight_off_prompt(self) -> str:
+    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
         today = datetime.today()
         day = today.day  # Get the day of the month without leading zeros
         formatted_date = today.strftime(f'%A, %B {day}, %Y')
-        return f"""<SYSTEM_CAPABILITY>
+        return SystemMessage(content=f"""<SYSTEM_CAPABILITY>
     * You are an assistant for the Compass application running on macOS.
     * Your role is to provide clear, step-by-step guidance to users WITHOUT executing any tools.
     * You must NEVER suggest tool calls or actions - instead, describe what the user should do themselves.
@@ -28,13 +29,13 @@ class GenericPrompt(BasePrompt):
     ❌ BAD: "Let me check where your cursor is or take another screenshot."
     ✅ GOOD: "Based on the screenshot, the settings icon (gear symbol) is located in the left sidebar menu."
     ❌ BAD: "I'll use the computer tool to show you where to click."
-    </EXAMPLES>"""
+    </EXAMPLES>""")
 
-    def get_tool_mode_prompt(self) -> str:
+    def get_tool_mode_prompt(self) -> SystemMessage:
         today = datetime.today()
         day = today.day  # Get the day of the month without leading zeros
         formatted_date = today.strftime(f'%A, %B {day}, %Y')
-        return f"""<SYSTEM_CAPABILITY>
+        return SystemMessage(content=f"""<SYSTEM_CAPABILITY>
     * You are the Compass AI agent. You can see the user's screen, user input, and can use tools to help users accomplish their tasks.
     * When you call a tool (such as 'computer'), you will receive the updated screen and cursor position as the return result.
     * When a user gives you a task, you must carefully plan the steps needed to accomplish it. Then execute these steps by calling the appropriate tools in sequence.
@@ -70,5 +71,6 @@ class GenericPrompt(BasePrompt):
     AI: Propose to type "Hello world" in the message box, since the message box is now highlighted.
     WHY GOOD? AI carefully reviewed the previous result and adjusted the next action accordingly.
 
-    </EXAMPLES>"""
+    </EXAMPLES>""")
+
     

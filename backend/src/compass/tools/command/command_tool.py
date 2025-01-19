@@ -1,7 +1,8 @@
 from typing import Literal
 from pathlib import Path
 from anthropic.types.beta import BetaToolUnionParam
-from ...tools.base import BaseTool, ToolResult
+from ...tools.base import BaseTool
+from compass.types.agent import ToolResult
 import asyncio
 import logging
 from ...constants import DOCKER_CONTAINER_NAME, DOCKER_WORKING_DIR
@@ -80,7 +81,7 @@ class BashExecutor(BaseTool):
             
             if run_detached:
                 return ToolResult(
-                    output="Background process started successfully",
+                    text="Background process started successfully",
                     system=f"Command running in background: {script}"
                 )
             

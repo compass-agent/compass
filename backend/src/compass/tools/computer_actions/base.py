@@ -8,7 +8,7 @@ import logging
 import asyncio
 from dataclasses import dataclass
 
-from ..base import ToolResult, ScalingSource, ToolError
+from compass.types.agent import ToolResult, ScalingSource
 from compass.services.state_manager import StateManager
 from compass.constants import SCREENSHOT_OPTIMIZATION
 from compass.tools.screen_parser.screen_parser import ScreenParser

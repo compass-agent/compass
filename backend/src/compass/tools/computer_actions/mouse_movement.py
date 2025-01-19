@@ -2,7 +2,7 @@ import pyautogui
 import logging
 from typing import Optional, Tuple, Literal
 
-from ..base import ToolResult, ToolError, ScalingSource
+from compass.types.agent import ToolResult, ScalingSource
 from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)

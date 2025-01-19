@@ -5,7 +5,8 @@ from enum import StrEnum
 from compass.services.state_manager import StateManager
 from anthropic.types.beta import BetaToolComputerUse20241022Param
 
-from ..base import BaseTool, ToolError
+from ..base import BaseTool
+from compass.types.agent import ToolResult
 from compass.constants import SCREENSHOT_SCALE_FACTOR
 from .screenshot import ScreenshotAction
 from .cursor_position import CursorPositionAction
@@ -34,11 +35,6 @@ TYPING_GROUP_SIZE = 50
 class Resolution(TypedDict):
     width: int
     height: int
-
-
-class ScalingSource(StrEnum):
-    COMPUTER = "computer"
-    API = "api"
 
 
 MAX_SCALING_TARGETS: dict[str, Resolution] = {

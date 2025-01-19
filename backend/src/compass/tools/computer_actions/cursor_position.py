@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Tuple
 
-from ..base import ToolResult, ToolError
+from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
@@ -15,9 +15,10 @@ class CursorPositionAction(BaseComputerAction):
         
         if coordinate is not None:
             logger.error("coordinate is not accepted for cursor_position")
-            raise ToolError("coordinate is not accepted for cursor_position")
+            return ToolResult(error="coordinate is not accepted for cursor_position")
         if text is not None:
-            raise ToolError("text is not accepted for cursor_position")
+            logger.error("text is not accepted for cursor_position")
+            return ToolResult(error="text is not accepted for cursor_position")
 
         scaled_x, scaled_y = await self.get_cursor_position()
-        return ToolResult(output=f"X={scaled_x},Y={scaled_y}", error=None) 
+        return ToolResult(text=f"X={scaled_x},Y={scaled_y}") 

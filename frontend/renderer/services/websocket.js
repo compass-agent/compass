@@ -4,6 +4,8 @@ class WebSocketService {
   constructor() {
     this.socket = null;
     this.stateHandlers = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 10;
   }
 
   setStateHandlers(handlers) {
@@ -17,19 +19,53 @@ class WebSocketService {
 
     this.socket = io("http://localhost:5001", {
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
       transports: ["websocket"],
+      forceNew: true
     });
 
     this.socket.on("connect", () => {
-      console.log("WebSocket connected");
+      console.log("WebSocket connected with ID:", this.socket.id);
+      this.reconnectAttempts = 0;
       this.stateHandlers?.onConnect();
     });
 
-    this.socket.on("disconnect", () => {
-      console.log("WebSocket disconnected");
+    this.socket.on("disconnect", (reason) => {
+      console.log("WebSocket disconnected. Reason:", reason);
       this.stateHandlers?.onDisconnect();
+      
+      if (reason === "io server disconnect") {
+        // Server initiated disconnect, try reconnecting
+        this.socket.connect();
+      }
+    });
+
+    this.socket.on("connect_error", (error) => {
+      this.reconnectAttempts++;
+      console.log(`WebSocket connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}):`, error);
+      
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.log("Max reconnection attempts reached, stopping reconnection");
+        this.socket.disconnect();
+      }
+
+      this.stateHandlers?.onError({
+        message: `Connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}). ${error.message}`,
+      });
+    });
+
+    // Add heartbeat to check connection
+    setInterval(() => {
+      if (this.socket?.connected) {
+        this.socket.emit('ping');
+      }
+    }, 25000);
+
+    this.socket.on('pong', () => {
+      console.log('Received pong from server');
     });
 
     this.socket.on("state_update", (data) => {
@@ -55,13 +91,6 @@ class WebSocketService {
     this.socket.on("error", (error) => {
       console.error("WebSocket error:", error);
       this.stateHandlers?.onError(error);
-    });
-
-    this.socket.on("connect_error", () => {
-      console.log("WebSocket connection failed");
-      this.stateHandlers?.onError({
-        message: "Connection failed. Retrying...",
-      });
     });
 
     this.socket.on("detection_result", (data) => {

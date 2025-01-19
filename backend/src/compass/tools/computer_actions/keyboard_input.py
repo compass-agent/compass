@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Optional, Literal
 
-from ..base import ToolResult, ToolError
+from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
@@ -20,12 +20,12 @@ class KeyboardInputAction(BaseComputerAction):
         """Handle keyboard input actions."""
         if text is None:
             logger.error(f"text is required for {action}")
-            raise ToolError(f"text is required for {action}")
+            return ToolResult(error=f"text is required for {action}")
 
         if action == "key":
             logger.info(f"Executing key action: {text}")
             pyautogui.press(text)
-            return ToolResult(output=None, error=None)
+            return ToolResult(text=None)
         else:  # type action
             logger.info(f"Executing type action: {text}")
             chunks = [text[i:i + TYPING_GROUP_SIZE] 
@@ -36,7 +36,5 @@ class KeyboardInputAction(BaseComputerAction):
                 if len(chunks) > 1:
                     time.sleep(TYPING_DELAY_MS / 1000)
             return ToolResult(
-                output=None, 
-                error=None, 
-                base64_image=(await self.capture_and_process_screenshot()).base64_image
+                image=(await self.capture_and_process_screenshot()).base64_image
             ) 

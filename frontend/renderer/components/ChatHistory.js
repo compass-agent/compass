@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useRef, useState, useEffect } from "react";
 import { useAppState } from "../context/AppContext";
 import "../styles/ChatHistory.scss";
@@ -18,17 +17,9 @@ import {
 } from "../constants/toolActionMappings";
 import CoordinatePreview from "./preview/components/CoordinatePreview";
 import PopupFileEditor from "./workspace/fileEditor";
-=======
-import React, { useRef, useState, useEffect } from 'react';
-import { useAppState } from '../context/AppContext';
-import '../styles/ChatHistory.scss';
-import { MESSAGE_TYPES } from '../constants';
-import { faSpinner  } from '@fortawesome/free-solid-svg-icons';
-import { AgentStatus, AgentMode } from '../constants';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faClock } from '@fortawesome/free-solid-svg-icons';
 import { TOOL_ACTION_MAPPING } from '../constants/toolActionMappings';
->>>>>>> fd1ac5d (update agent)
+
 
 function ChatHistory({onEditorWidthChange }) {
   const { state } = useAppState();
@@ -40,7 +31,6 @@ function ChatHistory({onEditorWidthChange }) {
   const isAutoMode = agentState.mode === AgentMode.AUTO;
   const [toolResults, setToolResults] = useState(new Map()); // Store tool results by ID
   const [expandedTools, setExpandedTools] = useState(new Set());
-<<<<<<< HEAD
   const [previewCoord, setPreviewCoord] = useState({
     x: 0,
     y: 0,
@@ -53,8 +43,6 @@ function ChatHistory({onEditorWidthChange }) {
     setOriginalFileText(fileText); // Store the original file text
     setIsEditorOpen(true);
   };
-=======
->>>>>>> fd1ac5d (update agent)
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
   // console.log('ChatHistory - Current messages:', messages);
@@ -351,7 +339,6 @@ function ChatHistory({onEditorWidthChange }) {
           </div>
         )}
       </div>
-<<<<<<< HEAD
       {previewCoord.visible && (
         <CoordinatePreview
           x={previewCoord.x}
@@ -359,8 +346,6 @@ function ChatHistory({onEditorWidthChange }) {
           visible={true}
         />
       )}
-=======
->>>>>>> fd1ac5d (update agent)
     </div>
   );
 }
