@@ -196,14 +196,15 @@ ipcMain.handle("open-file-dialog", async () => {
       ],
     });
     if (result.canceled) {
+      mainWindow.setAlwaysOnTop(true);
       return { success: false, error: "File selection was canceled" };
     } else {
       const filePath = result.filePaths[0];
       const fileName = path.basename(filePath);
       const content = fs.readFileSync(filePath, "utf-8");
+      mainWindow.setAlwaysOnTop(true);
       return { success: true, filePath, fileName, content };
     }
-    mainWindow.setAlwaysOnTop(true);
   } catch (error) {
     console.error("Main Process: Failed to open file dialog:", error);
     return { success: false, error: error.message };
@@ -223,14 +224,15 @@ ipcMain.handle("save-file-dialog", async (event, content) => {
       ],
     });
     if (result.canceled) {
+      mainWindow.setAlwaysOnTop(true);
       return { success: false, error: "Save was canceled" };
     } else {
       const filePath = result.filePath;
       fs.writeFileSync(filePath, content, "utf-8");
+      mainWindow.setAlwaysOnTop(true);
       return { success: true, filePath };
     }
-    mainWindow.setAlwaysOnTop(true);
-  } catch (error) {
+} catch (error) {
     console.error("Main Process: Failed to save file:", error);
     return { success: false, error: error.message };
   }

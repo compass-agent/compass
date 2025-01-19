@@ -33,11 +33,37 @@ function ChatHistory({onEditorWidthChange }) {
     visible: false,
   });
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [originalFileText, setOriginalFileText] = useState("");
+  const [editorTabs, setEditorTabs] = useState([]); // Tracks files being edited
 
-  const handleEditorOpen = (fileText) => {
-    setOriginalFileText(fileText); // Store the original file text
-    setIsEditorOpen(true);
+  const handleEditorOpen = (filePath, fileName, fileContent) => {
+    // Check if the file is already being edited
+    const existingTabIndex = editorTabs.findIndex((tab) => tab.filePath === filePath);
+    console.log("handleEditorOpen - filePath: existingTabIndex: ", filePath, existingTabIndex);
+    console.log("handleEditorOpen - editorTabs: ", editorTabs);
+    if (existingTabIndex !== -1) {
+      console.log("File already open in editor:", filePath);
+      // Activate the existing editor tab
+      setEditorTabs((prev) =>
+        prev.map((tab, index) =>
+          index === existingTabIndex ? { ...tab, name: fileName, filePath, content: fileContent, originalContent: fileContent, isActive: true } : { ...tab, isActive: false }
+        )
+      );
+    } else {
+      console.log("Opening new file in editor:", filePath);
+      // Add a new tab to the editor
+      setEditorTabs((prev) => [
+        ...prev.map((tab) => ({ ...tab, isActive: false })), // Deactivate other tabs
+        { filePath, name: fileName, content: fileContent, originalContent: fileContent, isActive: true, isModified: false },
+      ]);
+    }
+  
+    // Open the editor if not already open
+    if (!isEditorOpen) setIsEditorOpen(true);
+  };
+
+  const handleEditorClose = (wasSaved, tabs) => {
+    setEditorTabs(tabs); // Clear tabs
+    setIsEditorOpen(false); // Close the editor
   };
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
@@ -216,32 +242,31 @@ function ChatHistory({onEditorWidthChange }) {
                 <button
                   className="popup-open-btn"
                   onClick={() => {
-                    handleEditorOpen(tool.input.file_text);
-                    setIsEditorOpen(true)}}
+                    handleEditorOpen(
+                      filePath || "Untitled",
+                      fileName,
+                      tool.input?.file_text || ""
+                    );
+                  }}
                 >
                   <FontAwesomeIcon icon={faPenToSquare} />
                 </button>
               )}
             </div>
-            {isFileEditorTool && (
+            {isFileEditorTool && isEditorOpen && (
               <PopupFileEditor
                 isOpen={isEditorOpen}
-                fileContent={tool.input?.file_text || ""}
-                fileName={fileName}
-                onClose={(wasSaved, newContent) => {
-                  console.log("Original File Text:", originalFileText);
-                  if (!wasSaved) {
-                    tool.input.file_text = originalFileText; // Reset to original if not saved
-                  } else {
-                    tool.input.file_text = newContent; // Update to the new content if saved
-                  }
-                  console.log("Current Tool File Text:", tool.input.file_text);
-                  setIsEditorOpen(false); // Close the editor
-                }}
+                tabs={editorTabs}
+                onClose={handleEditorClose}
                 onSave={(newContent) => {
-                  tool.input.file_text = newContent;
-                  // console.log(`File saved: ${tool.input?.file_text}`);
-                  setIsEditorOpen(false);
+                  const activeTabIndex = editorTabs.findIndex((tab) => tab.isActive);
+                  if (activeTabIndex !== -1) {
+                    setEditorTabs((prev) =>
+                      prev.map((tab, index) =>
+                        index === activeTabIndex ? { ...tab, fileContent: newContent } : tab
+                      )
+                    );
+                  }
                 }}
                 onWidthChange={(newWidth) => onEditorWidthChange(newWidth)}
               />

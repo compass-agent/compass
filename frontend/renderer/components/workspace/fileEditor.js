@@ -14,23 +14,33 @@ import { v4 as uuidv4 } from "uuid";
 
 const FileEditorPanel = ({
   isOpen,
-  fileContent,
-  fileName,
+  tabs: initialTabs,
   onClose,
   onSave,
   onWidthChange,
 }) => {
   const [width, setWidth] = useState(EditorWindowConf.MIN_EDITOR_WIN_WIDTH); // Initial width of the editor
   const [isResizing, setIsResizing] = useState(false);
-  const [content, setContent] = useState(fileContent);
   const [isModified, setIsModified] = useState(false); // Track unsaved changes
-  const [tabs, setTabs] = useState([
-    { id: 1, name: fileName, path: null, content: fileContent, originalContent: content, isModified: false, isInitial: true },
-  ]);
+  const [tabs, setTabs] = useState(initialTabs);
   const [activeTab, setActiveTab] = useState(0);
   const activeTabRef = useRef(activeTab);
   const tabsRef = useRef([]); // Refs to measure individual tab widths
   const [canAddTab, setCanAddTab] = useState(true);
+
+  useEffect(() => {
+    setTabs(initialTabs);
+    console.log("Renderer Process: initialTabs", initialTabs);
+
+  }, [initialTabs]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
@@ -50,17 +60,15 @@ const FileEditorPanel = ({
     );
     setCanAddTab(totalTabWidth + 70 <= panelWidth); // 70px for a new tab
   };
+
   //global
   useEffect(() => {
     if (isOpen) {
-      setContent(fileContent); // Update content if fileContent prop changes
-      setIsModified(false); // Reset modification state
       onWidthChange(EditorWindowConf.MIN_EDITOR_WIN_WIDTH);
       calcEditorWidth();
-    } else {
-      setContent(fileContent);
-    }
-  }, [isOpen, fileContent]);
+    } 
+
+  }, [isOpen]);
 
   const handleMouseDown = () => {
     setIsResizing(true);
@@ -104,14 +112,6 @@ const FileEditorPanel = ({
     };
   }, [isResizing]);
 
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [content]);
-
   const openFile = async () => {
     try {
       const response = await window.electron.ipcRenderer.invoke("open-file-dialog");
@@ -121,7 +121,7 @@ const FileEditorPanel = ({
         const newTab = {
           id: uuidv4(),
           name: fileName,
-          path: filePath,
+          filePath: filePath,
           content: content,
           originalContent: content,
         };
@@ -138,17 +138,25 @@ const FileEditorPanel = ({
   // Handle close with unsaved changes
   const handleClose = () => {
 
-    onClose(false, content);
+    onClose(false, tabs);
     onWidthChange(0);
   };
 
-  const handleAddTab = () => {
+  const handleAddTab = (
+    name = `Tab ${tabs.length + 1}`,
+    content = "",
+    originalContent = "",
+    filePath = "",
+    isInitial = false,
+  ) => {
     const newTab = {
       id: uuidv4(),
-      name: `Tab ${tabs.length + 1}`,
-      content: "",
-      originalContent: "",
+      name: name,
+      content: content,
+      originalContent: originalContent,
+      filePath: filePath,
       isModified: false,
+      isInitial: isInitial
     };
     setTabs([...tabs, newTab]);
     setActiveTab(tabs.length); // Activate the new tab
@@ -162,7 +170,7 @@ const FileEditorPanel = ({
     }
   };
   
-  const handleRemoveTab = (index) => {
+  const handleRemoveTab = async (index) => {
     const tab = tabs[index];
     console.log("", tab);
     if (tab.isModified) {
@@ -170,7 +178,7 @@ const FileEditorPanel = ({
         "You have unsaved changes. Do you want to save them before closing?"
       );
       if (confirmClose) {
-        handleSaveTab(index); // Save changes
+        await handleSaveTab(index); // Save changes
       }
     }
     if (tabs.length === 1) return; // Prevent removing the last tab
@@ -184,8 +192,9 @@ const FileEditorPanel = ({
     if (!updatedTabs[index].path) {
       const filePath = await createFile(updatedTabs[index].content);
       if (filePath) {
-        updatedTabs[index].path = filePath;
-        updatedTabs[index].isModified = false; // Mark tab as saved
+        updatedTabs[index].filePath = filePath;
+        updatedTabs[index].name = filePath.split(/[/\\]/).pop();
+        updatedTabs[index].isModified = false;
         setTabs(updatedTabs);
       } else {
         console.error("Failed to save new file");
@@ -193,18 +202,22 @@ const FileEditorPanel = ({
       }
     }
     if (updatedTabs[index].isInitial && updatedTabs[index].name === fileName) {
-      onInputTabSave(updatedTabs[index].content); // Pass the content to the parent for saving
+      //onInputTabSave(updatedTabs[index].content); // Pass the content to the parent for saving
+      saveContentToFile(updatedTabs[index]);
     } else {
       saveContentToFile(updatedTabs[index]);
     }
+    updatedTabs[index].isModified = false;
+    updatedTabs[index].originalContent = updatedTabs[index].content;
+    setTabs(updatedTabs);
   };
 
-  const onInputTabSave = (content) => {
-    // Find the tab with the fileName from Input
-    if (content) {
-      onSave(content); // Pass the content to the parent for saving
-    }
-  };
+  // const onInputTabSave = (content) => {
+  //   // TODO: what should send back to parent
+  //   if (content) {
+  //     onSave(content); // Pass the content to the parent for saving
+  //   }
+  // };
 
   const saveContentToFile = (tabToSave) => {
     // Save the content to the file system
@@ -275,7 +288,7 @@ const FileEditorPanel = ({
           ))}
           {canAddTab && (
             <button
-              onClick={handleAddTab}
+              onClick={() => handleAddTab()}
               className="file-editor-btn add-tab-btn"
             >
               <FontAwesomeIcon icon={faPlus} />
@@ -302,7 +315,6 @@ const FileEditorPanel = ({
                   updatedTabs[index].content = value;
                   updatedTabs[index].isModified = value !== tabs[index].originalContent; // Compare with original content
                   setTabs(updatedTabs);
-                  //setIsModified(true);
                 }}
               />
             </TabPanel>
