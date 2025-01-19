@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { useAppState } from "../context/AppContext";
 import "../styles/ChatHistory.scss";
 import { MESSAGE_TYPES } from "../constants";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, AgentMode } from "../constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,10 +14,7 @@ import {
   FILE_EDIT_TOOLS_NAME,
   TOOL_ACTION_MAPPING,
 } from "../constants/toolActionMappings";
-import CoordinatePreview from "./preview/components/CoordinatePreview";
 import PopupFileEditor from "./workspace/fileEditor";
-import { faCheck, faTimes, faClock } from '@fortawesome/free-solid-svg-icons';
-import { TOOL_ACTION_MAPPING } from '../constants/toolActionMappings';
 
 
 function ChatHistory({onEditorWidthChange }) {
@@ -339,13 +335,6 @@ function ChatHistory({onEditorWidthChange }) {
           </div>
         )}
       </div>
-      {previewCoord.visible && (
-        <CoordinatePreview
-          x={previewCoord.x}
-          y={previewCoord.y}
-          visible={true}
-        />
-      )}
     </div>
   );
 }
