@@ -108,6 +108,10 @@ class WebSocketService {
       console.log("WebSocket: x_factor =", data.x_factor, "y_factor =", data.y_factor);
       this.stateHandlers?.onScalingFactors?.(data);
     });
+
+    this.socket.on('chat_reset', () => {
+      if (this.stateHandlers?.onChatReset) this.stateHandlers.onChatReset();
+    });
   }
 
   disconnect() {

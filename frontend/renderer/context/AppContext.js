@@ -127,6 +127,22 @@ function appReducer(state, action) {
         }
       };
 
+    case ActionTypes.RESET_CHAT:
+      return {
+        ...state,
+        chat: {
+          messages: [],
+          error: null,
+          currentInput: "",
+        },
+        agent: {
+          ...state.agent,
+          status: AgentStatus.STOPPED,
+          currentTask: null,
+          pendingTools: 0,
+        }
+      };
+
     default:
       return state;
   }
@@ -186,6 +202,12 @@ export function AppProvider({ children }) {
         dispatch({
           type: ActionTypes.SET_SCALING_FACTORS,
           payload: data
+        });
+      },
+
+      onChatReset: () => {
+        dispatch({
+          type: ActionTypes.RESET_CHAT
         });
       },
     });

@@ -165,6 +165,19 @@ def handle_save_template(data):
 def handle_ping():
     emit('pong')
 
+@socketio.on('new_chat')
+def handle_new_chat():
+    logger.info('Starting new chat')
+    try:
+        # Reinitialize the services
+        global agent_service, state_manager
+        state_manager = StateManager(socketio)
+        agent_service = AgentService(state_manager)
+        emit('chat_reset', {'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error starting new chat: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
 @socketio.on_error()
 def error_handler(e):
     logger.error(f"SocketIO error: {str(e)}")
