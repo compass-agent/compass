@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload, faCamera } from '@fortawesome/free-solid-svg-icons';
 import '../styles/components/PageEditor.scss';
 import ImageWorkspace from './ImageWorkspace';
 import Toolbar from './Toolbar';
@@ -128,14 +130,14 @@ const PageEditor = ({
                 style={{ display: 'none' }}
               />
               <label htmlFor="imageUpload" className="upload-button">
-                Upload Image
+                <FontAwesomeIcon icon={faUpload} /> Upload Image
               </label>
               <button 
                 className="upload-button"
                 onClick={() => {}}
                 disabled
               >
-                Take Screenshot
+                <FontAwesomeIcon icon={faCamera} /> Take Screenshot
               </button>
             </div>
             <div className="upload-instructions">
