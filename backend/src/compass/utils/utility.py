@@ -70,9 +70,12 @@ class HistoryLogger:
         
         self.log_dir = Path(log_dir) / self.session_id
         self.screenshots_dir = self.log_dir / 'screenshots'
+        self.prompts_dir = self.log_dir / 'llm_prompt'
         
+        # Create all necessary directories
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        self.prompts_dir.mkdir(parents=True, exist_ok=True)
         
         self.history_file = self.log_dir / 'history.json'
         self.app_log_file = self.log_dir / 'app.log'
@@ -130,6 +133,12 @@ class HistoryLogger:
                 json.dump(message, f, indent=4)
         except Exception as e:
             logger.error(f"Failed to save message: {e}")
+
+    @staticmethod
+    def get_timestamp_filename() -> str:
+        """Generate a filename-safe timestamp in mm:ss:ms format"""
+        now = datetime.now()
+        return now.strftime('%M_%S_%f')[:9]  # Gets MM_SS_xxx format
 
 class TokenTracker:
     def __init__(self):

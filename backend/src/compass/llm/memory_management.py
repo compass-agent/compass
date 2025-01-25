@@ -21,8 +21,9 @@ class MemoryManager:
             "data": message.to_dict()
         }
         message_type = message.__class__.__name__.lower()
-        self.history_tracker.save_messages(serializable_message, f"{message_type}_{self.recording_iteration}")
-        logger.info(f"Saved message of type {message_type} for iteration {self.recording_iteration}")
+        timestamp = self.history_tracker.get_timestamp_filename()
+        self.history_tracker.save_messages(serializable_message, f"message_{timestamp}_{message_type}")
+        logger.info(f"Saved message of type {message_type} with timestamp {timestamp}")
         self.recording_iteration += 1
 
     def _remove_old_screenshots(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]], images_to_keep: int | None = 1) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:

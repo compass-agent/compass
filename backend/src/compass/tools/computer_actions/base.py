@@ -133,10 +133,10 @@ class BaseComputerAction(ABC):
         try:
             history_tracker = SessionManager.get_history_tracker()
             if history_tracker:
-                timestamp = int(time())
+                timestamp = history_tracker.get_timestamp_filename()
                 screenshot_path = history_tracker.screenshots_dir / f"screenshot_{timestamp}.png"
                 screenshot.save(screenshot_path, format='PNG')
-                logger.info(f"Saved original screenshot to {screenshot_path}")
+                logger.info(f"Saved original screenshot with timestamp {timestamp}")
         except Exception as e:
             logger.error(f"Failed to save screenshot: {e}")
 

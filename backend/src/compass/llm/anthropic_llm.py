@@ -41,7 +41,7 @@ class AnthropicLLM(BaseLLMInterface):
                     "display_height_px": tool["display_height_px"]} 
                    if tool["type"] == "computer_20241022" else {})
             }
-            if tool["type"] in ["computer_20241022", "text_editor_20241022"]
+            if tool["name"] in ["computer", "str_replace_editor"]
             else tool
             for tool in tools_params
         ]
@@ -195,7 +195,10 @@ class AnthropicLLM(BaseLLMInterface):
             "system": system_content
         }
         
-        # Use the same history tracker from memory manager
-        filename = f"anthropic_llm_prompt/prompt_{self.memory_manager.recording_iteration}"
+        timestamp = self.memory_manager.history_tracker.get_timestamp_filename()
+        save_dir = self.memory_manager.history_tracker.prompts_dir
+        filename = f"llm_prompt/prompt_{timestamp}"
+        
+        # Save to anthropic_prompts_dir
         self.memory_manager.history_tracker.save_messages(prompt_data, filename)
-        logger.info(f"Saved formatted Anthropic prompt for iteration {self.memory_manager.recording_iteration}") 
+        logger.info(f"Saved formatted Anthropic prompt with timestamp {timestamp}") 

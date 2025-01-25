@@ -1,11 +1,11 @@
 import pyautogui
 import logging
 from typing import Optional, Tuple, Literal
-
+import time
 from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 from compass.services.state_manager import StateManager
-from compass.constants import ENABLE_SCREEN_DESCRIPTION_MOUSE_CLICK, ENABLE_SCREENSHOT_COMPARISON_MOUSE_CLICK
+from compass.constants import ENABLE_SCREEN_DESCRIPTION_MOUSE_CLICK, ENABLE_SCREENSHOT_COMPARISON_MOUSE_CLICK, TIME_TO_WAIT_AFTER_CLICK_BEFORE_SCREENSHOT
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,8 @@ class MouseClickAction(BaseComputerAction):
                 
             logger.info(f"Click action completed: {action}")
 
-            # Take screenshot with comparison
+            # wait slightly before taking screenshot
+            time.sleep(TIME_TO_WAIT_AFTER_CLICK_BEFORE_SCREENSHOT)
             screenshot_result = await self.capture_and_process_screenshot()
             
             output_parts = []

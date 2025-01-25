@@ -39,6 +39,7 @@ class FreeCADPrompt(BasePrompt):
     - After calling a chain of tools, before proceeding with next chain of tool calling, ALWAYS first CAREFULLY review the updated screen and cursor position (from Tool Results) To make sure the previous tool call was successful and behaved as your expectation. If not, adjust your next function calls accordingly.
     - mouse_move ONLY moves the cursor - you must explicitly specify any following action (click, type, etc.) within the same tool use block (unless you're only hovering over an element).
     - Important: Keep your all instructions as short and concise as possible while maintaining clarity.
+    - Important: NEVER use numerical coordinates in instructions (e.g., "click at [289, 102]"). Instead, just use mouse_move action.
     </IMPORTANT_GUIDELINES>""")
 
     
