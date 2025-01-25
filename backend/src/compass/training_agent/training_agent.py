@@ -9,10 +9,15 @@ from compass.tools.screen_parser.models import ScreenData, BoundingBox
 from compass.tools.screen_parser.utils.box_utils import calculate_iou
 from compass.database.models import Session, Template
 from dataclasses import dataclass
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, DateTime
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 IOU_THRESHOLD = 0.9  # Using same threshold as box_utils
+
+Base = declarative_base()
 
 @dataclass
 class Detection:
@@ -90,22 +95,113 @@ class OverlapFilter(DetectionFilter):
                 return False
         return True
 
+class Screenshot(Base):
+    """Model for storing full screenshots"""
+    __tablename__ = 'screenshots'
+    
+    id = Column(Integer, primary_key=True)
+    agent_name = Column(String, nullable=False)
+    base64_image = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class TrainingAgent:
     def __init__(self):
         """Initialize training agent with detectors and filters"""
         self.yolo_detector = YOLOIconDetector()
         self.template_detector = TemplateDetector()
         
-        # Initialize filters
         self.filters = [
             EmptyImageFilter(),
             SmallBoxFilter(),
             OverlapFilter()
         ]
         
-        # Could add post-processors here later
-        self.post_processors = []
+    def get_screenshots(self, agent_name: str) -> List[Dict]:
+        """Get all screenshots for an agent"""
+        try:
+            with Session() as session:
+                screenshots = session.query(Screenshot).filter_by(
+                    agent_name=agent_name
+                ).order_by(Screenshot.created_at.desc()).all()
+                
+                return [{
+                    'id': s.id,
+                    'image': s.base64_image,
+                    'created_at': s.created_at.isoformat()
+                } for s in screenshots]
+        except Exception as e:
+            logger.error(f"Failed to get screenshots: {e}")
+            raise
+
+    def save_screenshot(self, image_data: str, agent_name: str) -> int:
+        """
+        Save full screenshot to database if it doesn't exist
         
+        Args:
+            image_data: Base64 encoded image
+            agent_name: Name of the agent
+            
+        Returns:
+            id: ID of saved or existing screenshot
+        """
+        try:
+            with Session() as session:
+                # Check if screenshot already exists
+                existing = session.query(Screenshot).filter_by(
+                    base64_image=image_data,
+                    agent_name=agent_name
+                ).first()
+                
+                if existing:
+                    return existing.id
+                
+                # Create new screenshot
+                screenshot = Screenshot(
+                    base64_image=image_data,
+                    agent_name=agent_name
+                )
+                session.add(screenshot)
+                session.commit()
+                return screenshot.id
+                
+        except Exception as e:
+            logger.error(f"Failed to save screenshot: {e}")
+            raise
+
+    def save_template(self, image_data: str, caption: str, 
+                     bbox: List[float], agent_name: str = "FreeCAD") -> None:
+        """Save template to database, ensuring screenshot exists first"""
+        try:
+            # First save the full screenshot
+            self.save_screenshot(image_data, agent_name)
+            
+            # Then save the template as before
+            cropped_image = self._crop_and_encode_image(image_data, bbox)
+            
+            with Session() as session:
+                existing_template = session.query(Template).filter_by(
+                    base64_image=cropped_image,
+                    agent_name=agent_name
+                ).first()
+                
+                if existing_template:
+                    existing_template.caption = caption
+                    logger.info(f"Updated existing template caption to: {caption}")
+                else:
+                    template = Template(
+                        base64_image=cropped_image,
+                        caption=caption,
+                        agent_name=agent_name
+                    )
+                    session.add(template)
+                    logger.info(f"Saved new template with caption: {caption}")
+                
+                session.commit()
+                
+        except Exception as e:
+            logger.error(f"Failed to save template: {e}")
+            raise
+
     def _calculate_size_context(self, template_detections: List[Detection], 
                               yolo_detections: List[Detection]) -> float:
         """Calculate median area and minimum threshold"""
@@ -201,49 +297,3 @@ class TrainingAgent:
         cropped_b64 = base64.b64encode(buffer).decode('utf-8')
         
         return cropped_b64
-
-    def save_template(self, image_data: str, caption: str, 
-                     bbox: List[float], agent_name: str = "FreeCAD", 
-                     page_name: str = "default") -> None:
-        """
-        Save template to database, updating caption if template already exists
-        
-        Args:
-            image_data: Base64 encoded image
-            caption: Template caption/description
-            bbox: Bounding box coordinates [x1, y1, x2, y2]
-            agent_name: Name of the agent this template belongs to
-            page_name: Name of the page this template belongs to
-        """
-        try:
-            # Crop and encode the icon region
-            cropped_image = self._crop_and_encode_image(image_data, bbox)
-            
-            with Session() as session:
-                # Check if template already exists
-                existing_template = session.query(Template).filter_by(
-                    base64_image=cropped_image,
-                    agent_name=agent_name
-                ).first()
-                
-                if existing_template:
-                    # Update caption if template exists
-                    existing_template.caption = caption
-                    existing_template.page_name = page_name
-                    logger.info(f"Updated existing template caption to: {caption}")
-                else:
-                    # Create new template if it doesn't exist
-                    template = Template(
-                        base64_image=cropped_image,
-                        caption=caption,
-                        agent_name=agent_name,
-                        page_name=page_name
-                    )
-                    session.add(template)
-                    logger.info(f"Saved new template with caption: {caption}")
-                
-                session.commit()
-                
-        except Exception as e:
-            logger.error(f"Failed to save template: {e}")
-            raise

@@ -1,1 +1,1 @@
-SELECT * FROM templates;
+DELETE FROM templates;

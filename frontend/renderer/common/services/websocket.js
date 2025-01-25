@@ -112,6 +112,11 @@ class WebSocketService {
     this.socket.on('chat_reset', () => {
       if (this.stateHandlers?.onChatReset) this.stateHandlers.onChatReset();
     });
+
+    this.socket.on("screenshots_list", (data) => {
+      console.log("WebSocket received screenshots list:", data);
+      this.stateHandlers?.onScreenshotsList?.(data);
+    });
   }
 
   disconnect() {
@@ -179,6 +184,15 @@ class WebSocketService {
       this.socket.emit("save_template", templateData);
     } else {
       console.error("Socket not connected when trying to save template");
+    }
+  }
+
+  getScreenshots(agentName) {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending get_screenshots");
+      this.socket.emit("get_screenshots", {
+        agent_name: agentName
+      });
     }
   }
 }

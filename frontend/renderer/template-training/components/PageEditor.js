@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/components/PageEditor.scss';
 import ImageWorkspace from './ImageWorkspace';
 import Toolbar from './Toolbar';
 import { useImageHandling } from '../hooks/useImageHandling';
+import WebSocketService from '../../common/services/websocket';
+import { VIEW_STATES } from '../constants/viewStates';
 
 const PageEditor = ({ 
   onSave, 
@@ -26,6 +28,8 @@ const PageEditor = ({
   setSelectedBox,
   setIsAnalyzing
 }) => {
+  const [pageName, setPageName] = useState('');
+
   const cleanupFunctions = {
     setDetections,
     setBoxes,
@@ -43,11 +47,56 @@ const PageEditor = ({
     getImageSrc
   } = useImageHandling(cleanupFunctions);
 
+  const handleSave = () => {
+    if (!image) {
+      alert('No image available');
+      return;
+    }
+
+    if (!pageName.trim()) {
+      alert('Please enter a page name');
+      return;
+    }
+
+    if (Object.keys(captions).length === 0) {
+      alert('No templates to save');
+      return;
+    }
+
+    // Remove the data URL prefix if it exists
+    const imageData = image.includes('base64,') 
+      ? image.split('base64,')[1] 
+      : image;
+
+    // Save each box as a template
+    Object.entries(captions).forEach(([boxIndex, caption]) => {
+      const box = boxes[boxIndex];
+      if (!box) return;
+
+      const bbox = [
+        box.x,
+        box.y,
+        box.x + box.width,
+        box.y + box.height
+      ];
+
+      WebSocketService.saveTemplate({
+        image: imageData,
+        caption: caption,
+        bbox: bbox,
+        page_name: pageName.trim()
+      });
+    });
+
+    // Return to pages list
+    setCurrentView(VIEW_STATES.PAGES_LIST);
+  };
+
   return (
     <div className="page-editor">
       <Toolbar
-        handleAnalyze={() => handleAnalyze(getImageSrc(image))}
-        handleSaveTemplates={() => handleSaveTemplates(getImageSrc(image))}
+        handleAnalyze={() => handleAnalyze(image)}
+        handleSaveTemplates={handleSave}
         isAnalyzing={isAnalyzing}
         inputValue={inputValue}
         setInputValue={setInputValue}
@@ -55,6 +104,8 @@ const PageEditor = ({
         selectedBox={selectedBox}
         onDeleteBox={() => deleteBox(selectedBox)}
         onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
+        pageName={pageName}
+        setPageName={setPageName}
       />
 
       <div className="editor-content">

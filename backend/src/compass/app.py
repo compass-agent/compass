@@ -178,6 +178,29 @@ def handle_new_chat():
         logger.error(f"Error starting new chat: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
+@socketio.on('get_screenshots')
+def handle_get_screenshots(data):
+    try:
+        screenshots = training_agent.get_screenshots(
+            agent_name=data['agent_name']
+        )
+        emit('screenshots_list', {'screenshots': screenshots})
+    except Exception as e:
+        logger.error(f"Error getting screenshots: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('save_screenshot')
+def handle_save_screenshot(data):
+    try:
+        screenshot_id = training_agent.save_screenshot(
+            image_data=data['image'],
+            agent_name=data['agent_name']
+        )
+        emit('screenshot_saved', {'id': screenshot_id})
+    except Exception as e:
+        logger.error(f"Error saving screenshot: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
 @socketio.on_error()
 def error_handler(e):
     logger.error(f"SocketIO error: {str(e)}")

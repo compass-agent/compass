@@ -12,25 +12,43 @@ const Toolbar = ({
   handleKeyPress,
   selectedBox,
   onDeleteBox,
-  onCancel
+  onCancel,
+  pageName,
+  setPageName
 }) => {
   return (
     <div className="toolbar">
       <div className="toolbar-top">
-        <button 
-          onClick={handleAnalyze}
-          disabled={isAnalyzing}
-          className="analyze-button"
-        >
-          <FontAwesomeIcon icon={faSearch} /> 
-          {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-        </button>
+        <div className="left-actions">
+          <input
+            type="text"
+            placeholder="Enter page name"
+            value={pageName}
+            onChange={(e) => setPageName(e.target.value)}
+            className="page-name-input"
+          />
+          <button 
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="analyze-button"
+          >
+            <FontAwesomeIcon icon={faSearch} /> 
+            {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+          </button>
+        </div>
         
         <div className="right-actions">
-          <button onClick={onCancel} className="cancel-button">
+          <button 
+            onClick={onCancel}
+            className="cancel-button"
+          >
             <FontAwesomeIcon icon={faTimes} /> Cancel
           </button>
-          <button onClick={handleSaveTemplates} className="save-button">
+          <button 
+            onClick={handleSaveTemplates}
+            className="save-button"
+            disabled={!pageName.trim()}
+          >
             <FontAwesomeIcon icon={faSave} /> Save
           </button>
         </div>

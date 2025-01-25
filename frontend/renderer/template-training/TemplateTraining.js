@@ -20,6 +20,7 @@ const TemplateTraining = () => {
   });
   const [saveStatus, setSaveStatus] = useState('');
   const [inputValue, setInputValue] = useState('');
+  const [currentScreenshot, setCurrentScreenshot] = useState(null);
 
   // Custom hooks
   const { 
@@ -140,10 +141,11 @@ const TemplateTraining = () => {
       case VIEW_STATES.PAGES_LIST:
         return (
           <PagesList
-            pages={agentData.pages}
+            agentName={agentData.name}
             onAddPage={() => setCurrentView(VIEW_STATES.PAGE_EDITOR)}
-            onEditPage={(pageIndex) => {
-              // Handle edit page
+            onEditPage={(screenshot) => {
+              setCurrentScreenshot(screenshot);
+              setCurrentView(VIEW_STATES.PAGE_EDITOR);
             }}
           />
         );
