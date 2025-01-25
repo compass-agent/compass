@@ -7,7 +7,7 @@ const {
 const { handleCoordinatePreview } = require("./coordinatePreview");
 const { handleTerminalEvents } = require("./terminalEvents");
 const setupFileHandlers = require('./fileHandlers'); 
-require('./windowHandler');
+const setupWindowHandlers = require('./windowHandler');
 require("dotenv").config();
 
 const WINDOW_CONFIG = {
@@ -61,6 +61,7 @@ function createWindow() {
   }
 
   setupFileHandlers(mainWindow);
+  setupWindowHandlers(mainWindow);
 }
 
 function createTemplateTrainingWindow() {

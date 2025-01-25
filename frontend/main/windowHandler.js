@@ -1,8 +1,8 @@
 
 const { ipcMain, screen } = require('electron');
 
+module.exports = (mainWindow) => {
 let previousBounds = null; // To store the previous window bounds
-
 // Comment out the handlers but keep them for reference
 ipcMain.on("toggle-fullscreen", (_, isFullscreen) => {
   // if (!mainWindow) return;
@@ -59,3 +59,4 @@ ipcMain.on("maximize-window", () => {
     }
   }
 });
+}
