@@ -1,28 +1,49 @@
 .toolbar {
   display: flex;
+  flex-direction: column;
   gap: 10px;
   padding: 10px;
   background-color: #2a2a2a;
   border-bottom: 1px solid #333;
 
-  input[type="text"] {
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #444;
-    background-color: #333;
-    color: #e0e0e0;
+  .toolbar-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 
-    // Style specifically for agent name and page name inputs
-    &[placeholder="Agent Name"],
-    &[placeholder="Page Name"] {
-      width: 150px;  // Set fixed width for these inputs
-      min-width: 150px;  // Ensure minimum width
+    .right-actions {
+      display: flex;
+      gap: 10px;
+    }
+  }
+
+  .toolbar-bottom {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+
+    textarea {
+      flex: 1;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background-color: #333;
+      color: #e0e0e0;
+      resize: none;
+      min-height: 100px;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
 
-    // Style for caption input (to differentiate it)
-    &[placeholder="Enter caption for selected box"] {
-      flex: 1;  // Allow caption input to take remaining space
-      min-width: 200px;
+    .box-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 120px;
     }
   }
 
@@ -36,14 +57,50 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: #555;
     }
 
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    &.analyze-button {
+      background-color: #505050;
+      &:hover:not(:disabled) {
+        background-color: #606060;
+      }
+    }
+
+    &.save-button {
+      background-color: #404040;
+      &:hover:not(:disabled) {
+        background-color: #505050;
+      }
+    }
+
+    &.cancel-button {
+      background-color: #383838;
+      &:hover:not(:disabled) {
+        background-color: #484848;
+      }
+    }
+
+    &.delete-button {
+      background-color: #303030;
+      &:hover:not(:disabled) {
+        background-color: #404040;
+      }
+    }
+
+    &.auto-caption-button {
+      background-color: #404040;
+      &:hover:not(:disabled) {
+        background-color: #505050;
+      }
     }
   }
 } 

@@ -29,14 +29,14 @@ const TemplateTraining = () => {
     setDetections 
   } = useSocketConnection();
 
-  const {
-    image,
-    setImage,
-    imageSize,
-    setImageSize,
-    handleImageUpload,
-    handleImageLoad
-  } = useImageHandling();
+  // Setup cleanup functions for image handling
+  const cleanupFunctions = {
+    setDetections,
+    setBoxes,
+    setCaptions,
+    setSelectedBox,
+    setIsAnalyzing
+  };
 
   const {
     boxes,
@@ -50,6 +50,15 @@ const TemplateTraining = () => {
     createNewBox,
     deleteBox
   } = useBoxManagement(detections);
+
+  // Update input value when selecting a box
+  useEffect(() => {
+    if (selectedBox !== null && captions[selectedBox]) {
+      setInputValue(captions[selectedBox]);
+    } else {
+      setInputValue('');
+    }
+  }, [selectedBox, captions]);
 
   // WebSocket handlers setup
   useEffect(() => {
@@ -66,21 +75,19 @@ const TemplateTraining = () => {
     });
   }, []);
 
-  const handleAnalyze = () => {
-    if (!image) {
+  const handleAnalyze = (imageData) => {
+    if (!imageData) {
       alert('Please upload an image first');
       return;
     }
     setIsAnalyzing(true);
     
-    // Remove the data URL prefix if it exists
-    const base64Image = image.split(',')[1] || image;
-    
+    const base64Image = imageData.split(',')[1] || imageData;
     WebSocketService.uploadScreenshot(base64Image, agentData.name);
   };
 
-  const handleSaveTemplates = () => {
-    if (!image || Object.keys(captions).length === 0) {
+  const handleSaveTemplates = (imageData) => {
+    if (!imageData || Object.keys(captions).length === 0) {
       alert('No templates to save');
       return;
     }
@@ -99,11 +106,11 @@ const TemplateTraining = () => {
       ];
 
       WebSocketService.saveTemplate({
-        image: image,
+        image: imageData,
         caption: caption,
         bbox: bbox,
         agent_name: agentData.name,
-        page_name: 'default' // You might want to make this configurable
+        page_name: 'default'
       });
     });
   };
@@ -141,7 +148,6 @@ const TemplateTraining = () => {
           />
         );
       case VIEW_STATES.PAGE_EDITOR:
-        // Convert boxes object to array
         const boxesArray = Object.entries(boxes).map(([index, box]) => ({
           ...box,
           id: index,
@@ -161,8 +167,6 @@ const TemplateTraining = () => {
             handleAnalyze={handleAnalyze}
             handleSaveTemplates={handleSaveTemplates}
             isAnalyzing={isAnalyzing}
-            image={image}
-            setImage={setImage}
             boxes={boxesArray}
             selectedBox={selectedBox}
             handleBoxClick={handleBoxClick}
@@ -172,6 +176,12 @@ const TemplateTraining = () => {
             setInputValue={setInputValue}
             handleKeyPress={handleKeyPress}
             captions={captions}
+            setCurrentView={setCurrentView}
+            setDetections={setDetections}
+            setBoxes={setBoxes}
+            setCaptions={setCaptions}
+            setSelectedBox={setSelectedBox}
+            setIsAnalyzing={setIsAnalyzing}
           />
         );
       default:

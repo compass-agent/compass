@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import '../styles/components/PageEditor.scss';
 import ImageWorkspace from './ImageWorkspace';
+import Toolbar from './Toolbar';
+import { useImageHandling } from '../hooks/useImageHandling';
 
 const PageEditor = ({ 
   onSave, 
@@ -8,8 +10,6 @@ const PageEditor = ({
   handleAnalyze,
   handleSaveTemplates,
   isAnalyzing,
-  image,
-  setImage,
   boxes,
   selectedBox,
   handleBoxClick,
@@ -19,76 +19,81 @@ const PageEditor = ({
   setInputValue,
   handleKeyPress,
   captions,
-  imageSize,
-  handleImageLoad,
-  detections
+  setCurrentView,
+  setDetections,
+  setBoxes,
+  setCaptions,
+  setSelectedBox,
+  setIsAnalyzing
 }) => {
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageData = e.target.result;
-        setImage(imageData);
-      };
-      reader.readAsDataURL(file);
-    }
+  const cleanupFunctions = {
+    setDetections,
+    setBoxes,
+    setCaptions,
+    setSelectedBox,
+    setIsAnalyzing
   };
+
+  const {
+    image,
+    setImage,
+    imageSize,
+    handleImageLoad,
+    handleImageUpload,
+    getImageSrc
+  } = useImageHandling(cleanupFunctions);
 
   return (
     <div className="page-editor">
-      <div className="editor-header">
-        <h2>Add New Page</h2>
-        <div className="header-actions">
-          <button 
-            className="primary"
-            onClick={handleAnalyze}
-            disabled={!image || isAnalyzing}
-          >
-            {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-          </button>
-          <button className="secondary" onClick={onCancel}>
-            Cancel
-          </button>
-          <button 
-            className="primary" 
-            onClick={handleSaveTemplates}
-            disabled={!image || Object.keys(boxes).length === 0}
-          >
-            Save Templates
-          </button>
-        </div>
-      </div>
+      <Toolbar
+        handleAnalyze={() => handleAnalyze(getImageSrc(image))}
+        handleSaveTemplates={() => handleSaveTemplates(getImageSrc(image))}
+        isAnalyzing={isAnalyzing}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
+        handleKeyPress={handleKeyPress}
+        selectedBox={selectedBox}
+        onDeleteBox={() => deleteBox(selectedBox)}
+        onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
+      />
 
       <div className="editor-content">
         {!image ? (
           <div className="upload-area">
-            <input
-              type="file"
-              id="imageUpload"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-            <label htmlFor="imageUpload" className="upload-button">
-              Upload Image
-            </label>
-            <button className="upload-button disabled" disabled>
-              Take Screenshot
-            </button>
+            <div className="upload-buttons">
+              <input
+                type="file"
+                id="imageUpload"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+              <label htmlFor="imageUpload" className="upload-button">
+                Upload Image
+              </label>
+              <button 
+                className="upload-button"
+                onClick={() => {}}
+                disabled
+              >
+                Take Screenshot
+              </button>
+            </div>
+            <div className="upload-instructions">
+              Upload an image or take a screenshot to begin
+            </div>
           </div>
         ) : (
           <ImageWorkspace
             image={image}
             handleImageLoad={handleImageLoad}
-            detections={detections}
-            boxes={boxes}
             imageSize={imageSize}
+            boxes={boxes}
             selectedBox={selectedBox}
             captions={captions}
             handleBoxClick={handleBoxClick}
             createNewBox={createNewBox}
+            getImageSrc={getImageSrc}
           />
         )}
       </div>
