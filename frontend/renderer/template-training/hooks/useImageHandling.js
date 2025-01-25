@@ -42,7 +42,7 @@ export const useImageHandling = (cleanupFunctions = {}) => {
     if (imageData.startsWith('data:')) {
       return imageData;
     }
-    return `data:image/jpeg;base64,${imageData}`;
+    return `data:image/png;base64,${imageData}`;
   };
 
   return {

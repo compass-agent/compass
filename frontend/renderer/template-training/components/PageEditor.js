@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/components/PageEditor.scss';
 import ImageWorkspace from './ImageWorkspace';
 import Toolbar from './Toolbar';
@@ -26,7 +26,8 @@ const PageEditor = ({
   setBoxes,
   setCaptions,
   setSelectedBox,
-  setIsAnalyzing
+  setIsAnalyzing,
+  currentScreenshot
 }) => {
   const [pageName, setPageName] = useState('');
 
@@ -46,6 +47,13 @@ const PageEditor = ({
     handleImageUpload,
     getImageSrc
   } = useImageHandling(cleanupFunctions);
+
+  useEffect(() => {
+    if (currentScreenshot) {
+      setImage(currentScreenshot.image);
+      setPageName(currentScreenshot.page_name || '');
+    }
+  }, [currentScreenshot]);
 
   const handleSave = () => {
     if (!image) {
@@ -109,7 +117,7 @@ const PageEditor = ({
       />
 
       <div className="editor-content">
-        {!image ? (
+        {!image && !currentScreenshot ? (
           <div className="upload-area">
             <div className="upload-buttons">
               <input

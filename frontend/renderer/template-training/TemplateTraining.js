@@ -184,6 +184,7 @@ const TemplateTraining = () => {
             setCaptions={setCaptions}
             setSelectedBox={setSelectedBox}
             setIsAnalyzing={setIsAnalyzing}
+            currentScreenshot={currentScreenshot}
           />
         );
       default:
