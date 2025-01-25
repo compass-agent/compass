@@ -26,7 +26,7 @@ PRE_RUN_SCREENSHOTS = True     # Take screenshots before running the agent
 # Mouse click constants
 ENABLE_SCREEN_DESCRIPTION_MOUSE_CLICK = True
 ENABLE_SCREENSHOT_COMPARISON_MOUSE_CLICK = True
-TIME_TO_WAIT_AFTER_CLICK_BEFORE_SCREENSHOT = 0.5
+TIME_TO_WAIT_AFTER_CLICK_BEFORE_SCREENSHOT = 0.1
 
 # Screenshot constants
 ENABLE_SCREEN_DESCRIPTION_SCREENSHOT = True
@@ -38,7 +38,7 @@ ENABLE_SCREENSHOT_COMPARISON_SCREENSHOT = True
 # For now, we only set these here. But in the future, we will allow set them in the UI.
 
 # Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
-AGENT_NAME = "OpenFoam" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
+AGENT_NAME = "FreeCAD" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
 
 # Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
@@ -50,25 +50,10 @@ HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
 # Screenshot configuration
 
 # Define tool configurations for different agents
-TOOL_TYPES = {
-    "computer": "computer_20241022",
-    "file": "text_editor_20241022",
-    "bash": "command_20241022"
-}
-
 AGENT_TOOLS = {
-    "OpenFoam": [
-        {"name": "bash", "type": TOOL_TYPES["bash"]},
-        {"name": "file", "type": TOOL_TYPES["file"]}
-    ],
-    "FreeCAD": [
-        {"name": "computer", "type": TOOL_TYPES["computer"]}
-    ],
-    "Generic": [
-        {"name": "computer", "type": TOOL_TYPES["computer"]},
-        {"name": "file", "type": TOOL_TYPES["file"]},
-        {"name": "bash", "type": TOOL_TYPES["bash"]}
-    ]
+    "OpenFoam": ["bash", "file"],
+    "FreeCAD": ["computer", "bash", "file"],
+    "Generic": ["computer", "file", "bash"]
 }
 
 # LLM Provider Configuration

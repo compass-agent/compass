@@ -63,7 +63,8 @@
   box-sizing: border-box;
   overflow-y: hidden; 
   min-height: 44px;
-  
+  max-height: calc(1.5em * 4 + 16px); /* Allow up to 4 lines */
+
   &::placeholder {
     color: #888;
   }
