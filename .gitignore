@@ -86,3 +86,4 @@ backend/src/compass/tools/screen_parser/data/*
 backend/src/compass/tools/screen_parser/imgs/
 backend/src/compass/key.py
 !config/
+experiments/
