@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("electron", {
         "open-file-editor",
         "save-file-content",
         "close-editor-window",
+        "run-command", // Allow sending commands to run in the terminal
       ];
       if (validChannels.includes(channel)) {
         if (channel !== "toggle-fullscreen" && channel !== "move-to-bottom-right") {
@@ -27,13 +28,13 @@ contextBridge.exposeInMainWorld("electron", {
       }
     },
     on: (channel, func) => {
-      const validChannels = ["move-to-bottom-right-done", "load-file-content", "save-file-success"];
+      const validChannels = ["move-to-bottom-right-done", "load-file-content", "save-file-success", "command-output"];
       if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     invoke: (channel, data) => {
-      const validChannels = ['open-file-dialog', 'save-file', 'save-file-dialog'];
+      const validChannels = ['open-file-dialog', 'save-file', 'read-file', 'save-file-dialog'];
       if (validChannels.includes(channel)) {
         return ipcRenderer.invoke(channel, data);
       }
@@ -52,6 +53,12 @@ contextBridge.exposeInMainWorld("electron", {
   templateTraining: {
     saveTemplate: (data) => ipcRenderer.send('save-template', data),
     onTemplateSaved: (callback) => ipcRenderer.on('template-saved', callback),
+  },
+  terminal: {
+    runCommand: (command) => ipcRenderer.send("run-command", command), // Send a command to run
+    onCommandOutput: (callback) => ipcRenderer.on("command-output", (event, data) => callback(data)), // Listen for command outputs
+    removeCommandOutputListener: (callback) =>
+      ipcRenderer.removeListener("command-output", callback), // remove a previously added listener for command-output events.
   }
 });
 

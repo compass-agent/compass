@@ -1,0 +1,119 @@
+const { ipcMain, app, dialog } = require("electron");
+const fs = require("fs");
+const path = require("path");
+
+module.exports = (mainWindow) => {
+  ipcMain.handle("save-file", async (event, { filePath, content }) => {
+    try {
+      console.log("Main Process: Save file request received:", {
+        filePath,
+        content,
+      });
+      if (!filePath) {
+        throw new Error("File path is undefined");
+      }
+
+      // Normalize path for Windows
+      const normalizedPath = path.normalize(filePath);
+      console.log("Normalized path:", normalizedPath);
+
+      // Ensure directory exists
+      const directory = path.dirname(normalizedPath);
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+
+      fs.writeFileSync(filePath, content || "", "utf-8");
+      console.log("Main Process: File saved successfully at:", normalizedPath);
+
+      return { success: true, path: normalizedPath };
+    } catch (error) {
+      console.error("Main Process: Failed to save file:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("read-file", async (event, filePath) => {
+    try {
+      console.log("Main Process: Read file request received:", filePath);
+      if (!filePath) {
+        console.log("File path is undefined");
+        return { success: false, error: "File path is undefined" };
+      }
+
+      // Normalize path for Windows
+      const normalizedPath = path.normalize(filePath);
+      console.log("Normalized path:", normalizedPath);
+
+      // Check if path is absolute
+      if (!path.isAbsolute(normalizedPath)) {
+        return { success: false, error: "File path is relative" };
+      }
+      // Read file content
+      const content = fs.readFileSync(normalizedPath, "utf-8");
+      console.log("Main Process: File read successfully");
+
+      return { success: true, content };
+    } catch (error) {
+      console.error("Main Process: Failed to read file:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("open-file-dialog", async () => {
+    try {
+      // Temporarily disable alwaysOnTop
+      mainWindow.setAlwaysOnTop(false);
+      const result = await dialog.showOpenDialog({
+        properties: ["openFile"],
+        filters: [
+          { name: "Text Files", extensions: ["txt"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+      });
+      if (result.canceled) {
+        mainWindow.setAlwaysOnTop(true);
+        return { success: false, error: "File selection was canceled" };
+      } else {
+        const filePath = result.filePaths[0];
+        const fileName = path.basename(filePath);
+        const content = fs.readFileSync(filePath, "utf-8");
+        mainWindow.setAlwaysOnTop(true);
+        return { success: true, filePath, fileName, content };
+      }
+    } catch (error) {
+      console.error("Main Process: Failed to open file dialog:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("save-file-dialog", async (event, tab) => {
+    try {
+      // Temporarily disable alwaysOnTop
+      mainWindow.setAlwaysOnTop(false);
+      const result = await dialog.showSaveDialog({
+        title: "Save File",
+        defaultPath: path.join(
+          app.getPath("documents"),
+          tab.name || "untitled.txt"
+        ),
+        filters: [
+          { name: "Text Files", extensions: ["txt"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+      });
+      if (result.canceled) {
+        mainWindow.setAlwaysOnTop(true);
+        return { success: false, error: "Save was canceled" };
+      } else {
+        const filePath = result.filePath;
+        fs.writeFileSync(filePath, tab.content, "utf-8");
+        mainWindow.setAlwaysOnTop(true);
+        return { success: true, filePath };
+      }
+    } catch (error) {
+      console.error("Main Process: Failed to save file:", error);
+      return { success: false, error: error.message };
+    }
+  });
+};

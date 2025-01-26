@@ -4,22 +4,26 @@ import "../../styles/workspace.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark,
-  faFloppyDisk,
   faFolderOpen,
   faPlus,
+  faTerminal
 } from "@fortawesome/free-solid-svg-icons";
-import { ButtonsBarHeight, EditorWindowConf } from "../../constants";
+import { ButtonsBarHeight, WorkspaceWindowsConf } from "../../constants";
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from "@headlessui/react";
 import { v4 as uuidv4 } from "uuid";
+import TerminalComponent from "./terminal";
+import { getNameFromPath } from "./../../utils/utils";
 
-const FileEditorPanel = ({
+const WorkspaceWindow = ({
   isOpen,
+  isTerminalVisible: initialTerminalVisible,
   tabs: initialTabs,
   onClose,
   onSave,
   onWidthChange,
 }) => {
-  const [width, setWidth] = useState(EditorWindowConf.MIN_EDITOR_WIN_WIDTH); // Initial width of the editor
+  if (!isOpen) return null; // Do not render when not open
+  const [width, setWidth] = useState(WorkspaceWindowsConf.MIN_EDITOR_WIN_WIDTH); // Initial width of the editor
   const [isResizing, setIsResizing] = useState(false);
   const [isModified, setIsModified] = useState(false); // Track unsaved changes
   const [tabs, setTabs] = useState(initialTabs);
@@ -27,12 +31,33 @@ const FileEditorPanel = ({
   const activeTabRef = useRef(activeTab);
   const tabsRef = useRef([]); // Refs to measure individual tab widths
   const [canAddTab, setCanAddTab] = useState(true);
+  const [terminalHeight, setTerminalHeight] = useState(WorkspaceWindowsConf.MIN_TERMINAL_WIN_HEIGHT); // Terminal height
+  const [isTerminalVisible, setIsTerminalVisible] = useState(initialTerminalVisible); // Terminal visibility
+  const isResizingTerminal = useRef(false); 
 
   useEffect(() => {
     setTabs(initialTabs);
     console.log("Renderer Process: initialTabs", initialTabs);
+    if (initialTabs.length > 0) {
+      initialTabs.forEach((tab, index) => {
+        if (tab.isActive) {
+          setActiveTab(index);
+          activeTabRef.current = index;
+        }
+      });
+    }
 
   }, [initialTabs]);
+
+  useEffect(() => {
+    //console.log("Tabs updated:", tabs);
+    if (tabs.length > 0) {
+      tabsRef.current = tabs;
+      const newIndex = tabs.length - 1;
+      setActiveTab(newIndex);
+      activeTabRef.current = newIndex;
+    }
+  }, [tabs]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -58,21 +83,19 @@ const FileEditorPanel = ({
       (acc, tab) => acc + (tab?.offsetWidth || 0),
       0
     );
-    setCanAddTab(totalTabWidth + 70 <= panelWidth); // 70px for a new tab
+    setCanAddTab(totalTabWidth + 100 <= panelWidth); // 70px for a new tab
   };
 
   //global
   useEffect(() => {
+    console.log("WorkspaceWindow: isOpen", isOpen)
     if (isOpen) {
-      onWidthChange(EditorWindowConf.MIN_EDITOR_WIN_WIDTH);
+      onWidthChange(WorkspaceWindowsConf.MIN_EDITOR_WIN_WIDTH);
       calcEditorWidth();
     } 
 
   }, [isOpen]);
 
-  const handleMouseDown = () => {
-    setIsResizing(true);
-  };
 
   const handleMouseMove = (e) => {
     if (!isResizing) return;
@@ -83,10 +106,10 @@ const FileEditorPanel = ({
     // Calculate the new width based on mouse position, with boundaries
     const newWidth = Math.min(
       Math.max(
-        EditorWindowConf.MIN_EDITOR_WIN_WIDTH,
+        WorkspaceWindowsConf.MIN_EDITOR_WIN_WIDTH,
         window.innerWidth - (e ? e.clientX : width)
       ),
-      EditorWindowConf.MAX_EDITOR_WIN_WIDTH
+      WorkspaceWindowsConf.MAX_EDITOR_WIN_WIDTH
     );
     setWidth(newWidth);
     onWidthChange(newWidth); // Notify parent of width changes
@@ -137,8 +160,8 @@ const FileEditorPanel = ({
 
   // Handle close with unsaved changes
   const handleClose = () => {
-
-    onClose(false, tabs);
+    console.log("handleClose:", tabs)
+    onClose(tabs);
     onWidthChange(0);
   };
 
@@ -158,14 +181,34 @@ const FileEditorPanel = ({
       isModified: false,
       isInitial: isInitial
     };
-    setTabs([...tabs, newTab]);
-    setActiveTab(tabs.length); // Activate the new tab
+
+    const updatedTabs = [...tabs, newTab];
+    console.info("handleAddTab: updatedTabs before setting", updatedTabs);
+    setTabs(updatedTabs);
+    // console.info("handleAddTab: updatedTabs after setting", tabs);
+    // const newIndex = updatedTabs.length - 1; // New tab index
+    // setActiveTab(newIndex); // Activate the new tab
+    // activeTabRef.current = newIndex; // Update the ref
+    // console.info("handleAddTab: activeTabRef.current set to", newIndex);
   };
 
   const handleKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "s") {
       e.preventDefault(); // Prevent default browser save behavior
       const activeTabIndex = activeTabRef.current;
+      setTabs((prevTabs) => {
+        const updatedTabs = [...prevTabs];
+        updatedTabs[activeTabIndex].isModified = false; // Example modification
+        return updatedTabs;
+      });
+      const currentTabs = tabsRef.current; // Access the latest state from the ref
+      console.info("handleKeyDown: activeTabRef.current tabs", activeTabIndex, currentTabs);
+  
+      if (activeTabIndex === -1 || !currentTabs[activeTabIndex]) {
+        console.warn("No active tab to save");
+        return;
+      }
+      console.info("handleSaveTab: tabs", tabs);
       handleSaveTab(activeTabIndex);
     }
   };
@@ -181,55 +224,60 @@ const FileEditorPanel = ({
         await handleSaveTab(index); // Save changes
       }
     }
-    if (tabs.length === 1) return; // Prevent removing the last tab
+    // if (tabs.length === 1) return; // Prevent removing the last tab
     const updatedTabs = tabs.filter((_, i) => i !== index);
     setTabs(updatedTabs);
-    setActiveTab(index === 0 ? 0 : index - 1); // Adjust active tab
+    // Only set activeTab if there are remaining tabs
+    if (updatedTabs.length > 0) {
+      setActiveTab(index === 0 ? 0 : index - 1); // Adjust active tab
+    } else {
+      setActiveTab(-1); // No tabs left, reset active tab
+    }
   };
 
   const handleSaveTab = async (index) => {
-    const updatedTabs = [...tabsRef.current];
-    if (!updatedTabs[index].path) {
-      const filePath = await createFile(updatedTabs[index].content);
+    const currentTabs = tabsRef.current;
+    console.info("handleSaveTab: index currentTabs", index, currentTabs);
+    console.info("handleSaveTab: currentTabs[index]", currentTabs[index]);
+    if (!currentTabs[index].filePath) {
+      console.info("handleSaveTab: No file path");
+      const filePath = await createFile(currentTabs[index]);
       if (filePath) {
-        updatedTabs[index].filePath = filePath;
-        updatedTabs[index].name = filePath.split(/[/\\]/).pop();
-        updatedTabs[index].isModified = false;
-        setTabs(updatedTabs);
+        currentTabs[index].filePath = filePath;
+        currentTabs[index].name = getNameFromPath(filePath);
+        currentTabs[index].isModified = false;
+        setTabs(currentTabs);
       } else {
         console.error("Failed to save new file");
         return;
       }
     }
-    if (updatedTabs[index].isInitial && updatedTabs[index].name === fileName) {
-      //onInputTabSave(updatedTabs[index].content); // Pass the content to the parent for saving
-      saveContentToFile(updatedTabs[index]);
+    if (currentTabs[index].isInitial) {
+      //TODO: updatedTabs[index].name === fileName
+      console.info("handleSaveTab: isInitial");
+      saveContentToFile(currentTabs[index]);
     } else {
-      saveContentToFile(updatedTabs[index]);
+      saveContentToFile(currentTabs[index]);
     }
-    updatedTabs[index].isModified = false;
-    updatedTabs[index].originalContent = updatedTabs[index].content;
-    setTabs(updatedTabs);
+    currentTabs[index].isModified = false;
+    currentTabs[index].originalContent = currentTabs[index].content;
+    setTabs(currentTabs);
+    console.info("handleSaveTab: currentTabs", currentTabs);
+    console.info("handleSaveTab: tabs", tabs);
+    onSave(currentTabs); 
   };
-
-  // const onInputTabSave = (content) => {
-  //   // TODO: what should send back to parent
-  //   if (content) {
-  //     onSave(content); // Pass the content to the parent for saving
-  //   }
-  // };
 
   const saveContentToFile = (tabToSave) => {
     // Save the content to the file system
     window.electron.ipcRenderer.invoke("save-file", {
-      filePath: tabToSave.path,
+      filePath: tabToSave.filePath,
       content: tabToSave.content,
     });
   };
 
-  const createFile = async (content) => {
+  const createFile = async (tab) => {
     try {
-      const response = await window.electron.ipcRenderer.invoke("save-file-dialog", content);
+      const response = await window.electron.ipcRenderer.invoke("save-file-dialog", tab);
       if (response.success) {
         const { filePath } = response;
         console.log("Renderer Process: saveFile", { filePath });
@@ -243,8 +291,33 @@ const FileEditorPanel = ({
       return null;
     }
   };
+  // TERMINAL 
+  const toggleTerminal = () => {
+    setIsTerminalVisible(!isTerminalVisible);
+  };
 
-  if (!isOpen) return null; // Do not render when not open
+  const handleTerminalResize = (e) => {
+    if (!isResizingTerminal.current) return;
+    const newHeight = Math.max(
+      WorkspaceWindowsConf.MIN_TERMINAL_WIN_HEIGHT,
+      window.innerHeight - e.clientY
+    );
+    setTerminalHeight(newHeight);
+  };
+
+
+  const startResizingTerminal = () => {
+    isResizingTerminal.current = true;
+    window.addEventListener("mousemove", handleTerminalResize);
+    window.addEventListener("mouseup", stopResizingTerminal);
+  };
+
+  const stopResizingTerminal = () => {
+    isResizingTerminal.current = false;
+    window.removeEventListener("mousemove", handleTerminalResize);
+    window.removeEventListener("mouseup", stopResizingTerminal);
+  };
+
   return (
     <div className="file-editor-panel" style={{ width: `${width}px` }}>
       <div className="file-editor-header">
@@ -252,6 +325,9 @@ const FileEditorPanel = ({
           <div className="file-editor-btn open-folder-btn" onClick={openFile}>
             <FontAwesomeIcon icon={faFolderOpen} />
           </div>
+          <button onClick={toggleTerminal} className="file-editor-btn terminal-btn">
+            <FontAwesomeIcon icon={faTerminal} />
+          </button>
           <button onClick={handleClose} className="file-editor-btn close-btn">
             <FontAwesomeIcon icon={faXmark} />
           </button>
@@ -299,7 +375,9 @@ const FileEditorPanel = ({
         <TabPanels
           className="tab-panels"
           style={{
-            height: `calc(${window.innerHeight}px - ${3 * ButtonsBarHeight}px)`,
+            height: isTerminalVisible
+              ? `calc(${window.innerHeight}px - ${3 * ButtonsBarHeight}px - ${terminalHeight}px)`
+              : `calc(${window.innerHeight}px - ${3 * ButtonsBarHeight}px)`,
           }}
         >
           {tabs.map((tab, index) => (
@@ -322,6 +400,19 @@ const FileEditorPanel = ({
         </TabPanels>
       </TabGroup>
 
+      {/* Terminal Section */}
+      {isTerminalVisible && (
+        <div className="terminal-container" style={{ height: `${terminalHeight}px` }}>
+          <TerminalComponent />
+          <div
+            className="terminal-resize-handle"
+            onMouseDown={startResizingTerminal}
+            title="Drag to resize terminal"
+          ></div>
+        </div>
+      )}
+
+      {/* Editor Resize Handle */}
       <div
         className="file-editor-resize-handle"
         onMouseDown={() => setIsResizing(true)}
@@ -331,4 +422,4 @@ const FileEditorPanel = ({
   );
 };
 
-export default FileEditorPanel;
+export default WorkspaceWindow;

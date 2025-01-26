@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAppState } from '../context/AppContext';
+import { useAppState } from "../context/AppContext";
 import "../styles/Header.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,14 +13,13 @@ import {
   faUpRightAndDownLeftFromCenter,
   faMinus,
   faImage,
-  faMessage
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import WebSocketService from "../services/websocket";
 
 function Header() {
   const { state } = useAppState();
-  const { compassWindow} = state;
+  const { compassWindow } = state;
   const [isFullscreen, setIsFullscreen] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
@@ -82,25 +81,6 @@ function Header() {
     console.log('Template training button clicked');
     window.electron.ipcRenderer.send('open-template-training');
   };
-
-  const handleSettingsClick = (e) => {
-    e.stopPropagation();
-    setShowSettingsMenu(!showSettingsMenu);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowSettingsMenu(false);
-    };
-
-    if (showSettingsMenu) {
-      document.addEventListener('click', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showSettingsMenu]);
 
   return (
     <div className={`header ${isMac ? "macos" : "windows"}`}>
@@ -213,25 +193,20 @@ function Header() {
         </div>
       ) : (
         <div className="header-controls left">
-          <div className="settings-container">
-            <button
-              className="header-button settings"
-              onClick={handleSettingsClick}
-              title="Settings"
-            >
-              <FontAwesomeIcon icon={faEllipsisVertical} />
-            </button>
-            
-            {showSettingsMenu && (
-              <div className="settings-menu">
-                <button onClick={handleTemplateTraining}>
-                  <FontAwesomeIcon icon={faImage} /> Agent Training
-                </button>
-                {/* Add more menu items here */}
-              </div>
-            )}
-          </div>
-
+          <button
+            className="header-button"
+            onClick={handleTemplateTraining}
+            title="Template Training"
+          >
+            <FontAwesomeIcon icon={faImage} />
+          </button>
+          <button
+            className="header-button settings"
+            onClick={handleSettings}
+            title="Settings"
+          >
+            <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
           {isFullscreen ? (
             <button
               className="header-button fullscreen"

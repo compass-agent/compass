@@ -15,8 +15,8 @@ import {
   FILE_EDIT_TOOLS_NAME,
   TOOL_ACTION_MAPPING,
 } from "../constants/toolActionMappings";
-import PopupFileEditor from "./workspace/fileEditor";
-
+import WorkspaceWindow from "./workspace/workspace";
+import { getNameFromPath } from "./../utils/utils";
 
 function ChatHistory({onEditorWidthChange }) {
   const { state } = useAppState();
@@ -33,39 +33,60 @@ function ChatHistory({onEditorWidthChange }) {
     y: 0,
     visible: false,
   });
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [editorTabs, setEditorTabs] = useState([]); // Tracks files being edited
 
-  const handleEditorOpen = (filePath, fileName, fileContent) => {
+  const handleEditorOpen = async (filePath, fileName, fileContent, toolId) => {
     // Check if the file is already being edited
-    const existingTabIndex = editorTabs.findIndex((tab) => tab.filePath === filePath);
-    console.log("handleEditorOpen - filePath: existingTabIndex: ", filePath, existingTabIndex);
     console.log("handleEditorOpen - editorTabs: ", editorTabs);
+    console.log("handleEditorOpen - isWorkspaceOpen: ", isWorkspaceOpen, fileName);
+
+    const existingTabIndex = editorTabs.findIndex((tab) => tab.filePath === filePath);
+
+    // Request file content from the main process
+    const result = await window.electron.ipcRenderer.invoke('read-file', filePath);
+    if (result.success) {
+      fileContent = result.content;
+    } else {
+      console.error("Failed to read file:", result.error);
+    }
+
+    console.log("handleEditorOpen - fileName filePath: existingTabIndex toolId: ",fileName, filePath, existingTabIndex, toolId);
     if (existingTabIndex !== -1) {
       console.log("File already open in editor:", filePath);
-      // Activate the existing editor tab
+
       setEditorTabs((prev) =>
         prev.map((tab, index) =>
-          index === existingTabIndex ? { ...tab, name: fileName, filePath, content: fileContent, originalContent: fileContent, isActive: true } : { ...tab, isActive: false }
+          index === existingTabIndex ? { ...tab, name: fileName, filePath, content: fileContent, originalContent: fileContent, isActive: true, toolId } : { ...tab, isActive: false }
         )
       );
+      console.log("File already open in editorTabs:", editorTabs);
     } else {
       console.log("Opening new file in editor:", filePath);
       // Add a new tab to the editor
       setEditorTabs((prev) => [
         ...prev.map((tab) => ({ ...tab, isActive: false })), // Deactivate other tabs
-        { filePath, name: fileName, content: fileContent, originalContent: fileContent, isActive: true, isModified: false },
+        { filePath, name: fileName, content: fileContent, originalContent: fileContent, isActive: true, isInitial: true, isModified: false, toolId },
       ]);
+      // Save the content to the file system
+      window.electron.ipcRenderer.invoke("save-file", {
+        filePath: filePath,
+        content: fileContent,
+      });
+      console.log("Opening new file editorTabs:", editorTabs);
     }
   
     // Open the editor if not already open
-    if (!isEditorOpen) setIsEditorOpen(true);
+    if (!isWorkspaceOpen) setIsWorkspaceOpen(true);
   };
 
-  const handleEditorClose = (wasSaved, tabs) => {
+  const handleEditorClose = (tabs) => {
+    console.log("handleEditorClose - tabs ", tabs);
     setEditorTabs(tabs); // Clear tabs
-    setIsEditorOpen(false); // Close the editor
+    setIsWorkspaceOpen(false); // Close the editor
   };
+
+
   // TODO: Issue: this state is defined locally. to be able use it in chatInput.js,
   // it should be defined in the context or common parent component (AppContent)
   // console.log('ChatHistory - Current messages:', messages);
@@ -78,6 +99,7 @@ function ChatHistory({onEditorWidthChange }) {
 
   // Update streaming text handling
   useEffect(() => {
+    console.log("Rendering ChatHistory:", messages);
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.type === "ai_response_stream") {
@@ -158,8 +180,10 @@ function ChatHistory({onEditorWidthChange }) {
 
   const renderToolUse = (tool) => {
     console.log("renderToolUse - Received tool:", tool);
-    //setIsEditorOpen(false);
+    console.log("Rendering WorkspaceWindow:", isWorkspaceOpen, editorTabs);
 
+    //setIsEditorOpen(false);
+    //if (!isWorkspaceOpen) setIsWorkspaceOpen(true);
     const toolId = tool.id;
     const toolResult = toolResults.get(toolId);
     const isExpanded = expandedTools.has(toolId);
@@ -170,7 +194,7 @@ function ChatHistory({onEditorWidthChange }) {
       action
     );
     const filePath = tool.input?.path;
-    const fileName = filePath ? filePath.split('/').pop() : 'Untitled';
+    const fileName = filePath ? getNameFromPath(filePath) : 'Untitled';
 
     const toolInfo = TOOL_ACTION_MAPPING[action] || {
       label: "Unknown Action",
@@ -188,7 +212,12 @@ function ChatHistory({onEditorWidthChange }) {
       (description.text ||
         description.component ||
         (typeof description === "string" && description.length > 0));
-    const isFileEditorTool = FILE_EDIT_TOOLS_NAME.includes(tool.input?.command);
+    const isWorkspaceTool = FILE_EDIT_TOOLS_NAME.includes(tool.input?.command);
+    const isTerminalVisible = tool.input?.command === "bash_run";
+    console.log("ChatHistory - renderToolUse: isFileEditorTool isTerminal", isWorkspaceTool, isTerminalVisible);
+    console.log("ChatHistory - renderToolUse: toolInfo", toolInfo);
+    console.log("ChatHistory - renderToolUse: toolResult", toolResult);
+    console.log("ChatHistory - renderToolUse: description", description);
     // Local state to track the visibility of the editor
     return (
       <div className="tool-suggestion">
@@ -239,14 +268,15 @@ function ChatHistory({onEditorWidthChange }) {
                   description
                 )}
               </div>
-              {isFileEditorTool && (
+              {isWorkspaceTool && (
                 <button
                   className="popup-open-btn"
                   onClick={() => {
                     handleEditorOpen(
                       filePath || "Untitled",
                       fileName,
-                      tool.input?.file_text || ""
+                      tool.input?.file_text || "",
+                      toolId
                     );
                   }}
                 >
@@ -254,20 +284,24 @@ function ChatHistory({onEditorWidthChange }) {
                 </button>
               )}
             </div>
-            {isFileEditorTool && isEditorOpen && (
-              <PopupFileEditor
-                isOpen={isEditorOpen}
+            {isWorkspaceTool && isWorkspaceOpen && (
+              <WorkspaceWindow
+                isOpen={isWorkspaceOpen}
+                isTerminalVisible={isTerminalVisible}
                 tabs={editorTabs}
                 onClose={handleEditorClose}
-                onSave={(newContent) => {
-                  const activeTabIndex = editorTabs.findIndex((tab) => tab.isActive);
-                  if (activeTabIndex !== -1) {
-                    setEditorTabs((prev) =>
-                      prev.map((tab, index) =>
-                        index === activeTabIndex ? { ...tab, fileContent: newContent } : tab
-                      )
-                    );
-                  }
+                onSave={(tabs) => {
+                  // const activeTabIndex = editorTabs.findIndex((tab) => tab.isActive);
+                  // if (activeTabIndex !== -1) {
+                  //   setEditorTabs((prev) =>
+                  //     prev.map((tab, index) =>
+                  //       index === activeTabIndex ? { ...tab, fileContent: newContent } : tab
+                  //     )
+                  //   );
+                  // }
+                  console.log("ChatHistory - onSave", tabs);
+                  setEditorTabs(tabs);
+                  //updateMessages(tabs);
                 }}
                 onWidthChange={(newWidth) => onEditorWidthChange(newWidth)}
               />

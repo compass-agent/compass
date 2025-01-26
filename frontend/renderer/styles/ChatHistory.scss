@@ -58,7 +58,7 @@
       padding: 10px;
       border: 1px solid #333;
       border-radius: 12px;
-      margin-right: 10px;
+      // margin-right: 10px;
       margin-left: auto;
       color: white;
       max-width: 70%;
@@ -217,6 +217,7 @@
       font-family: monospace;
       font-size: 0.9em;
       flex-grow: 1; /* Allow the text to take up the remaining space */
+      min-width: 0;
     }
 
     .popup-open-btn {

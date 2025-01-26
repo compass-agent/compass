@@ -35,9 +35,10 @@ const ActionTypes = {
   SET_SCALING_FACTORS: "SET_SCALING_FACTORS",
 };
 
-const EditorWindowConf = {
+const WorkspaceWindowsConf = {
   MIN_EDITOR_WIN_WIDTH: 300,
   MAX_EDITOR_WIN_WIDTH: 800,
+  MIN_TERMINAL_WIN_HEIGHT: 200,
 }
 
-module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, EditorWindowConf };
+module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, WorkspaceWindowsConf };

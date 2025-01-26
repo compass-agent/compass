@@ -156,7 +156,22 @@
     }
   }
 
-    .file-editor-resize-handle {
+  .terminal-container {
+    background-color: #1e1e1e;
+    border-top: 1px solid #444;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+
+    .terminal-resize-handle {
+      height: 5px;
+      background: #444;
+      width: 100%;
+      cursor: ns-resize; /* Vertical resize cursor */
+    }
+  }
+ 
+  .file-editor-resize-handle {
       position: absolute;
       left: 0;
       top: 0;
@@ -169,7 +184,7 @@
       &:hover {
         background-color: rgba(255, 255, 255, 0.3);
       }
-    }
+  }
 }
 
 

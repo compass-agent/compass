@@ -1,0 +1,1 @@
+export const getNameFromPath = (path) => path.split(/[/\\]/).pop();

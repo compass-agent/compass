@@ -6,7 +6,7 @@ const getFileName = (filepath) => {
   return filepath.split('/').pop().split('\\').pop();
 };
 
-export const FILE_EDIT_TOOLS_NAME = ['bash_run', 'view', 'create', 'str_replace', 'insert', 'undo_edit'];
+export const FILE_EDIT_TOOLS_NAME = ['bash_run', 'str_replace_editor', 'view', 'create', 'str_replace', 'insert', 'undo_edit'];
 
 export const TOOL_ACTION_MAPPING = {
   // Bash script execution
