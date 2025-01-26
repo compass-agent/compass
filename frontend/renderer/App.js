@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
-import "./styles/common.scss";
-import "./styles/App.scss";
-import ChatHistory from "./components/ChatHistory";
-import MessageInput from "./components/MessageInput";
-import ControlPanel from "./components/ControlPanel";
-import { AppProvider, useAppState } from "./context/AppContext";
-import Header from "./components/Header";
-import useUpdateContainerHeight from "./hooks/useUpdateContainerHeight";
-import useScrollToBottom from "./hooks/useScrollToBottom";
-import { AgentStatus, AgentMode } from "./constants";
+import "./main-chat/styles/common.scss";
+import "./main-chat/styles/App.scss";
+import ChatHistory from "./main-chat/components/ChatHistory";
+import MessageInput from "./main-chat/components/MessageInput";
+import ControlPanel from "./main-chat/components/ControlPanel";
+import { AppProvider, useAppState } from "./common/context/AppContext";
+import Header from "./main-chat/components/Header";
+import useUpdateContainerHeight from "./main-chat/hooks/useUpdateContainerHeight";
+import useScrollToBottom from "./main-chat/hooks/useScrollToBottom";
+import { AgentStatus, AgentMode } from "./common/constants";
 
 // Separate component for the main app content to use the context
 function AppContent() {

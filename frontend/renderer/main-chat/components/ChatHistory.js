@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useAppState } from "../context/AppContext";
+import { useAppState } from "../../common/context/AppContext";
 import "../styles/ChatHistory.scss";
-import { MESSAGE_TYPES } from "../constants";
-import { AgentStatus, AgentMode } from "../constants";
+import { AgentStatus, AgentMode, MESSAGE_TYPES } from "../../common/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { ButtonsBarHeight } from "../constants";
+import { ButtonsBarHeight } from "../../common/constants";
+import { AgentStatus } from '../../common/constants';
 
 const useUpdateContainerHeight = (ref) => {
   useEffect(() => {

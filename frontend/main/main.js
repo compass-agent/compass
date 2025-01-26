@@ -43,7 +43,7 @@ function createWindow() {
 
   mainWindow.setResizable(true);
 
-  const indexPath = path.join(__dirname, "../renderer/index.html");
+  const indexPath = path.join(__dirname, '../renderer/main-chat/index.html');
   mainWindow.loadFile(indexPath);
 
   // Remove the default menu

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAppState } from '../context/AppContext';
+import { useAppState } from '../../common/context/AppContext';
 import "../styles/Header.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,7 +16,7 @@ import {
   faMessage
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
-import WebSocketService from "../services/websocket";
+import WebSocketService from "../../common/services/websocket";
 
 function Header() {
   const { state } = useAppState();

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { FaSearchLocation } from 'react-icons/fa';
-import { useAppState } from '../../../context/AppContext';
+import { useAppState } from '../../../../common/context/AppContext';
 
 function CoordinatePreviewButton({ x, y }) {
   const { state } = useAppState();

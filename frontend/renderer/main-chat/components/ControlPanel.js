@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import WebSocketService from "../services/websocket";
-import { useAppState } from "../context/AppContext";
+import WebSocketService from "../../common/services/websocket";
+import { useAppState } from "../../common/context/AppContext";
 import "../styles/ControlPanel.scss";
-import { AgentStatus, ActionTypes, AgentMode } from "../constants";
+import { AgentStatus, ActionTypes, AgentMode } from '../../common/constants';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faRotateRight,

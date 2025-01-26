@@ -8,7 +8,7 @@ import {
   faFolderOpen,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
-import { ButtonsBarHeight, EditorWindowConf } from "../../constants";
+import { ButtonsBarHeight, EditorWindowConf } from "../../../common/constants";
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from "@headlessui/react";
 import { v4 as uuidv4 } from "uuid";
 

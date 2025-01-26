@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import WebSocketService from "../services/websocket";
-import { useAppState } from "../context/AppContext";
+import WebSocketService from "../../common/services/websocket";
+import { useAppState } from "../../common/context/AppContext";
 import "../styles/MessageInput.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,7 +9,7 @@ import {
   faStop,
   faImage,
 } from "@fortawesome/free-solid-svg-icons";
-import { AgentStatus, ActionTypes } from '../constants'; 
+import { AgentStatus, ActionTypes } from '../../common/constants'; 
 
 function MessageInput() {
   const { state, dispatch } = useAppState();
