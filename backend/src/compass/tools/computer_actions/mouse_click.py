@@ -5,6 +5,7 @@ from typing import Optional, Tuple, Literal
 from compass.types.agent import ToolResult
 from .base import BaseComputerAction
 from compass.services.state_manager import StateManager
+from compass.constants import ENABLE_SCREEN_DESCRIPTION_MOUSE_CLICK, ENABLE_SCREENSHOT_COMPARISON_MOUSE_CLICK
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,8 @@ class MouseClickAction(BaseComputerAction):
             scaled_width=scaled_width,
             scaled_height=scaled_height,
             state_manager=state_manager,
-            enable_screenshot_comparison=True,
-            enable_screen_description=False
+            enable_screenshot_comparison=ENABLE_SCREENSHOT_COMPARISON_MOUSE_CLICK,
+            enable_screen_description=ENABLE_SCREEN_DESCRIPTION_MOUSE_CLICK
         )
 
     async def execute(self, 

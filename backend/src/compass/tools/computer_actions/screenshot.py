@@ -3,7 +3,7 @@ import logging
 from compass.types.agent import ToolResult, ToolError
 from .base import BaseComputerAction
 from compass.services.state_manager import StateManager
-
+from compass.constants import ENABLE_SCREENSHOT_COMPARISON_SCREENSHOT, ENABLE_SCREEN_DESCRIPTION_SCREENSHOT
 logger = logging.getLogger(__name__)
 
 class ScreenshotAction(BaseComputerAction):
@@ -16,8 +16,8 @@ class ScreenshotAction(BaseComputerAction):
             scaled_width=scaled_width,
             scaled_height=scaled_height,
             state_manager=state_manager,
-            enable_screenshot_comparison=True,
-            enable_screen_description=False
+            enable_screenshot_comparison=ENABLE_SCREENSHOT_COMPARISON_SCREENSHOT,
+            enable_screen_description=ENABLE_SCREEN_DESCRIPTION_SCREENSHOT
         )
 
     async def execute(self, **kwargs) -> ToolResult:

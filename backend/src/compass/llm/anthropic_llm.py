@@ -13,13 +13,14 @@ from compass.constants import (
     ANTHROPIC_MODEL_NAME_MANUAL,
     ANTHROPIC_MODEL_NAME_AUTO,
     MAX_TOKENS,
-    COMPUTER_USE_BETA_FLAG,
-    PROMPT_CACHING_BETA_FLAG,
     PROMPT_CACHING
 )
 from compass.key import ANTHROPIC_API_KEY
 from compass.utils.utility import log_execution_time
 from compass.utils.utility import TokenTracker
+
+COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
+PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 logger = logging.getLogger(__name__)
 
@@ -48,42 +49,19 @@ class AnthropicLLM(BaseLLMInterface):
         self.betas = [COMPUTER_USE_BETA_FLAG] + ([PROMPT_CACHING_BETA_FLAG] if PROMPT_CACHING else [])
         # We don't need to store system messages as Anthropic handles them differently
 
-    def preprocess_messages(self, messages: list[BetaMessageParam]) -> list[BetaMessageParam]:
-        """Preprocess messages for manual mode by converting tool-related content to text"""
-        processed = []
-        for message in messages:
-            new_message = {"role": message["role"]}
-            new_content = []
-            
-            for content_item in message["content"]:
-                if content_item["type"] == "tool_result": # type: ignore
-                    # Flatten tool_result content directly into the message
-                    new_content.extend(content_item["content"]) # type: ignore
-                elif content_item["type"] == "tool_use": # type: ignore
-                    # Convert tool_use to text format
-                    tool_text = f"Tool Use - Name: {content_item['name']}, Input: {json.dumps(content_item['input'])}" # type: ignore
-                    new_content.append({
-                        "type": "text",
-                        "text": tool_text
-                    })
-                else:
-                    # Keep other content types (text, image) as is
-                    new_content.append(content_item)
-            
-            new_message["content"] = new_content # type: ignore
-            processed.append(new_message)
-        return processed
-
     @log_execution_time(logger)
     def stream_call(self, system_message: SystemMessage, manual_mode: bool = False) -> Generator[Union[str, ToolCall], None, None]:
         messages = self.memory_manager.memory
         messages = self.memory_manager.optimize_messages(messages)
         formatted_messages = self.format_messages_for_llm(messages)
+        
+        # Save formatted messages
+        self._save_formatted_messages(formatted_messages, system_message.content)
 
         try:
             if manual_mode:
                 # Preprocess messages for manual mode
-                formatted_messages = self.preprocess_messages(formatted_messages)
+                formatted_messages = self._preprocess_messages(formatted_messages)
                 with self.client.messages.stream(
                     max_tokens=MAX_TOKENS,
                     messages=formatted_messages, # type: ignore
@@ -120,6 +98,32 @@ class AnthropicLLM(BaseLLMInterface):
         except Exception as e:
             logger.error(f"API call failed: {e}")
             raise
+
+    def _preprocess_messages(self, messages: list[BetaMessageParam]) -> list[BetaMessageParam]:
+        """Preprocess messages for manual mode by converting tool-related content to text"""
+        processed = []
+        for message in messages:
+            new_message = {"role": message["role"]}
+            new_content = []
+            
+            for content_item in message["content"]:
+                if content_item["type"] == "tool_result": # type: ignore
+                    # Flatten tool_result content directly into the message
+                    new_content.extend(content_item["content"]) # type: ignore
+                elif content_item["type"] == "tool_use": # type: ignore
+                    # Convert tool_use to text format
+                    tool_text = f"Tool Use - Name: {content_item['name']}, Input: {json.dumps(content_item['input'])}" # type: ignore
+                    new_content.append({
+                        "type": "text",
+                        "text": tool_text
+                    })
+                else:
+                    # Keep other content types (text, image) as is
+                    new_content.append(content_item)
+            
+            new_message["content"] = new_content # type: ignore
+            processed.append(new_message)
+        return processed
 
     def format_messages_for_llm(self, messages: list[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]) -> list[BetaMessageParam]:
         """Convert our generic message types to Anthropic's beta message format"""
@@ -183,3 +187,15 @@ class AnthropicLLM(BaseLLMInterface):
                 })
         
         return formatted_messages 
+
+    def _save_formatted_messages(self, formatted_messages: list[BetaMessageParam], system_content: str) -> None:
+        """Save the formatted messages that will be sent to Anthropic"""
+        prompt_data = {
+            "messages": formatted_messages,
+            "system": system_content
+        }
+        
+        # Use the same history tracker from memory manager
+        filename = f"anthropic_llm_prompt/prompt_{self.memory_manager.recording_iteration}"
+        self.memory_manager.history_tracker.save_messages(prompt_data, filename)
+        logger.info(f"Saved formatted Anthropic prompt for iteration {self.memory_manager.recording_iteration}") 

@@ -9,10 +9,7 @@ from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
 from compass.llm.memory_management import MemoryManager
 from compass.utils.utility import log_execution_time
 from compass.constants import (
-    MAX_TOKENS,
-    COMPUTER_USE_BETA_FLAG,
-    PROMPT_CACHING_BETA_FLAG,
-    PROMPT_CACHING
+    MAX_TOKENS
 )
 from compass.key import GOOGLE_API_KEY
 from compass.constants import GOOGLE_MODEL_NAME
@@ -30,8 +27,6 @@ class GoogleLLM(BaseLLMInterface):
             generation_config={"temperature": 0.7, "max_output_tokens": MAX_TOKENS}
         )
         self.memory_manager = memory_manager
-        self.use_function_calling = COMPUTER_USE_BETA_FLAG
-        self.use_prompt_caching = PROMPT_CACHING and PROMPT_CACHING_BETA_FLAG
         
         # Initialize both manual and auto mode chats as None
         self.manual_chat = None

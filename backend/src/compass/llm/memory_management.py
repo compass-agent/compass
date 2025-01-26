@@ -15,16 +15,14 @@ class MemoryManager:
 
     def add_message(self, message: Union[SystemMessage, HumanMessage, AIMessage, ToolResult]):
         self.memory.append(message)
-        # Convert messages to JSON-serializable format
-        serializable_messages = [
-            {
-                "type": message.__class__.__name__,
-                "data": message.to_dict()
-            }
-            for message in self.memory
-        ]
-        self.history_tracker.save_messages(serializable_messages, self.recording_iteration)
-        logger.info(f"Saved messages for iteration {self.recording_iteration} as a json file")
+        # Convert single message to JSON-serializable format
+        serializable_message = {
+            "type": message.__class__.__name__,
+            "data": message.to_dict()
+        }
+        message_type = message.__class__.__name__.lower()
+        self.history_tracker.save_messages(serializable_message, f"{message_type}_{self.recording_iteration}")
+        logger.info(f"Saved message of type {message_type} for iteration {self.recording_iteration}")
         self.recording_iteration += 1
 
     def _remove_old_screenshots(self, messages: List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]], images_to_keep: int | None = 1) -> List[Union[SystemMessage, HumanMessage, AIMessage, ToolResult]]:

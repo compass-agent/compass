@@ -6,12 +6,14 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 import logging
 from dataclasses import dataclass
+from time import time
 
 from compass.types.agent import ToolResult, ScalingSource
 from compass.services.state_manager import StateManager
 from compass.tools.screen_parser.screen_parser import ScreenParser
 from compass.tools.screen_parser.models import ScreenData
 from compass.utils.utility import log_execution_time
+from compass.utils.utility import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -45,46 +47,17 @@ class BaseComputerAction(ABC):
         self.screen_parser = ScreenParser() if enable_screen_description else None
         self._enable_screenshot_comparison = enable_screenshot_comparison
         self._enable_screen_description = enable_screen_description
-        
-    @log_execution_time(logger)
-    def _take_screenshot(self, use_logical_dimensions: bool = True) -> Image.Image:
-        """Helper method to capture screenshot with either logical or physical dimensions.
-        """
-        screenshot = pyautogui.screenshot()
-        if use_logical_dimensions:
-            logical_width, logical_height = pyautogui.size()
-            screenshot = screenshot.resize(
-                (logical_width, logical_height),
-                resample=Image.Resampling.LANCZOS
-            )
-            logger.info(f"Screenshot resized to logical dimensions: {screenshot.width}x{screenshot.height}")
-        return screenshot
 
     @log_execution_time(logger)
     async def capture_and_process_screenshot(self) -> ScreenshotResult:
         """Core method to capture and process screenshot, returning a ScreenshotResult object
-        
-        Current Flow:
-        1. Take screenshot -> image
-        2. Get screen description (original image) -> string
-        3. Check for changes (original image) -> string
-        4. Rescale (image) -> image
-        5. Optimize (image) -> image
-        
-        TODO - Future Parallel Flow:
-        1. Sync: Take screenshot -> image
-        2. Async parallel:
-            - Get screen description (original image) -> string
-            - Check for changes (original image) -> string
-        3. Sync: Rescale (image) -> image
-        4. Sync: Optimize (image) -> image
-        
-        Returns:
-            ScreenshotResult: Contains base64 image, change detection, and screen description
         """
         try:
             logger.info("Capturing screenshot")
             screenshot = self._take_screenshot(use_logical_dimensions=True)
+            
+            # Save original screenshot
+            self._save_original_screenshot(screenshot)
             
             description = None
             if self._enable_screen_description and self.screen_parser:
@@ -140,6 +113,32 @@ class BaseComputerAction(ABC):
                 error=error_msg,
                 description=None
             )
+
+    @log_execution_time(logger)
+    def _take_screenshot(self, use_logical_dimensions: bool = True) -> Image.Image:
+        """Helper method to capture screenshot with either logical or physical dimensions.
+        """
+        screenshot = pyautogui.screenshot()
+        if use_logical_dimensions:
+            logical_width, logical_height = pyautogui.size()
+            screenshot = screenshot.resize(
+                (logical_width, logical_height),
+                resample=Image.Resampling.LANCZOS
+            )
+            logger.info(f"Screenshot resized to logical dimensions: {screenshot.width}x{screenshot.height}")
+        return screenshot
+
+    def _save_original_screenshot(self, screenshot: Image.Image) -> None:
+        """Helper method to save the original screenshot to the session directory."""
+        try:
+            history_tracker = SessionManager.get_history_tracker()
+            if history_tracker:
+                timestamp = int(time())
+                screenshot_path = history_tracker.screenshots_dir / f"screenshot_{timestamp}.png"
+                screenshot.save(screenshot_path, format='PNG')
+                logger.info(f"Saved original screenshot to {screenshot_path}")
+        except Exception as e:
+            logger.error(f"Failed to save screenshot: {e}")
 
     def _image_to_base64(self, image: Image.Image) -> str:
         """Helper method to convert PIL Image to base64 string"""

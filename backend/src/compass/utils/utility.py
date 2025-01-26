@@ -78,6 +78,7 @@ class HistoryLogger:
         self.app_log_file = self.log_dir / 'app.log'
         self.logs = []
         
+        SessionManager.set_history_tracker(self)
         self._configure_logging()
 
     def _configure_logging(self):
@@ -121,14 +122,14 @@ class HistoryLogger:
         """Get the base path for this session's logs"""
         return self.log_dir
 
-    def save_messages(self, messages: list, iteration: int) -> None:
-        """Save messages to a JSON file in the session directory"""
-        messages_file = self.log_dir / f'messages_{iteration}.json'
+    def save_messages(self, message: dict, filename: str) -> None:
+        """Save a single message to a JSON file in the session directory"""
+        messages_file = self.log_dir / f'{filename}.json'
         try:
             with open(messages_file, 'w') as f:
-                json.dump(messages, f, indent=4)
+                json.dump(message, f, indent=4)
         except Exception as e:
-            logger.error(f"Failed to save messages: {e}")
+            logger.error(f"Failed to save message: {e}")
 
 class TokenTracker:
     def __init__(self):
@@ -151,3 +152,21 @@ class TokenTracker:
         # Log current iteration and totals
         logger.info(f"Current: input_tokens={input_tokens} (${input_cost:.4f}), output_tokens={output_tokens} (${output_cost:.4f})")
         logger.info(f"Total: input_tokens={self.total_input_tokens} (${total_input_cost:.4f}), output_tokens={self.total_output_tokens} (${total_output_cost:.4f})")
+
+class SessionManager:
+    _instance = None
+    _history_tracker = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def set_history_tracker(cls, history_tracker: HistoryLogger):
+        cls._history_tracker = history_tracker
+
+    @classmethod
+    def get_history_tracker(cls) -> Optional[HistoryLogger]:
+        return cls._history_tracker
