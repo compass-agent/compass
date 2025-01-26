@@ -98,7 +98,7 @@
   gap: 8px;
   align-items: center;
   
-  &.left, &.right {
+  &.left {
     order: unset;
   }
 
@@ -132,9 +132,5 @@
 
   .image-button {
     color: #666;
-  }
-
-  .send-button {
-    color: #2196f3;
   }
 }

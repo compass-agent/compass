@@ -225,15 +225,6 @@ function MessageInput() {
           rows="1"
           disabled={!isInputEnabled}
         />
-        <div className="message-buttons right">
-          <button
-            className="button send-button"
-            onClick={handleSubmit}
-            disabled={!isInputEnabled || (!message.trim() && !imageData)}
-          >
-            <FontAwesomeIcon icon={faArrowUp} />
-          </button>
-        </div>
       </div>
     </div>
   );
