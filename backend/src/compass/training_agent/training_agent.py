@@ -1,6 +1,6 @@
 import logging
 import base64
-from typing import Dict, List
+from typing import Dict, List, Protocol
 import numpy as np
 import cv2
 from compass.tools.screen_parser.detectors.icon.yolo_detector import YOLOIconDetector
@@ -8,81 +8,169 @@ from compass.tools.screen_parser.detectors.template_matcher.template_detector im
 from compass.tools.screen_parser.models import ScreenData, BoundingBox
 from compass.tools.screen_parser.utils.box_utils import calculate_iou
 from compass.database.models import Session, Template
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 IOU_THRESHOLD = 0.9  # Using same threshold as box_utils
 
-class TrainingAgent:
-    def __init__(self):
-        """Initialize training agent with YOLO and template detectors"""
-        self.yolo_detector = YOLOIconDetector()
+@dataclass
+class Detection:
+    """Represents a single detection with its properties"""
+    bbox: List[float]
+    confidence: float
+    caption: str | None
+    source: str  # e.g., 'template', 'yolo'
+
+class DetectionFilter(Protocol):
+    """Protocol for detection filters"""
+    def filter(self, detection: Detection, context: Dict) -> bool:
+        """Return True if detection should be kept"""
+        pass
+
+class EmptyImageFilter(DetectionFilter):
+    def filter(self, detection: Detection, context: Dict) -> bool:
+        threshold = 10.0  # Can be made configurable
+        image_data = context['image_data']
+        return not self._is_empty_image(image_data, detection.bbox, threshold)
         
-    def process_screenshot(self, image_data: str, agent_name: str) -> Dict:
+    def _is_empty_image(self, image_data: str, bbox: List[float], threshold: float) -> bool:
         """
-        Process screenshot using template matching and YOLO detection
+        Check if cropped image region is empty (uniform color/low variation)
         
         Args:
             image_data: Base64 encoded image
-            agent_name: Name of agent to filter templates
+            bbox: Bounding box coordinates [x1, y1, x2, y2]
+            threshold: Threshold for std deviation (default 10.0)
+                      Lower values = more strict (catches more uniform regions)
             
         Returns:
-            Dict containing detected regions with labels where available
+            bool: True if image is considered empty/uniform
         """
-        # Create ScreenData object
+        # Decode and crop image
+        img_bytes = base64.b64decode(image_data)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        x1, y1, x2, y2 = map(int, bbox)
+        cropped = img[y1:y2, x1:x2]
+        
+        # Convert to grayscale
+        gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+        
+        # Calculate standard deviation of pixel values
+        std_dev = np.std(gray)
+        
+        return std_dev < threshold
+
+class SmallBoxFilter(DetectionFilter):
+    def filter(self, detection: Detection, context: Dict) -> bool:
+        if detection.source == 'template':  # Skip filter for templates
+            return True
+        return self._get_box_area(detection.bbox) >= context['min_area_threshold']
+        
+    def _get_box_area(self, bbox: List[float]) -> float:
+        """Calculate area of bounding box"""
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        return width * height
+
+class OverlapFilter(DetectionFilter):
+    def filter(self, detection: Detection, context: Dict) -> bool:
+        if detection.source == 'template':  # Skip filter for templates
+            return True
+            
+        template_detections = context['template_detections']
+        for template_detection in template_detections:
+            # Create BoundingBox objects for IOU calculation
+            box1 = BoundingBox(bbox=tuple(detection.bbox), element_type="icon", confidence=detection.confidence)
+            box2 = BoundingBox(bbox=tuple(template_detection.bbox), element_type="icon", confidence=template_detection.confidence)
+            
+            if calculate_iou(box1, box2) > context['iou_threshold']:
+                return False
+        return True
+
+class TrainingAgent:
+    def __init__(self):
+        """Initialize training agent with detectors and filters"""
+        self.yolo_detector = YOLOIconDetector()
+        self.template_detector = TemplateDetector()
+        
+        # Initialize filters
+        self.filters = [
+            EmptyImageFilter(),
+            SmallBoxFilter(),
+            OverlapFilter()
+        ]
+        
+        # Could add post-processors here later
+        self.post_processors = []
+        
+    def _calculate_size_context(self, template_detections: List[Detection], 
+                              yolo_detections: List[Detection]) -> float:
+        """Calculate median area and minimum threshold"""
+        all_boxes = [d.bbox for d in template_detections + yolo_detections]
+        if not all_boxes:
+            return 0
+            
+        box_areas = [SmallBoxFilter()._get_box_area(bbox) for bbox in all_boxes]
+        median_area = np.median(box_areas)
+        return median_area * 0.2  # 20% of median area
+
+    def process_screenshot(self, image_data: str, agent_name: str) -> Dict:
+        """Process screenshot using detection pipeline"""
+        # Run detectors
         screen_data = ScreenData(image_data=image_data)
-        
-        # First run template matching
-        template_detector = TemplateDetector(agent_name=agent_name)
-        template_results = template_detector.detect(screen_data)
-        
-        # Then run YOLO detection
+        template_results = self.template_detector.detect(screen_data)
         yolo_results = self.yolo_detector.detect(screen_data)
         
-        # Combine results, removing YOLO detections that overlap with templates
-        detections = []
+        # Convert to Detection objects
+        template_detections = [
+            Detection(
+                bbox=t.bbox,
+                confidence=t.confidence,
+                caption=t.caption,
+                source='template'
+            ) for t in template_results.icon_elements
+        ]
         
-        # Add template matches first
-        for template in template_results.icon_elements:
-            detections.append({
-                'bbox': template.bbox,
-                'confidence': template.confidence,
-                'caption': template.caption  # Include template caption
-            })
+        yolo_detections = [
+            Detection(
+                bbox=y.bbox,
+                confidence=y.confidence,
+                caption=None,
+                source='yolo'
+            ) for y in yolo_results.icon_elements
+        ]
         
-        # Add non-overlapping YOLO detections
-        for yolo_detection in yolo_results.icon_elements:
-            should_add = True
-            
-            # Create BoundingBox objects for IOU calculation
-            yolo_box = BoundingBox(
-                bbox=yolo_detection.bbox,
-                element_type="icon",
-                confidence=yolo_detection.confidence
-            )
-            
-            # Check for overlap with template detections
-            for template in template_results.icon_elements:
-                template_box = BoundingBox(
-                    bbox=template.bbox,
-                    element_type="icon",
-                    confidence=template.confidence,
-                    caption=template.caption
-                )
-                
-                if calculate_iou(yolo_box, template_box) > IOU_THRESHOLD:
-                    should_add = False
-                    break
-            
-            if should_add:
-                detections.append({
-                    'bbox': yolo_detection.bbox,
-                    'confidence': yolo_detection.confidence,
-                    'caption': None  # No caption for new YOLO detections
-                })
-            
+        # Create filter context
+        context = {
+            'image_data': image_data,
+            'template_detections': template_detections,
+            'min_area_threshold': self._calculate_size_context(
+                template_detections, yolo_detections
+            ),
+            'iou_threshold': 0.3
+        }
+        
+        # Apply filters to YOLO detections
+        filtered_yolo = []
+        for detection in yolo_detections:
+            if all(f.filter(detection, context) for f in self.filters):
+                filtered_yolo.append(detection)
+        
+        # Combine results
+        all_detections = template_detections + filtered_yolo
+        
+        # Convert back to dictionary format
         return {
-            'detections': detections,
+            'detections': [
+                {
+                    'bbox': d.bbox,
+                    'confidence': d.confidence,
+                    'caption': d.caption
+                } for d in all_detections
+            ],
             'image': image_data
         }
     

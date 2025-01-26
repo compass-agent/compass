@@ -18,8 +18,8 @@ icon_detection:
   yolo:
     model_path: "src/compass/tools/screen_parser/data/icon_detect_v1_5/model_v1_5.pt"
     device: "${general.device}"
-    conf_threshold: 0.05
-    iou_threshold: 0.7
+    conf_threshold: 0.4
+    iou_threshold: 0.1
   template:
     database_path: "data/icon_templates.csv"
     threshold: 0.8
