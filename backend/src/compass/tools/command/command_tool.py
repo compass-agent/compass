@@ -8,6 +8,7 @@ import logging
 from ...constants import DOCKER_CONTAINER_NAME, DOCKER_WORKING_DIR
 import subprocess
 import platform
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -25,14 +26,40 @@ class BashExecutor(BaseTool):
             elif platform.system() == "Linux":  # Linux
                 command = "hostname -I | awk '{print $1}'"
             elif platform.system() == "Windows":  # Windows
-                command = "ipconfig | findstr \"IPv4\" | findstr \"192.168.0.\" | awk -F \": \" '{print $2}'"
+                command = "powershell -Command \"(ipconfig | findstr 'IPv4' | findstr '192.168.0.') -replace '^.*: ', ''\""
             else:
                 raise ValueError("Unsupported operating system")
             self.host_ip = subprocess.check_output(command, 
             shell=True
             ).decode().strip()
+            logger.info(f"SPZ , {self.host_ip}")
             # Set up X11 permissions
-            subprocess.run(f"xhost + {self.host_ip}", shell=True)
+            if platform.system() == "Darwin":  # macOS
+                subprocess.run(f"xhost + {self.host_ip}", shell=True)
+            elif platform.system() == "Linux":  # Linux
+                subprocess.run(f"xhost + {self.host_ip}", shell=True)
+            elif platform.system() == "Windows":  # Windows
+                if not os.environ.get("DISPLAY"):
+                    os.environ["DISPLAY"] = "localhost:0.0"
+                logger.info(f"Windows X11: DISPLAY set to {os.environ['DISPLAY']}")
+                # Check if X server is running
+                try:
+                    # Use PowerShell's Get-Process to check for vcxsrv.exe
+                    result = subprocess.run(
+                        ["powershell", "-Command", "Get-Process -Name vcxsrv"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        logger.info("Windows X11: VcXsrv is running.")
+                    else:
+                        logger.warning("Windows X11: VcXsrv is not running.")
+                except Exception as e:
+                    logger.error(f"Error checking X server: {e}")
+            else:
+                raise ValueError("Unsupported operating system")
         except Exception as e:
             logger.warning(f"Failed to set up X11 forwarding: {e}")
             self.host_ip = None

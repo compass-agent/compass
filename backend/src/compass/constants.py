@@ -19,7 +19,7 @@ KEEP_SCREENSHOTS = True        # Keep screenshots after use
 # For now, we only set these here. But in the future, we will allow set them in the UI.
 
 # Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
-AGENT_NAME = "FreeCAD" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
+AGENT_NAME = "OpenFoam" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
 
 
 # Below are the parameters for the OpenFoam agent
@@ -37,10 +37,25 @@ HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
 PRE_RUN_SCREENSHOTS = True    # Take screenshots before running the agent
 
 # Define tool configurations for different agents
+TOOL_TYPES = {
+    "computer": "computer_20241022",
+    "file": "text_editor_20241022",
+    "bash": "command_20241022"
+}
+
 AGENT_TOOLS = {
-    "OpenFoam": ["bash", "file"],
-    "FreeCAD": ["computer"],
-    "Generic": ["computer", "file", "bash"]
+    "OpenFoam": [
+        {"name": "bash", "type": TOOL_TYPES["bash"]},
+        {"name": "file", "type": TOOL_TYPES["file"]}
+    ],
+    "FreeCAD": [
+        {"name": "computer", "type": TOOL_TYPES["computer"]}
+    ],
+    "Generic": [
+        {"name": "computer", "type": TOOL_TYPES["computer"]},
+        {"name": "file", "type": TOOL_TYPES["file"]},
+        {"name": "bash", "type": TOOL_TYPES["bash"]}
+    ]
 }
 
 # LLM Provider Configuration
