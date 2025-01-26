@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export const useImageHandling = () => {
   const [image, setImage] = useState(null);
@@ -12,7 +12,7 @@ export const useImageHandling = () => {
       cleanupFunctions.setBoxes({});
       cleanupFunctions.setCaptions({});
       cleanupFunctions.setSelectedBox(null);
-      cleanupFunctions.setIsAnalyzing(false);
+      cleanupFunctions.setIsAnalyzing(false); // Add this to reset analyzing state
 
       // Clear image size
       setImageSize({ width: 0, height: 0 });

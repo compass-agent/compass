@@ -1,0 +1,25 @@
+.navigation-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #2c2c2c;
+  border-bottom: 1px solid #404040;
+
+  .nav-title {
+    font-size: 1.2rem;
+    color: #e0e0e0;
+    font-weight: 500;
+  }
+
+  .nav-steps {
+    color: #808080;
+    font-size: 0.9rem;
+
+    .step-indicator {
+      padding: 0.3rem 0.8rem;
+      background-color: #404040;
+      border-radius: 4px;
+    }
+  }
+} 

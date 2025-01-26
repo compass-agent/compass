@@ -13,7 +13,9 @@ import {
   faUpRightAndDownLeftFromCenter,
   faMinus,
   faImage,
-  faMessage
+  faMessage,
+  faRobot,
+  faEdit
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import WebSocketService from "../../common/services/websocket";
@@ -195,10 +197,22 @@ function Header() {
             
             {showSettingsMenu && (
               <div className="settings-menu">
-                <button onClick={handleTemplateTraining}>
-                  <FontAwesomeIcon icon={faImage} /> Agent Training
-                </button>
-                {/* Add more menu items here */}
+                <div className="menu-section">
+                  <div className="section-title">Agent</div>
+                  <button onClick={() => console.log('Select Agent clicked')}>
+                    <FontAwesomeIcon icon={faRobot} /> Select Agent
+                  </button>
+                  <div className="submenu-item">
+                    <button onClick={handleTemplateTraining}>
+                      <FontAwesomeIcon icon={faImage} /> Create New Agent
+                    </button>
+                    <button className="disabled">
+                      <FontAwesomeIcon icon={faEdit} /> Modify Existing Agent
+                    </button>
+                  </div>
+                </div>
+                <div className="menu-divider"></div>
+                {/* Future sections will go here */}
               </div>
             )}
           </div>
@@ -224,10 +238,22 @@ function Header() {
             
             {showSettingsMenu && (
               <div className="settings-menu">
-                <button onClick={handleTemplateTraining}>
-                  <FontAwesomeIcon icon={faImage} /> Agent Training
-                </button>
-                {/* Add more menu items here */}
+                <div className="menu-section">
+                  <div className="section-title">Agent</div>
+                  <button onClick={() => console.log('Select Agent clicked')}>
+                    <FontAwesomeIcon icon={faRobot} /> Select Agent
+                  </button>
+                  <div className="submenu-item">
+                    <button onClick={handleTemplateTraining}>
+                      <FontAwesomeIcon icon={faImage} /> Create New Agent
+                    </button>
+                    <button className="disabled">
+                      <FontAwesomeIcon icon={faEdit} /> Modify Existing Agent
+                    </button>
+                  </div>
+                </div>
+                <div className="menu-divider"></div>
+                {/* Future sections will go here */}
               </div>
             )}
           </div>

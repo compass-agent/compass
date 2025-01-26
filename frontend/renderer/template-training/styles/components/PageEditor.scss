@@ -1,0 +1,63 @@
+.page-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #202020;
+  color: #e0e0e0;
+
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #2a2a2a;
+    border-bottom: 1px solid #333;
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+
+      button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        &.primary {
+          background-color: #444;
+          color: #e0e0e0;
+
+          &:hover:not(:disabled) {
+            background-color: #555;
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+
+        &.secondary {
+          background-color: transparent;
+          border: 1px solid #444;
+          color: #e0e0e0;
+
+          &:hover {
+            background-color: #2c2c2c;
+          }
+        }
+      }
+    }
+  }
+
+  .editor-content {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+} 

@@ -1,0 +1,5 @@
+export const VIEW_STATES = {
+  SETUP: 'SETUP',
+  PAGES_LIST: 'PAGES_LIST',
+  PAGE_EDITOR: 'PAGE_EDITOR'
+}; 

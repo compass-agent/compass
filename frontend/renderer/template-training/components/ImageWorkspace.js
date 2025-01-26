@@ -14,70 +14,114 @@ const ImageWorkspace = ({
   createNewBox
 }) => {
   const renderBoxes = () => {
-    if (!detections || !Array.isArray(detections)) return null;
+    console.log('renderBoxes called with:', {
+      detections,
+      boxes,
+      imageSize,
+      selectedBox,
+      captions
+    });
 
-    return detections.map((detection, index) => {
-      if (!boxes[index]) return null;
+    if (!boxes || (!Array.isArray(boxes) && Object.keys(boxes).length === 0)) {
+      console.log('No boxes to render');
+      return null;
+    }
 
-      if (!detection || !detection.bbox) return null;
+    const imageElement = document.querySelector('.image-container img');
+    if (!imageElement) {
+      console.log('No image element found');
+      return null;
+    }
 
-      const imageElement = document.querySelector('.image-container img');
-      if (!imageElement) return null;
+    const displayedWidth = imageElement.offsetWidth;
+    const displayedHeight = imageElement.offsetHeight;
+    const originalWidth = imageSize?.width || imageElement.naturalWidth;
+    const originalHeight = imageSize?.height || imageElement.naturalHeight;
 
-      const displayedWidth = imageElement.offsetWidth || 1;
-      const displayedHeight = imageElement.offsetHeight || 1;
+    console.log('Image dimensions:', {
+      displayedWidth,
+      displayedHeight,
+      originalWidth,
+      originalHeight
+    });
 
-      const scaleX = displayedWidth / (imageSize.width || 1);
-      const scaleY = displayedHeight / (imageSize.height || 1);
+    const scaleX = displayedWidth / originalWidth;
+    const scaleY = displayedHeight / originalHeight;
 
-      const box = boxes[index];
+    console.log('Scale factors:', { scaleX, scaleY });
+
+    // Handle both array and object formats
+    const boxesArray = Array.isArray(boxes) ? boxes : Object.entries(boxes).map(([id, box]) => ({
+      ...box,
+      id
+    }));
+
+    return boxesArray.map((box, index) => {
       const scaledBox = {
-        x: Math.round(box.x * scaleX),
-        y: Math.round(box.y * scaleY),
-        width: Math.round(box.width * scaleX),
-        height: Math.round(box.height * scaleY)
+        x: box.x * scaleX,
+        y: box.y * scaleY,
+        width: box.width * scaleX,
+        height: box.height * scaleY
       };
+
+      console.log(`Box ${index}:`, {
+        original: box,
+        scaled: scaledBox,
+        isSelected: selectedBox === index,
+        hasCaption: captions && captions[index]
+      });
 
       return (
         <DetectionBox
-          key={index}
-          index={index}
+          key={box.id || index}
+          index={box.id || index}
           box={box}
           scaledBox={scaledBox}
-          isSelected={selectedBox === index}
-          hasCaption={!!captions[index]}
+          isSelected={selectedBox === box.id || selectedBox === index}
+          hasCaption={box.caption || (captions && captions[index])}
           onClick={handleBoxClick}
         />
       );
     });
   };
 
-  const handleWorkspaceClick = (e) => {
-    if (e.altKey) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      createNewBox(x, y);
-    }
+  const handleImageClick = (e) => {
+    if (!imageSize?.width || !imageSize?.height) return;
+
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    createNewBox(x, y);
   };
+
+  console.log('ImageWorkspace render:', { image, boxes });
 
   return (
     <div className="image-workspace">
       {image && (
-        <div 
-          className="image-container"
-          onClick={handleWorkspaceClick}
-        >
-          <img 
-            src={`data:image/png;base64,${image}`}
+        <div className="image-container" onClick={handleImageClick}>
+          <img
+            src={getImageSrc(image)}
             alt="Template"
-            onLoad={handleImageLoad}
+            onLoad={(e) => {
+              console.log('Image loaded:', e.target.naturalWidth, e.target.naturalHeight);
+              handleImageLoad(e);
+            }}
           />
           {renderBoxes()}
         </div>
       )}
     </div>
   );
+};
+
+// Helper function to handle image source
+const getImageSrc = (imageData) => {
+  if (!imageData) return '';
+  if (imageData.startsWith('data:')) {
+    return imageData;
+  }
+  return `data:image/jpeg;base64,${imageData}`;
 };
 
 export default ImageWorkspace; 

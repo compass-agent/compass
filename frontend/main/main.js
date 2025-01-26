@@ -64,19 +64,26 @@ function createTemplateTrainingWindow() {
     width: 1024,
     height: 768,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,  // Changed to false for security
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false  // Add this for development
     },
-    show: false, // Don't show until ready
+    show: false,
   });
 
-  templateTrainingWindow.loadFile(
-    path.join(__dirname, '../renderer/template-training/index.html')
-  );
+  const templateTrainingPath = path.join(__dirname, '../renderer/template-training/index.html');
+  console.log('Loading template training from:', templateTrainingPath);
+  templateTrainingWindow.loadFile(templateTrainingPath);
 
-  // Center the window and show when ready
+  // Add these lines for debugging
+  templateTrainingWindow.webContents.on('did-finish-load', () => {
+    console.log('Template training window finished loading');
+    templateTrainingWindow.webContents.openDevTools();  // Force open dev tools
+  });
+
   templateTrainingWindow.once('ready-to-show', () => {
+    console.log('Template training window ready to show');
     templateTrainingWindow.center();
     templateTrainingWindow.show();
   });

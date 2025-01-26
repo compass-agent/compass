@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import Toolbar from './components/Toolbar';
-import ImageWorkspace from './components/ImageWorkspace';
+import AgentSetup from './components/AgentSetup';
+import PagesList from './components/PagesList';
+import PageEditor from './components/PageEditor';
+import NavigationBar from './components/NavigationBar';
+import { VIEW_STATES } from './constants/viewStates';
+import WebSocketService from '../common/services/websocket';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useImageHandling } from './hooks/useImageHandling';
 import { useBoxManagement } from './hooks/useBoxManagement';
-import './styles/template-training.scss';
-import WebSocketService from '../common/services/websocket';
-import ReactDOM from 'react-dom/client';
+import './styles/TemplateTraining.scss';
 
-function TemplateTraining() {
-  const [agentName, setAgentName] = useState('FreeCAD');
-  const [pageName, setPageName] = useState('default');
-  const [inputValue, setInputValue] = useState('');
+console.log('TemplateTraining component is rendering');
+
+const TemplateTraining = () => {
+  const [currentView, setCurrentView] = useState(VIEW_STATES.SETUP);
+  const [agentData, setAgentData] = useState({
+    name: '',
+    pages: []
+  });
   const [saveStatus, setSaveStatus] = useState('');
+  const [inputValue, setInputValue] = useState('');
 
   // Custom hooks
   const { 
@@ -44,23 +51,13 @@ function TemplateTraining() {
     deleteBox
   } = useBoxManagement(detections);
 
-  // Update input value when selecting a box
-  useEffect(() => {
-    if (selectedBox !== null && captions[selectedBox]) {
-      setInputValue(captions[selectedBox]);
-    } else if (selectedBox === null) {
-      setInputValue('');
-    }
-  }, [selectedBox, captions]);
-
-  // Add useEffect for WebSocket handlers
+  // WebSocket handlers setup
   useEffect(() => {
     WebSocketService.setStateHandlers({
       ...WebSocketService.stateHandlers,
       onTemplateSaved: (data) => {
         if (data.success) {
           setSaveStatus('Templates saved successfully!');
-          // Clear the success message after 3 seconds
           setTimeout(() => setSaveStatus(''), 3000);
         } else {
           setSaveStatus('Error saving templates');
@@ -74,30 +71,16 @@ function TemplateTraining() {
       alert('Please upload an image first');
       return;
     }
-
     setIsAnalyzing(true);
-    // Pass agentName to uploadScreenshot
-    WebSocketService.uploadScreenshot(image, agentName);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && selectedBox !== null) {
-      setCaptions(prev => ({
-        ...prev,
-        [selectedBox]: inputValue
-      }));
-      setSelectedBox(null);
-      setInputValue('');
-    }
+    
+    // Remove the data URL prefix if it exists
+    const base64Image = image.split(',')[1] || image;
+    
+    WebSocketService.uploadScreenshot(base64Image, agentData.name);
   };
 
   const handleSaveTemplates = () => {
-    if (!image) {
-      alert('No image available');
-      return;
-    }
-
-    if (Object.keys(captions).length === 0) {
+    if (!image || Object.keys(captions).length === 0) {
       alert('No templates to save');
       return;
     }
@@ -115,76 +98,103 @@ function TemplateTraining() {
         box.y + box.height
       ];
 
-      console.log('Saving template:', {
-        caption,
-        bbox,
-        agent_name: agentName,
-        page_name: pageName
-      });
-
       WebSocketService.saveTemplate({
         image: image,
         caption: caption,
         bbox: bbox,
-        agent_name: agentName,
-        page_name: pageName
+        agent_name: agentData.name,
+        page_name: 'default' // You might want to make this configurable
       });
     });
   };
 
-  const handleImageUploadWithCleanup = (event) => {
-    handleImageUpload(event, {
-      setDetections,
-      setBoxes,
-      setCaptions,
-      setSelectedBox,
-      setIsAnalyzing
-    });
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && selectedBox !== null) {
+      setCaptions(prev => ({
+        ...prev,
+        [selectedBox]: inputValue
+      }));
+      setSelectedBox(null);
+      setInputValue('');
+    }
+  };
+
+  const renderCurrentView = () => {
+    switch(currentView) {
+      case VIEW_STATES.SETUP:
+        return (
+          <AgentSetup 
+            onNext={(name) => {
+              setAgentData(prev => ({ ...prev, name }));
+              setCurrentView(VIEW_STATES.PAGES_LIST);
+            }}
+          />
+        );
+      case VIEW_STATES.PAGES_LIST:
+        return (
+          <PagesList
+            pages={agentData.pages}
+            onAddPage={() => setCurrentView(VIEW_STATES.PAGE_EDITOR)}
+            onEditPage={(pageIndex) => {
+              // Handle edit page
+            }}
+          />
+        );
+      case VIEW_STATES.PAGE_EDITOR:
+        // Convert boxes object to array
+        const boxesArray = Object.entries(boxes).map(([index, box]) => ({
+          ...box,
+          id: index,
+          caption: captions[index]
+        }));
+
+        return (
+          <PageEditor
+            onSave={(pageData) => {
+              setAgentData(prev => ({
+                ...prev,
+                pages: [...prev.pages, pageData]
+              }));
+              setCurrentView(VIEW_STATES.PAGES_LIST);
+            }}
+            onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
+            handleAnalyze={handleAnalyze}
+            handleSaveTemplates={handleSaveTemplates}
+            isAnalyzing={isAnalyzing}
+            image={image}
+            setImage={setImage}
+            boxes={boxesArray}
+            selectedBox={selectedBox}
+            handleBoxClick={handleBoxClick}
+            createNewBox={createNewBox}
+            deleteBox={deleteBox}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleKeyPress={handleKeyPress}
+            captions={captions}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="template-training-container">
+    <div className="template-training">
       {saveStatus && (
         <div className={`save-status ${saveStatus.includes('Error') ? 'error' : 'success'}`}>
           {saveStatus}
         </div>
       )}
-      <Toolbar
-        agentName={agentName}
-        setAgentName={setAgentName}
-        pageName={pageName}
-        setPageName={setPageName}
-        handleImageUpload={handleImageUploadWithCleanup}
-        handleAnalyze={handleAnalyze}
-        isAnalyzing={isAnalyzing}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        handleKeyPress={handleKeyPress}
-        selectedBox={selectedBox}
-        handleSaveTemplates={handleSaveTemplates}
-        hasCaptions={Object.keys(captions).length > 0}
-        onDeleteBox={() => selectedBox !== null && deleteBox(selectedBox)}
+      <NavigationBar 
+        currentView={currentView}
+        agentName={agentData.name}
       />
-
-      <ImageWorkspace
-        image={image}
-        handleImageLoad={handleImageLoad}
-        detections={detections}
-        boxes={boxes}
-        imageSize={imageSize}
-        selectedBox={selectedBox}
-        captions={captions}
-        handleBoxClick={handleBoxClick}
-        createNewBox={createNewBox}
-      />
+      <div className="content">
+        {renderCurrentView()}
+      </div>
     </div>
   );
-}
-
-if (document.getElementById('root')) {
-  const container = document.getElementById('root');
-  const root = ReactDOM.createRoot(container);
-  root.render(<TemplateTraining />);
-}
+};
 
 export default TemplateTraining; 

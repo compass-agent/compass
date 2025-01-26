@@ -221,4 +221,33 @@
       }
     }
   }
+
+  .menu-section {
+    padding: 4px 0;
+
+    .section-title {
+      padding: 4px 12px;
+      color: #808080;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .submenu-item {
+      padding-left: 12px;
+    }
+  }
+
+  .menu-divider {
+    height: 1px;
+    background-color: #404040;
+    margin: 4px 0;
+  }
+
+  button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    &:hover {
+      background-color: transparent;
+    }
+  }
 }
