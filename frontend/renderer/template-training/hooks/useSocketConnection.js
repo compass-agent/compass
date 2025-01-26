@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import WebSocketService from '../../../services/websocket';
+import WebSocketService from '../../services/websocket';
 
 export function useSocketConnection() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);

@@ -5,7 +5,7 @@ import { useSocketConnection } from './hooks/useSocketConnection';
 import { useImageHandling } from './hooks/useImageHandling';
 import { useBoxManagement } from './hooks/useBoxManagement';
 import './styles/template-training.scss';
-import WebSocketService from '../../services/websocket';
+import WebSocketService from '../services/websocket';
 import ReactDOM from 'react-dom/client';
 
 function TemplateTraining() {
