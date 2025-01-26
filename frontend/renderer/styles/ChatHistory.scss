@@ -63,7 +63,13 @@
       color: white;
       max-width: 70%;
       word-wrap: break-word;
-   }
+
+      .image-indicator {
+        margin-left: 8px;
+        color: #888;
+        font-size: 0.9em;
+      }
+    }
 
     &.ai-response {
       display: flex;

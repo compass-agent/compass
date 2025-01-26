@@ -57,19 +57,26 @@ class AgentService:
         )
 
 
-    async def process_message(self, message: str) -> None:
+    async def process_message(self, message: Union[str, dict]) -> None:
         """Process message with iteration loop based on auto mode"""
-        logger.info(f"New message received: {message}")
+        if isinstance(message, str):
+            text = message
+            image_data = None
+        else:
+            text = message.get('text', '')
+            image_data = message.get('image_data')
+        
+        logger.info(f"New message received: {text}")
         await self.stop_processing()
 
         # Skip appending empty messages if last message was from user
-        if not message:
+        if not text and not image_data:
             logger.info("Skipping empty user message since last message was from user")
         else:
             self.memory_manager.add_message(
-                HumanMessage(content=message)
+                HumanMessage(content=text, image_data=image_data)
             )
-        self.state_manager.set_status(AgentStatus.RUNNING, message)
+        self.state_manager.set_status(AgentStatus.RUNNING, text)
         self.stop_event.clear()
 
         logger.info("Taking screenshot and cursor position before calling AI")

@@ -7,6 +7,7 @@ import {
   faRotateRight,
   faArrowUp,
   faStop,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, ActionTypes } from '../constants'; 
 
@@ -14,7 +15,10 @@ function MessageInput() {
   const { state, dispatch } = useAppState();
   const { agent, chat } = state;
   const [message, setMessage] = useState(chat.currentInput);
-  const textareaRef = useRef(null); // To dynamically measure the textarea height
+  const [imageData, setImageData] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Add logging for initial render and state changes
   useEffect(() => {
@@ -75,10 +79,44 @@ function MessageInput() {
   //   return playState;
   // };
 
-  const handleSubmit = async (e) => {
-    // Add logging at the start of submission
-    console.log("MessageInput - Starting submission with message:", message);
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Data = e.target.result;
+        // Strip the data URL prefix
+        const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+        setImageData(cleanBase64);
+        setImagePreview(base64Data); // Keep the full data URL for preview
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64Data = e.target.result;
+            // Strip the data URL prefix
+            const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+            setImageData(cleanBase64);
+            setImagePreview(base64Data); // Keep the full data URL for preview
+          };
+          reader.readAsDataURL(file);
+          e.preventDefault();
+          break;
+        }
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e?.preventDefault();
     //const playState = getPlayState();
 
@@ -99,23 +137,26 @@ function MessageInput() {
         payload: {
           type: "user",
           text: message.trim(),
+          image: imageData,
           timestamp: new Date().toISOString(),
         },
       });
 
-      // Add logging after dispatch
-      //console.log("MessageInput - Message dispatched, sending to WebSocket");
+      WebSocketService.sendMessage({
+        text: message,
+        image_data: imageData
+      });
 
-      WebSocketService.sendMessage(message);
       setMessage("");
+      setImageData(null);
+      setImagePreview(null);
       dispatch({
         type: ActionTypes.SET_CHAT_INPUT,
         payload: "",
       });
-       // Reset the height of the textarea
+      
       const textarea = textareaRef.current;
       textarea.style.height = "44px";
-
     } catch (error) {
       console.error("MessageInput - error sending message:", error);
     }
@@ -139,34 +180,61 @@ function MessageInput() {
 
   const isInputEnabled = agent.status === AgentStatus.STOPPED;
 
+  const clearImage = () => {
+    setImageData(null);
+    setImagePreview(null);
+  };
+
   return (
     <div className="message-input-container">
-      <textarea
-        ref={textareaRef} // Reference to dynamically adjust height
-        className="message-input"
-        placeholder={
-          agent.status === AgentStatus.STOPPED
-            ? "Ask Compass ..."
-            : "Processing..."
-        }
-        value={message}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        rows="1"
-        disabled={!isInputEnabled}
-      />
-      {/* <div className="message-buttons">
-        <button
-          className="button right-button"
-          title="Send Message"
-          onClick={ getPlayState() !== AgentStatus.STOPPED ? handleStop : handleSubmit}
+      {imagePreview && (
+        <div className="image-preview">
+          <img src={imagePreview} alt="Preview" />
+          <button className="clear-image" onClick={clearImage}>×</button>
+        </div>
+      )}
+      <div className="input-row">
+        <div className="message-buttons left">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+          <button
+            className="button image-button"
+            onClick={() => fileInputRef.current.click()}
+            disabled={!isInputEnabled}
+          >
+            <FontAwesomeIcon icon={faImage} />
+          </button>
+        </div>
+        <textarea
+          ref={textareaRef}
+          className="message-input"
+          placeholder={
+            agent.status === AgentStatus.STOPPED
+              ? "Ask Compass ..."
+              : "Processing..."
+          }
+          value={message}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          rows="1"
           disabled={!isInputEnabled}
-        >
-          {(
-            <FontAwesomeIcon icon={getPlayState() !== AgentStatus.STOPPED ? faStop : faArrowUp} />
-          )}
-        </button>
-      </div> */}
+        />
+        <div className="message-buttons right">
+          <button
+            className="button send-button"
+            onClick={handleSubmit}
+            disabled={!isInputEnabled || (!message.trim() && !imageData)}
+          >
+            <FontAwesomeIcon icon={faArrowUp} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

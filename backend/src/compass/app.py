@@ -77,8 +77,17 @@ def handle_disconnect():
 def handle_message(data):
     try:
         logger.info("Handling new message")
+        text = data.get('text', '')
+        image_data = data.get('image_data')
+        
+        # Create a HumanMessage with both text and image
+        message = {
+            'text': text,
+            'image_data': image_data
+        }
+        
         with app.app_context():
-            eventlet.spawn(asyncio.run, agent_service.process_message(data.get('text', '')))
+            eventlet.spawn(asyncio.run, agent_service.process_message(message))
     except Exception as e:
         logger.error(f"Error in handle_message: {e}", exc_info=True)
         emit('error', {'message': str(e)})

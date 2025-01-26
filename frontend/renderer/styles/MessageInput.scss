@@ -11,22 +11,59 @@
   width: 100%;
 }
 
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-preview {
+  position: relative;
+  margin-bottom: 8px;
+  
+  img {
+    max-height: 100px;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  .clear-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+  }
+}
+
 .message-input {
   width: 100%;
   resize: none;
-  padding: 8px 10px;
+  padding: 12px 10px;
   font-size: 14px;
   font-family: inherit;
   line-height: 1.5;
   border: none;
   outline: none;
-  color:  #e0e0e0;
+  color: #e0e0e0;
   background-color: transparent;
   box-sizing: border-box;
   overflow-y: hidden; 
-  min-height: 44px; 
-  max-height: calc(1.5em * 4 + 16px); /* Allow up to 4 lines */
-
+  min-height: 44px;
+  
   &::placeholder {
     color: #888;
   }
@@ -36,8 +73,8 @@
     color: #666;
   }
 
-  /* Show scrollbar after exceeding 4 rows */
   &.overflow {
+    max-height: calc(1.5em * 4 + 24px);
     overflow-y: auto;
   }
 
@@ -57,10 +94,12 @@
 
 .message-buttons {
   display: flex;
-  justify-content: flex-start;
+  gap: 8px;
   align-items: center;
-  width: 100%;
-  margin: 0px 5px;
+  
+  &.left, &.right {
+    order: unset;
+  }
 
   .button {
     width: 24px;
@@ -74,18 +113,27 @@
     transition: background-color 0.3s, color 0.3s;
     cursor: pointer;
 
-    &.right-button {
-      margin-left: auto;
+    svg {
+      width: 14px;
+      height: 14px;
     }
 
     &:hover {
-        background-color: #cccccc;
+      background-color: #cccccc;
     }
 
     &:disabled {
       background-color: $disabled-bg-color;
       cursor: default;
+      opacity: 0.5;
     }
   }
 
+  .image-button {
+    color: #666;
+  }
+
+  .send-button {
+    color: #2196f3;
+  }
 }

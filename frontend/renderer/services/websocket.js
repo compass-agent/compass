@@ -119,7 +119,16 @@ class WebSocketService {
 
   sendMessage(message) {
     if (this.socket?.connected) {
-      this.socket.emit("message", { text: message });
+      if (typeof message === 'string') {
+        // Handle legacy string messages
+        this.socket.emit("message", { text: message });
+      } else {
+        // Handle new message format with optional image
+        this.socket.emit("message", {
+          text: message.text,
+          image_data: message.image_data
+        });
+      }
     }
   }
 

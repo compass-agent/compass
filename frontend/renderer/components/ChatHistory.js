@@ -9,6 +9,7 @@ import {
   faTimes,
   faClock,
   faPenToSquare,
+  faImage
 } from "@fortawesome/free-solid-svg-icons";
 import {
   FILE_EDIT_TOOLS_NAME,
@@ -294,6 +295,11 @@ function ChatHistory({onEditorWidthChange }) {
               }
             >
               {msg.text}
+              {msg.image && (
+                <span className="image-indicator">
+                  <FontAwesomeIcon icon={faImage} />
+                </span>
+              )}
             </div>
           </div>
         );
