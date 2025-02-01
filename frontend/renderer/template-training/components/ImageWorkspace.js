@@ -55,8 +55,6 @@ const ImageWorkspace = ({
       scaleX: displayedWidth / originalWidth,
       scaleY: displayedHeight / originalHeight
     };
-    
-    console.log('Scaling factors:', factors);
     return factors;
   };
 
@@ -151,7 +149,7 @@ const ImageWorkspace = ({
   }, [contextMenu]);
 
   useEffect(() => {
-    console.log('ImageWorkspace boxes updated:', boxes);
+    console.log('Number of boxes:', Object.keys(boxes).length);
   }, [boxes]);
 
   const renderBoxes = () => {

@@ -62,7 +62,7 @@ const PageEditor = ({
   }, [currentScreenshot]);
 
   useEffect(() => {
-    console.log('PageEditor boxes:', boxes);
+    console.log('Number of boxes:', Object.keys(boxes).length);
   }, [boxes]);
 
   const handleSave = () => {

@@ -100,7 +100,7 @@ export const useBoxManagement = (detections) => {
     };
 
     const nextIndex = Math.max(...Object.keys(boxes).map(Number), -1) + 1;
-
+    console.log('Creating new box with ID:', nextIndex);
     setBoxes(prevBoxes => ({
       ...prevBoxes,
       [nextIndex]: newBox
@@ -110,7 +110,7 @@ export const useBoxManagement = (detections) => {
   };
 
   const deleteBox = (boxId) => {
-    console.log('Before deletion - boxes:', boxes);
+    console.log('Before deletion - number of boxes:', Object.keys(boxes).length);
     
     if (boxId === null || boxId === undefined) {
       console.warn('Attempted to delete box with invalid ID:', boxId);
@@ -118,8 +118,10 @@ export const useBoxManagement = (detections) => {
     }
 
     setBoxes(prevBoxes => {
-      const newBoxes = { ...prevBoxes };
-      delete newBoxes[boxId];
+      const numericBoxId = parseInt(boxId, 10);
+      const newBoxes = Object.fromEntries(
+        Object.entries(prevBoxes).filter(([key]) => parseInt(key, 10) !== numericBoxId)
+      );
       console.log('After deletion - newBoxes:', newBoxes);
       return newBoxes;
     });
