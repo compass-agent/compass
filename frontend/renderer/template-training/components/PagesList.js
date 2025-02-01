@@ -3,18 +3,18 @@ import WebSocketService from '../../common/services/websocket';
 import '../styles/components/PagesList.scss';
 
 const PagesList = ({ agentName, onAddPage, onEditPage }) => {
-  const [screenshots, setScreenshots] = useState([]);
+  const [pages, setPages] = useState([]);
 
   useEffect(() => {
-    // Set up WebSocket handler for screenshots list
+    // Set up WebSocket handler for pages list
     WebSocketService.setStateHandlers({
       ...WebSocketService.stateHandlers,
       onScreenshotsList: (data) => {
-        setScreenshots(data.screenshots || []);
+        setPages(data.screenshots || []);
       }
     });
 
-    // Get initial screenshots
+    // Get initial pages
     if (agentName) {
       WebSocketService.getScreenshots(agentName);
     }
@@ -23,9 +23,9 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
   return (
     <div className="pages-list">
       <div className="pages-header">
-        <h2>Screenshots</h2>
+        <h2>Pages</h2>
         <button className="primary" onClick={onAddPage}>
-          Add New Screenshot
+          Add New Page
         </button>
       </div>
       
@@ -34,25 +34,26 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
           {/* Add New Card */}
           <div className="page-card add-card" onClick={onAddPage}>
             <div className="add-icon">+</div>
-            <span>Add New Screenshot</span>
+            <span>Add New Page</span>
           </div>
 
-          {/* Existing Screenshots */}
-          {screenshots.map((screenshot) => (
+          {/* Existing Pages */}
+          {pages.map((page) => (
             <div 
-              key={screenshot.id} 
+              key={page.id} 
               className="page-card" 
-              onClick={() => onEditPage(screenshot)}
+              onClick={() => onEditPage(page)}
             >
               <div className="page-thumbnail">
                 <img 
-                  src={`data:image/png;base64,${screenshot.image}`} 
-                  alt={`Screenshot ${screenshot.id}`} 
+                  src={`data:image/png;base64,${page.image}`} 
+                  alt={page.name || `Page ${page.id}`} 
                 />
               </div>
               <div className="page-info">
+                <span className="page-name">{page.name || 'Untitled'}</span>
                 <span className="page-date">
-                  {new Date(screenshot.created_at).toLocaleDateString()}
+                  {new Date(page.created_at).toLocaleDateString()}
                 </span>
               </div>
             </div>

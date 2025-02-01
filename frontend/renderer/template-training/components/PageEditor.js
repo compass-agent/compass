@@ -29,7 +29,8 @@ const PageEditor = ({
   setCaptions,
   setSelectedBox,
   setIsAnalyzing,
-  currentScreenshot
+  currentScreenshot,
+  agentName = "FreeCAD"
 }) => {
   const [pageName, setPageName] = useState('');
 
@@ -94,7 +95,8 @@ const PageEditor = ({
         image: imageData,
         caption: caption,
         bbox: bbox,
-        page_name: pageName.trim()
+        page_name: pageName.trim(),
+        agent_name: agentName
       });
     });
 

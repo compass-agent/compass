@@ -95,14 +95,16 @@ class OverlapFilter(DetectionFilter):
                 return False
         return True
 
-class Screenshot(Base):
-    """Model for storing full screenshots"""
-    __tablename__ = 'screenshots'
+class Page(Base):
+    """Model for storing pages"""
+    __tablename__ = 'pages'
     
     id = Column(Integer, primary_key=True)
     agent_name = Column(String, nullable=False)
+    name = Column(String)  # Page name
     base64_image = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class TrainingAgent:
     def __init__(self):
@@ -117,90 +119,110 @@ class TrainingAgent:
         ]
         
     def get_screenshots(self, agent_name: str) -> List[Dict]:
-        """Get all screenshots for an agent"""
+        """Get all pages for an agent"""
         try:
             with Session() as session:
-                screenshots = session.query(Screenshot).filter_by(
+                pages = session.query(Page).filter_by(
                     agent_name=agent_name
-                ).order_by(Screenshot.created_at.desc()).all()
+                ).order_by(Page.created_at.desc()).all()
                 
                 return [{
-                    'id': s.id,
-                    'image': s.base64_image,
-                    'created_at': s.created_at.isoformat()
-                } for s in screenshots]
+                    'id': p.id,
+                    'image': p.base64_image,
+                    'name': p.name,  # Include page name
+                    'created_at': p.created_at.isoformat()
+                } for p in pages]
         except Exception as e:
-            logger.error(f"Failed to get screenshots: {e}")
+            logger.error(f"Failed to get pages: {e}")
             raise
 
-    def save_screenshot(self, image_data: str, agent_name: str) -> int:
+    def save_page(self, image_data: str, agent_name: str, page_name: str = "", session=None) -> tuple[int, Page]:
         """
-        Save full screenshot to database if it doesn't exist
+        Save page to database if it doesn't exist
         
         Args:
             image_data: Base64 encoded image
             agent_name: Name of the agent
+            page_name: Name of the page
+            session: Optional SQLAlchemy session for transaction management
             
         Returns:
-            id: ID of saved or existing screenshot
+            tuple: (page_id, page_object)
         """
         try:
-            with Session() as session:
-                # Check if screenshot already exists
-                existing = session.query(Screenshot).filter_by(
-                    base64_image=image_data,
-                    agent_name=agent_name
-                ).first()
-                
-                if existing:
-                    return existing.id
-                
-                # Create new screenshot
-                screenshot = Screenshot(
-                    base64_image=image_data,
-                    agent_name=agent_name
-                )
-                session.add(screenshot)
-                session.commit()
-                return screenshot.id
+            should_close_session = session is None
+            session = session or Session()
+            
+            # Check if page already exists
+            existing = session.query(Page).filter_by(
+                base64_image=image_data,
+                agent_name=agent_name
+            ).first()
+            
+            if existing:
+                if page_name and existing.name != page_name:
+                    existing.name = page_name
+                    existing.updated_at = datetime.utcnow()
+                    session.commit()
+                return existing.id, existing
+            
+            # Create new page
+            page = Page(
+                base64_image=image_data,
+                agent_name=agent_name,
+                name=page_name
+            )
+            session.add(page)
+            session.commit()
+            return page.id, page
                 
         except Exception as e:
-            logger.error(f"Failed to save screenshot: {e}")
+            logger.error(f"Failed to save page: {e}")
+            if should_close_session:
+                session.rollback()
             raise
+        finally:
+            if should_close_session:
+                session.close()
 
     def save_template(self, image_data: str, caption: str, 
-                     bbox: List[float], agent_name: str = "FreeCAD") -> None:
+                     bbox: List[float], agent_name: str = "FreeCAD", page_name: str = "") -> None:
         """Save template to database, ensuring screenshot exists first"""
+        session = Session()
         try:
-            # First save the full screenshot
-            self.save_screenshot(image_data, agent_name)
+            # First save the full screenshot within the same session
+            _, page = self.save_page(image_data, agent_name, page_name, session=session)
             
-            # Then save the template as before
+            # Then save the template
             cropped_image = self._crop_and_encode_image(image_data, bbox)
             
-            with Session() as session:
-                existing_template = session.query(Template).filter_by(
+            existing_template = session.query(Template).filter_by(
+                base64_image=cropped_image,
+                agent_name=agent_name
+            ).first()
+            
+            if existing_template:
+                existing_template.caption = caption
+                existing_template.page_name = page_name
+                logger.info(f"Updated existing template caption to: {caption}")
+            else:
+                template = Template(
                     base64_image=cropped_image,
-                    agent_name=agent_name
-                ).first()
-                
-                if existing_template:
-                    existing_template.caption = caption
-                    logger.info(f"Updated existing template caption to: {caption}")
-                else:
-                    template = Template(
-                        base64_image=cropped_image,
-                        caption=caption,
-                        agent_name=agent_name
-                    )
-                    session.add(template)
-                    logger.info(f"Saved new template with caption: {caption}")
-                
-                session.commit()
+                    caption=caption,
+                    agent_name=agent_name,
+                    page_name=page_name
+                )
+                session.add(template)
+                logger.info(f"Saved new template with caption: {caption}")
+            
+            session.commit()
                 
         except Exception as e:
             logger.error(f"Failed to save template: {e}")
+            session.rollback()
             raise
+        finally:
+            session.close()
 
     def _calculate_size_context(self, template_detections: List[Detection], 
                               yolo_detections: List[Detection]) -> float:

@@ -154,7 +154,9 @@ def handle_save_template(data):
         training_agent.save_template(
             image_data=data['image'],
             caption=data['caption'],
-            bbox=data['bbox']
+            bbox=data['bbox'],
+            page_name=data['page_name'],
+            agent_name=data['agent_name']
         )
         emit('template_saved', {'success': True})
     except Exception as e:
@@ -192,13 +194,14 @@ def handle_get_screenshots(data):
 @socketio.on('save_screenshot')
 def handle_save_screenshot(data):
     try:
-        screenshot_id = training_agent.save_screenshot(
+        page_id = training_agent.save_page(
             image_data=data['image'],
-            agent_name=data['agent_name']
+            agent_name=data['agent_name'],
+            page_name=data['page_name']
         )
-        emit('screenshot_saved', {'id': screenshot_id})
+        emit('screenshot_saved', {'id': page_id})
     except Exception as e:
-        logger.error(f"Error saving screenshot: {e}", exc_info=True)
+        logger.error(f"Error saving page: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on_error()
