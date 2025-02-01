@@ -19,6 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import WebSocketService from "../../common/services/websocket";
+import SettingsMenu from './SettingsMenu';
 
 function Header() {
   const { state } = useAppState();
@@ -196,24 +197,7 @@ function Header() {
             </button>
             
             {showSettingsMenu && (
-              <div className="settings-menu">
-                <div className="menu-section">
-                  <div className="section-title">Agent</div>
-                  <button onClick={() => console.log('Select Agent clicked')}>
-                    <FontAwesomeIcon icon={faRobot} /> Select Agent
-                  </button>
-                  <div className="submenu-item">
-                    <button onClick={handleTemplateTraining}>
-                      <FontAwesomeIcon icon={faImage} /> Create New Agent
-                    </button>
-                    <button className="disabled">
-                      <FontAwesomeIcon icon={faEdit} /> Modify Existing Agent
-                    </button>
-                  </div>
-                </div>
-                <div className="menu-divider"></div>
-                {/* Future sections will go here */}
-              </div>
+              <SettingsMenu onClose={() => setShowSettingsMenu(false)} />
             )}
           </div>
 
@@ -237,24 +221,7 @@ function Header() {
             </button>
             
             {showSettingsMenu && (
-              <div className="settings-menu">
-                <div className="menu-section">
-                  <div className="section-title">Agent</div>
-                  <button onClick={() => console.log('Select Agent clicked')}>
-                    <FontAwesomeIcon icon={faRobot} /> Select Agent
-                  </button>
-                  <div className="submenu-item">
-                    <button onClick={handleTemplateTraining}>
-                      <FontAwesomeIcon icon={faImage} /> Create New Agent
-                    </button>
-                    <button className="disabled">
-                      <FontAwesomeIcon icon={faEdit} /> Modify Existing Agent
-                    </button>
-                  </div>
-                </div>
-                <div className="menu-divider"></div>
-                {/* Future sections will go here */}
-              </div>
+              <SettingsMenu onClose={() => setShowSettingsMenu(false)} />
             )}
           </div>
 
