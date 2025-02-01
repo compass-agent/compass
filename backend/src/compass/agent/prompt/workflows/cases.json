@@ -1,0 +1,8 @@
+[
+    {
+        "name": "create_cylinder",
+        "agent_name": "FreeCAD",
+        "description": "Create a simple cylinder with a diameter of 10mm and a height of 20mm and save it as a .FCstd file",
+        "workflow_file_name": "create_cylinder.txt"
+    }
+]

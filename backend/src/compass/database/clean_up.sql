@@ -1,1 +1,1 @@
-DELETE FROM templates;
+SELECT * FROM pages;

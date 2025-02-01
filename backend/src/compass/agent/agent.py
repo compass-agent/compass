@@ -176,7 +176,9 @@ class AgentService:
     async def _next_step_proposal(self) -> list[ToolCall]:
         system_message = self.system_prompt.get_system_prompt(
             manual_mode=self.state_manager.mode == AgentMode.MANUAL, 
-            highlight_mode=False)
+            highlight_mode=False,
+            workflow_name='create_cylinder'
+        )
         
         response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
         text_response_content = []
