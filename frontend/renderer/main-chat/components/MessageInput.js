@@ -17,6 +17,7 @@ function MessageInput() {
   const fileInputRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showWorkflowSubmenu, setShowWorkflowSubmenu] = useState(false);
+  const [closeTimeout, setCloseTimeout] = useState(null);
   
   const workflowList = state.workflows || [];
 
@@ -201,6 +202,30 @@ function MessageInput() {
     }
   };
 
+  const handleWorkflowMenuEnter = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      setCloseTimeout(null);
+    }
+    setShowWorkflowSubmenu(true);
+  };
+
+  const handleWorkflowMenuLeave = () => {
+    const timeout = setTimeout(() => {
+      setShowWorkflowSubmenu(false);
+    }, 300); // 300ms delay before closing
+    setCloseTimeout(timeout);
+  };
+
+  // Clean up timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+      }
+    };
+  }, [closeTimeout]);
+
   return (
     <div className="message-input-container">
       {imagePreview && (
@@ -256,8 +281,8 @@ function MessageInput() {
                 <div className="dropdown-divider"></div>
                 <div 
                   className="workflow-container"
-                  onMouseEnter={() => setShowWorkflowSubmenu(true)}
-                  onMouseLeave={() => setShowWorkflowSubmenu(false)}
+                  onMouseEnter={handleWorkflowMenuEnter}
+                  onMouseLeave={handleWorkflowMenuLeave}
                 >
                   <button className="dropdown-item workflow-item">
                     Attach Workflow <span className="arrow">▶</span>

@@ -173,15 +173,21 @@
   .workflow-container {
     position: relative;
     
-    &:hover .workflow-submenu {
-      display: block;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -10px;
+      width: 20px;
+      height: 100%;
+      background: transparent;
     }
   }
 
   .workflow-submenu {
     position: absolute;
     left: 100%;
-    bottom: -4px;
+    top: 0;
     background-color: #2d2d2d;
     border: 1px solid #333;
     border-radius: 8px;
@@ -189,6 +195,16 @@
     min-width: 150px;
     margin-left: 4px;
     
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -10px;
+      width: 10px;
+      height: 100%;
+      background: transparent;
+    }
+
     .submenu-item {
       padding: 8px 12px;
       font-size: 13px;
