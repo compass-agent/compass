@@ -71,7 +71,7 @@ const ImageWorkspace = ({
 
     // Get the clicked box element
     const boxElement = e.target.closest('.detection-box');
-    const boxId = boxElement ? parseInt(boxElement.dataset.boxId) : null;
+    const boxId = boxElement ? boxElement.dataset.boxId : null;
 
     console.log('Context menu event:', {
       target: e.target,
@@ -169,14 +169,14 @@ const ImageWorkspace = ({
         <div
           key={id}
           data-box-id={id}
-          className={`detection-box ${selectedBox === parseInt(id) ? 'selected' : ''} ${captions[id] ? 'labeled' : ''}`}
+          className={`detection-box ${selectedBox === id ? 'selected' : ''} ${captions[id] ? 'labeled' : ''}`}
           style={{
             position: 'absolute',
             left: 0,
             top: 0,
             width: `${scaledBox.width}px`,
             height: `${scaledBox.height}px`,
-            border: selectedBox === parseInt(id) ? '2px solid #ff0000' : 
+            border: selectedBox === id ? '2px solid #ff0000' : 
                    captions[id] ? '2px solid #0088ff' : 
                    '2px solid #00ff00',
             backgroundColor: 'rgba(0, 255, 0, 0.1)',
@@ -184,7 +184,7 @@ const ImageWorkspace = ({
           }}
           onClick={(e) => {
             e.stopPropagation();
-            handleBoxClick(parseInt(id));
+            handleBoxClick(id);
           }}
           onContextMenu={(e) => {
             e.stopPropagation();

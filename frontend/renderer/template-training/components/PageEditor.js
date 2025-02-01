@@ -112,7 +112,7 @@ const PageEditor = ({
     setBoxes(prev => ({
       ...prev,
       [boxId]: newBox
-    }));f 
+    }));
   };
 
   return (

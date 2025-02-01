@@ -149,12 +149,6 @@ const TemplateTraining = () => {
           />
         );
       case VIEW_STATES.PAGE_EDITOR:
-        const boxesArray = Object.entries(boxes).map(([index, box]) => ({
-          ...box,
-          id: index,
-          caption: captions[index]
-        }));
-
         return (
           <PageEditor
             onSave={(pageData) => {
@@ -168,7 +162,7 @@ const TemplateTraining = () => {
             handleAnalyze={handleAnalyze}
             handleSaveTemplates={handleSaveTemplates}
             isAnalyzing={isAnalyzing}
-            boxes={boxesArray}
+            boxes={boxes}
             selectedBox={selectedBox}
             handleBoxClick={handleBoxClick}
             createNewBox={createNewBox}
