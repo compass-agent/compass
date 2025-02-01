@@ -150,7 +150,12 @@ const ImageWorkspace = ({
     };
   }, [contextMenu]);
 
+  useEffect(() => {
+    console.log('ImageWorkspace boxes updated:', boxes);
+  }, [boxes]);
+
   const renderBoxes = () => {
+    console.log('Rendering boxes:', boxes);
     const { scaleX, scaleY } = getScalingFactors();
     const { offsetX, offsetY } = getImagePosition();
 
@@ -161,13 +166,6 @@ const ImageWorkspace = ({
         width: Math.round(box.width * scaleX),
         height: Math.round(box.height * scaleY)
       };
-
-      console.log('Rendering box:', { 
-        id, 
-        original: box, 
-        scaled: scaledBox,
-        selected: selectedBox === parseInt(id)
-      });
 
       return (
         <div
@@ -188,12 +186,10 @@ const ImageWorkspace = ({
           }}
           onClick={(e) => {
             e.stopPropagation();
-            console.log('Box clicked:', id);
             handleBoxClick(parseInt(id));
           }}
           onContextMenu={(e) => {
             e.stopPropagation();
-            console.log('Box right-clicked:', id);
             handleContextMenu(e);
           }}
         >

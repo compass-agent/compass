@@ -17,19 +17,23 @@ export const useBoxManagement = (detections) => {
     const initialBoxes = {};
     const initialCaptions = {};
 
-    detections.forEach((detection, index) => {
+    detections.forEach((detection) => {
       if (detection && detection.bbox) {
-        // Create box
-        initialBoxes[index] = {
+        // Use numeric ID from backend
+        const id = detection.id;
+        
+        // Create box with source information
+        initialBoxes[id] = {
           x: detection.bbox[0] || 0,
           y: detection.bbox[1] || 0,
           width: (detection.bbox[2] - detection.bbox[0]) || 0,
-          height: (detection.bbox[3] - detection.bbox[1]) || 0
+          height: (detection.bbox[3] - detection.bbox[1]) || 0,
+          source: detection.source // Store source information
         };
 
-        // If detection has a caption (from template match), add it
+        // If detection has a caption, add it
         if (detection.caption) {
-          initialCaptions[index] = detection.caption;
+          initialCaptions[id] = detection.caption;
         }
       }
     });
@@ -105,18 +109,28 @@ export const useBoxManagement = (detections) => {
     setSelectedBox(nextIndex);
   };
 
-  const deleteBox = (boxIndex) => {
-    console.log('Deleting box:', boxIndex);
+  const deleteBox = (boxId) => {
+    console.log('Before deletion - boxes:', boxes);
     
-    const newBoxes = { ...boxes };
-    delete newBoxes[boxIndex];
-    setBoxes(newBoxes);
-    
-    const newCaptions = { ...captions };
-    delete newCaptions[boxIndex];
-    setCaptions(newCaptions);
-    
-    if (selectedBox === boxIndex) {
+    if (boxId === null || boxId === undefined) {
+      console.warn('Attempted to delete box with invalid ID:', boxId);
+      return;
+    }
+
+    setBoxes(prevBoxes => {
+      const newBoxes = { ...prevBoxes };
+      delete newBoxes[boxId];
+      console.log('After deletion - newBoxes:', newBoxes);
+      return newBoxes;
+    });
+
+    setCaptions(prevCaptions => {
+      const newCaptions = { ...prevCaptions };
+      delete newCaptions[boxId];
+      return newCaptions;
+    });
+
+    if (selectedBox === boxId) {
       setSelectedBox(null);
     }
   };
@@ -205,11 +219,6 @@ export const useBoxManagement = (detections) => {
             e.preventDefault();
             break;
         }
-      }
-
-      if (selectedBox !== null && (e.key === 'Delete' || e.key === 'Backspace')) {
-        e.preventDefault();
-        deleteBox(selectedBox);
       }
     };
 

@@ -61,6 +61,10 @@ const PageEditor = ({
     }
   }, [currentScreenshot]);
 
+  useEffect(() => {
+    console.log('PageEditor boxes:', boxes);
+  }, [boxes]);
+
   const handleSave = () => {
     if (!image) {
       alert('No image available');
@@ -108,7 +112,7 @@ const PageEditor = ({
     setBoxes(prev => ({
       ...prev,
       [boxId]: newBox
-    }));
+    }));f 
   };
 
   return (

@@ -22,6 +22,7 @@ Base = declarative_base()
 @dataclass
 class Detection:
     """Represents a single detection with its properties"""
+    id: str
     bbox: List[float]
     confidence: float
     caption: str | None
@@ -136,7 +137,7 @@ class TrainingAgent:
             logger.error(f"Failed to get pages: {e}")
             raise
 
-    def save_page(self, image_data: str, agent_name: str, page_name: str = "", session=None) -> tuple[int, Page]:
+    def save_page(self, image_data: str, agent_name: str, page_name: str = "") -> int:
         """
         Save page to database if it doesn't exist
         
@@ -144,85 +145,75 @@ class TrainingAgent:
             image_data: Base64 encoded image
             agent_name: Name of the agent
             page_name: Name of the page
-            session: Optional SQLAlchemy session for transaction management
             
         Returns:
-            tuple: (page_id, page_object)
+            id: ID of saved or existing page
         """
         try:
-            should_close_session = session is None
-            session = session or Session()
-            
-            # Check if page already exists
-            existing = session.query(Page).filter_by(
-                base64_image=image_data,
-                agent_name=agent_name
-            ).first()
-            
-            if existing:
-                if page_name and existing.name != page_name:
-                    existing.name = page_name
-                    existing.updated_at = datetime.utcnow()
-                    session.commit()
-                return existing.id, existing
-            
-            # Create new page
-            page = Page(
-                base64_image=image_data,
-                agent_name=agent_name,
-                name=page_name
-            )
-            session.add(page)
-            session.commit()
-            return page.id, page
+            with Session() as session:
+                # Check if page already exists
+                existing = session.query(Page).filter_by(
+                    base64_image=image_data,
+                    agent_name=agent_name
+                ).first()
+                
+                if existing:
+                    if page_name and existing.name != page_name:
+                        existing.name = page_name
+                        existing.updated_at = datetime.utcnow()
+                        session.commit()
+                    return existing.id  # Return ID before session closes
+                
+                # Create new page
+                page = Page(
+                    base64_image=image_data,
+                    agent_name=agent_name,
+                    name=page_name
+                )
+                session.add(page)
+                session.commit()
+                page_id = page.id  # Get ID before session closes
+                return page_id
                 
         except Exception as e:
             logger.error(f"Failed to save page: {e}")
-            if should_close_session:
-                session.rollback()
             raise
-        finally:
-            if should_close_session:
-                session.close()
 
     def save_template(self, image_data: str, caption: str, 
                      bbox: List[float], agent_name: str = "FreeCAD", page_name: str = "") -> None:
         """Save template to database, ensuring screenshot exists first"""
-        session = Session()
         try:
-            # First save the full screenshot within the same session
-            _, page = self.save_page(image_data, agent_name, page_name, session=session)
+            # First save the full screenshot
+            self.save_page(image_data, agent_name, page_name)
             
-            # Then save the template
+            # Then save the template as before
             cropped_image = self._crop_and_encode_image(image_data, bbox)
             
-            existing_template = session.query(Template).filter_by(
-                base64_image=cropped_image,
-                agent_name=agent_name
-            ).first()
-            
-            if existing_template:
-                existing_template.caption = caption
-                existing_template.page_name = page_name
-                logger.info(f"Updated existing template caption to: {caption}")
-            else:
-                template = Template(
+            with Session() as session:
+                existing_template = session.query(Template).filter_by(
                     base64_image=cropped_image,
-                    caption=caption,
-                    agent_name=agent_name,
-                    page_name=page_name
-                )
-                session.add(template)
-                logger.info(f"Saved new template with caption: {caption}")
-            
-            session.commit()
+                    agent_name=agent_name
+                ).first()
+                
+                if existing_template:
+                    existing_template.caption = caption
+                    existing_template.page_name = page_name  # Update page name
+                    logger.info(f"Updated existing template caption to: {caption}")
+                else:
+                    template = Template(
+                        base64_image=cropped_image,
+                        caption=caption,
+                        agent_name=agent_name,
+                        page_name=page_name  # Add page name
+                    )
+                    session.add(template)
+                    logger.info(f"Saved new template with caption: {caption}")
+                
+                session.commit()
                 
         except Exception as e:
             logger.error(f"Failed to save template: {e}")
-            session.rollback()
             raise
-        finally:
-            session.close()
 
     def _calculate_size_context(self, template_detections: List[Detection], 
                               yolo_detections: List[Detection]) -> float:
@@ -242,52 +233,55 @@ class TrainingAgent:
         template_results = self.template_detector.detect(screen_data)
         yolo_results = self.yolo_detector.detect(screen_data)
         
-        # Convert to Detection objects
-        template_detections = [
-            Detection(
+        # Convert to Detection objects with simple incremental IDs
+        all_detections = []
+        for i, t in enumerate(template_results.icon_elements):
+            all_detections.append(Detection(
+                id=i,  # Simple incremental ID
                 bbox=t.bbox,
                 confidence=t.confidence,
                 caption=t.caption,
                 source='template'
-            ) for t in template_results.icon_elements
-        ]
+            ))
         
-        yolo_detections = [
-            Detection(
+        next_id = len(all_detections)
+        for y in yolo_results.icon_elements:
+            all_detections.append(Detection(
+                id=next_id,  # Continue incrementing
                 bbox=y.bbox,
                 confidence=y.confidence,
                 caption=None,
                 source='yolo'
-            ) for y in yolo_results.icon_elements
-        ]
+            ))
+            next_id += 1
         
         # Create filter context
         context = {
             'image_data': image_data,
-            'template_detections': template_detections,
+            'template_detections': all_detections[:len(template_results.icon_elements)],
             'min_area_threshold': self._calculate_size_context(
-                template_detections, yolo_detections
+                all_detections[:len(template_results.icon_elements)],
+                all_detections[len(template_results.icon_elements):]
             ),
             'iou_threshold': 0.3
         }
         
         # Apply filters to YOLO detections
-        filtered_yolo = []
-        for detection in yolo_detections:
-            if all(f.filter(detection, context) for f in self.filters):
-                filtered_yolo.append(detection)
-        
-        # Combine results
-        all_detections = template_detections + filtered_yolo
+        filtered_detections = [d for d in all_detections if (
+            d.source == 'template' or 
+            all(f.filter(d, context) for f in self.filters)
+        )]
         
         # Convert back to dictionary format
         return {
             'detections': [
                 {
+                    'id': d.id,
                     'bbox': d.bbox,
                     'confidence': d.confidence,
-                    'caption': d.caption
-                } for d in all_detections
+                    'caption': d.caption,
+                    'source': d.source  # Include source in response
+                } for d in filtered_detections
             ],
             'image': image_data
         }
