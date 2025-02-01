@@ -80,11 +80,13 @@ def handle_message(data):
         logger.info("Handling new message")
         text = data.get('text', '')
         image_data = data.get('image_data')
+        workflow_name = data.get('workflow_name')
         
-        # Create a HumanMessage with both text and image
+        # Create a message with text, image, and workflow
         message = {
             'text': text,
-            'image_data': image_data
+            'image_data': image_data,
+            'workflow_name': workflow_name
         }
         
         with app.app_context():

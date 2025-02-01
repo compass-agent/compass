@@ -155,10 +155,11 @@ class WebSocketService {
         // Handle legacy string messages
         this.socket.emit("message", { text: message });
       } else {
-        // Handle new message format with optional image
+        // Handle new message format with optional image and workflow
         this.socket.emit("message", {
           text: message.text,
-          image_data: message.image_data
+          image_data: message.image_data,
+          workflow_name: message.workflow_name
         });
       }
     }

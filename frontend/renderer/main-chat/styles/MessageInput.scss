@@ -232,3 +232,36 @@
     color: #333;
   }
 }
+
+// Add new workflow pill styles
+.workflow-pill-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.workflow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #e0e0e0;
+  
+  .remove-workflow {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    
+    &:hover {
+      color: #fff;
+    }
+  }
+}

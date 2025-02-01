@@ -12,6 +12,7 @@ function MessageInput() {
   const [message, setMessage] = useState(chat.currentInput);
   const [imageData, setImageData] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -107,6 +108,15 @@ function MessageInput() {
     }
   };
 
+  const handleWorkflowSelect = (workflowName) => {
+    setSelectedWorkflow(workflowName);
+    setIsMenuOpen(false);
+  };
+
+  const removeWorkflow = () => {
+    setSelectedWorkflow(null);
+  };
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
 
@@ -133,7 +143,8 @@ function MessageInput() {
 
       WebSocketService.sendMessage({
         text: message,
-        image_data: imageData
+        image_data: imageData,
+        workflow_name: selectedWorkflow
       });
 
       setMessage("");
@@ -176,7 +187,7 @@ function MessageInput() {
   const handleOptionClick = (option) => {
     setIsMenuOpen(false);
     if (workflowList.includes(option)) {
-      console.log(`Selected workflow: ${option}`);
+      handleWorkflowSelect(option);
     } else {
       switch (option) {
         case 'Upload Photo':
@@ -198,6 +209,22 @@ function MessageInput() {
           <button className="clear-image" onClick={clearImage}>×</button>
         </div>
       )}
+      
+      {selectedWorkflow && (
+        <div className="workflow-pill-container">
+          <div className="workflow-pill">
+            <span>@{selectedWorkflow}</span>
+            <button 
+              className="remove-workflow" 
+              onClick={removeWorkflow}
+              title="Remove workflow"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="input-row">
         <div className="message-buttons left">
           <input

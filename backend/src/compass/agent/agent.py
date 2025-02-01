@@ -62,11 +62,13 @@ class AgentService:
         if isinstance(message, str):
             text = message
             image_data = None
+            workflow_name = None
         else:
             text = message.get('text', '')
             image_data = message.get('image_data')
+            workflow_name = message.get('workflow_name')
         
-        logger.info(f"New message received: {text}")
+        logger.info(f"New message received: {text} with workflow: {workflow_name}")
         await self.stop_processing()
 
         # Skip appending empty messages if last message was from user
@@ -76,6 +78,9 @@ class AgentService:
             self.memory_manager.add_message(
                 HumanMessage(content=text, image_data=image_data)
             )
+        
+        self._current_workflow = workflow_name
+        
         self.state_manager.set_status(AgentStatus.RUNNING, text)
         self.stop_event.clear()
 
@@ -177,7 +182,7 @@ class AgentService:
         system_message = self.system_prompt.get_system_prompt(
             manual_mode=self.state_manager.mode == AgentMode.MANUAL, 
             highlight_mode=False,
-            workflow_name='create_cylinder'
+            workflow_name=self._current_workflow
         )
         
         response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
