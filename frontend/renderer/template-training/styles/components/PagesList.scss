@@ -3,6 +3,27 @@
   height: 100%;
   overflow-y: auto;
 
+  .navigation-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    color: #e0e0e0;
+
+    .agent-name {
+      font-weight: 500;
+    }
+
+    .path-separator {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .page-name {
+      color: #888;
+    }
+  }
+
   .pages-header {
     display: flex;
     justify-content: space-between;
@@ -11,19 +32,6 @@
 
     h2 {
       margin: 0;
-    }
-
-    button {
-      padding: 0.5rem 1rem;
-      background-color: #2c2c2c;
-      border: 1px solid #404040;
-      color: #e0e0e0;
-      border-radius: 4px;
-      cursor: pointer;
-
-      &:hover {
-        background-color: #404040;
-      }
     }
   }
 

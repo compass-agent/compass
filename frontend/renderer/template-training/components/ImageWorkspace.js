@@ -190,11 +190,7 @@ const ImageWorkspace = ({
             e.stopPropagation();
             handleContextMenu(e);
           }}
-        >
-          {captions[id] && (
-            <div className="caption-preview">{captions[id]}</div>
-          )}
-        </div>
+        />
       );
     });
   };

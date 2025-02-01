@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import WebSocketService from '../../common/services/websocket';
 import '../styles/components/PagesList.scss';
 
@@ -22,11 +24,14 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
 
   return (
     <div className="pages-list">
+      <div className="navigation-path">
+        <span className="agent-name">{agentName}</span>
+        <FontAwesomeIcon icon={faChevronRight} className="path-separator" />
+        <span className="page-name">Pages</span>
+      </div>
+
       <div className="pages-header">
         <h2>Pages</h2>
-        <button className="primary" onClick={onAddPage}>
-          Add New Page
-        </button>
       </div>
       
       <div className="pages-container">
