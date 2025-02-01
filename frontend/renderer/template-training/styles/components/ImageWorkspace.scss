@@ -25,4 +25,29 @@
       display: block;
     }
   }
+
+  .box {
+    border: 2px solid #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+    cursor: pointer;
+    
+    &.selected {
+      border-color: #ff0000;
+      background-color: rgba(255, 0, 0, 0.1);
+    }
+
+    .caption-preview {
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 12px;
+      padding: 2px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 } 

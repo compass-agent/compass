@@ -31,7 +31,8 @@ const PageEditor = ({
   setSelectedBox,
   setIsAnalyzing,
   currentScreenshot,
-  agentName = "FreeCAD"
+  agentName = "FreeCAD",
+  handleAutoCaption
 }) => {
   const [pageName, setPageName] = useState('');
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -103,6 +104,13 @@ const PageEditor = ({
     setCurrentView(VIEW_STATES.PAGES_LIST);
   };
 
+  const handleBoxChange = (boxId, newBox) => {
+    setBoxes(prev => ({
+      ...prev,
+      [boxId]: newBox
+    }));
+  };
+
   return (
     <div className="page-editor">
       <Toolbar
@@ -164,7 +172,10 @@ const PageEditor = ({
             captions={captions}
             handleBoxClick={handleBoxClick}
             createNewBox={createNewBox}
+            deleteBox={deleteBox}
             getImageSrc={getImageSrc}
+            handleAutoCaption={handleAutoCaption}
+            onBoxChange={handleBoxChange}
           />
         )}
       </div>

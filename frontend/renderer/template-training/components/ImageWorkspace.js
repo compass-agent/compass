@@ -1,84 +1,241 @@
-import React from 'react';
-import DetectionBox from './DetectionBox';
+import React, { useRef, useState, useEffect } from 'react';
+import ContextMenu from './ContextMenu';
 import '../styles/components/ImageWorkspace.scss';
 
 const ImageWorkspace = ({
   image,
   handleImageLoad,
-  detections,
-  boxes,
   imageSize,
+  boxes,
   selectedBox,
   captions,
   handleBoxClick,
   createNewBox,
-  getImageSrc
+  deleteBox,
+  getImageSrc,
+  handleAutoCaption
 }) => {
-  const renderBoxes = () => {
-    if (!boxes || (!Array.isArray(boxes) && Object.keys(boxes).length === 0)) {
-      return null;
+  const [contextMenu, setContextMenu] = useState(null);
+  const imageRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const getImagePosition = () => {
+    const imageElement = imageRef.current;
+    const containerElement = containerRef.current;
+    if (!imageElement || !containerElement) {
+      console.log('Missing refs:', { imageRef: !!imageElement, containerRef: !!containerElement });
+      return { offsetX: 0, offsetY: 0 };
     }
 
-    const imageElement = document.querySelector('.image-container img');
+    const containerRect = containerElement.getBoundingClientRect();
+    const imageRect = imageElement.getBoundingClientRect();
+
+    const position = {
+      offsetX: imageRect.left - containerRect.left,
+      offsetY: imageRect.top - containerRect.top
+    };
+    
+    console.log('Image position:', position);
+    return position;
+  };
+
+  const getScalingFactors = () => {
+    const imageElement = imageRef.current;
     if (!imageElement) {
-      return null;
+      console.log('Missing imageRef in getScalingFactors');
+      return { scaleX: 1, scaleY: 1 };
     }
 
     const displayedWidth = imageElement.offsetWidth;
     const displayedHeight = imageElement.offsetHeight;
-    const originalWidth = imageSize?.width || imageElement.naturalWidth;
-    const originalHeight = imageSize?.height || imageElement.naturalHeight;
+    const originalWidth = imageSize.width || imageElement.naturalWidth;
+    const originalHeight = imageSize.height || imageElement.naturalHeight;
 
-    const scaleX = displayedWidth / originalWidth;
-    const scaleY = displayedHeight / originalHeight;
+    const factors = {
+      scaleX: displayedWidth / originalWidth,
+      scaleY: displayedHeight / originalHeight
+    };
+    
+    console.log('Scaling factors:', factors);
+    return factors;
+  };
 
-    const boxesArray = Array.isArray(boxes) ? boxes : Object.entries(boxes).map(([id, box]) => ({
-      ...box,
-      id
-    }));
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Context menu triggered', { x: e.clientX, y: e.clientY });
+    
+    // Close any existing context menu first
+    if (contextMenu) {
+      handleCloseContextMenu();
+    }
 
-    return boxesArray.map((box, index) => {
+    // Get the clicked box element
+    const boxElement = e.target.closest('.detection-box');
+    const boxId = boxElement ? parseInt(boxElement.dataset.boxId) : null;
+
+    console.log('Context menu event:', {
+      target: e.target,
+      boxElement,
+      boxId,
+      boxes: {...boxes}
+    });
+
+    const menuOptions = boxId !== null ? [
+      {
+        label: 'Delete Box',
+        onClick: () => {
+          console.log('Deleting box with ID:', boxId);
+          deleteBox(boxId);
+        }
+      },
+      {
+        label: 'Auto Caption',
+        onClick: () => handleAutoCaption(boxId),
+        disabled: !!captions[boxId]
+      }
+    ] : [
+      {
+        label: 'Add Box',
+        onClick: () => {
+          const imageElement = imageRef.current;
+          const rect = imageElement.getBoundingClientRect();
+          const { scaleX, scaleY } = getScalingFactors();
+          const x = (e.clientX - rect.left) / scaleX;
+          const y = (e.clientY - rect.top) / scaleY;
+          console.log('Creating new box at:', { x, y });
+          createNewBox(x, y);
+        }
+      }
+    ];
+
+    setTimeout(() => {
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        options: menuOptions,
+        boxId
+      });
+    }, 0);
+  };
+
+  const handleCloseContextMenu = () => {
+    console.log('Closing context menu:', contextMenu);
+    setContextMenu(null);
+  };
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (contextMenu && !e.target.closest('.context-menu')) {
+        console.log('Click outside context menu');
+        handleCloseContextMenu();
+      }
+    };
+
+    const handleGlobalContextMenu = (e) => {
+      // Only handle context menu events outside the image-workspace
+      if (!e.target.closest('.image-workspace')) {
+        console.log('Context menu outside image workspace');
+        handleCloseContextMenu();
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    document.addEventListener('contextmenu', handleGlobalContextMenu);
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('contextmenu', handleGlobalContextMenu);
+    };
+  }, [contextMenu]);
+
+  const renderBoxes = () => {
+    const { scaleX, scaleY } = getScalingFactors();
+    const { offsetX, offsetY } = getImagePosition();
+
+    return Object.entries(boxes).map(([id, box]) => {
       const scaledBox = {
-        x: box.x * scaleX,
-        y: box.y * scaleY,
-        width: box.width * scaleX,
-        height: box.height * scaleY
+        x: Math.round(box.x * scaleX) + offsetX,
+        y: Math.round(box.y * scaleY) + offsetY,
+        width: Math.round(box.width * scaleX),
+        height: Math.round(box.height * scaleY)
       };
 
+      console.log('Rendering box:', { 
+        id, 
+        original: box, 
+        scaled: scaledBox,
+        selected: selectedBox === parseInt(id)
+      });
+
       return (
-        <DetectionBox
-          key={box.id || index}
-          index={box.id || index}
-          box={box}
-          scaledBox={scaledBox}
-          isSelected={selectedBox === box.id || selectedBox === index}
-          hasCaption={box.caption || (captions && captions[index])}
-          onClick={handleBoxClick}
-        />
+        <div
+          key={id}
+          data-box-id={id}
+          className={`detection-box ${selectedBox === parseInt(id) ? 'selected' : ''} ${captions[id] ? 'labeled' : ''}`}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: `${scaledBox.width}px`,
+            height: `${scaledBox.height}px`,
+            border: selectedBox === parseInt(id) ? '2px solid #ff0000' : 
+                   captions[id] ? '2px solid #0088ff' : 
+                   '2px solid #00ff00',
+            backgroundColor: 'rgba(0, 255, 0, 0.1)',
+            transform: `translate(${scaledBox.x}px, ${scaledBox.y}px)`
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Box clicked:', id);
+            handleBoxClick(parseInt(id));
+          }}
+          onContextMenu={(e) => {
+            e.stopPropagation();
+            console.log('Box right-clicked:', id);
+            handleContextMenu(e);
+          }}
+        >
+          {captions[id] && (
+            <div className="caption-preview">{captions[id]}</div>
+          )}
+        </div>
       );
     });
   };
 
-  const handleImageClick = (e) => {
-    if (!imageSize?.width || !imageSize?.height) return;
-
-    const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    createNewBox(x, y);
-  };
-
   return (
     <div className="image-workspace">
-      {image && (
-        <div className="image-container" onClick={handleImageClick}>
-          <img
-            src={getImageSrc(image)}
-            alt="Template"
-            onLoad={handleImageLoad}
-          />
-          {renderBoxes()}
-        </div>
+      <div 
+        className="image-container" 
+        ref={containerRef}
+        onContextMenu={handleContextMenu}
+      >
+        <img
+          ref={imageRef}
+          src={getImageSrc(image)}
+          alt="Workspace"
+          onLoad={(e) => {
+            console.log('Image loaded:', {
+              width: e.target.width,
+              height: e.target.height,
+              naturalWidth: e.target.naturalWidth,
+              naturalHeight: e.target.naturalHeight
+            });
+            handleImageLoad(e);
+          }}
+        />
+        {renderBoxes()}
+      </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          options={contextMenu.options}
+          onClose={handleCloseContextMenu}
+        />
       )}
     </div>
   );
