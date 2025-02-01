@@ -61,19 +61,19 @@ class TemplateDetector:
                     
         return templates
     
-    def detect(self, screen_data: ScreenData) -> ScreenData:
+    def detect(self, screen_data: ScreenData, agent_name: Optional[str] = None) -> ScreenData:
         """
         Detect icons in screen using template matching
         
         Args:
             screen_data: ScreenData object containing the screenshot
+            agent_name: Optional agent name to filter templates. If None, uses instance agent_name
             
         Returns:
             ScreenData object with detected icons
         """
-        # ----------
-        # TODO FIXME IMPORTANT: Try SIFT  as well as template matching given that the icons may be scaled
-        # ----------
+        # Use provided agent_name if given, otherwise fall back to instance agent_name
+        agent_name = agent_name if agent_name is not None else self.agent_name
         
         img_bytes = base64.b64decode(screen_data.image_data)
         nparr = np.frombuffer(img_bytes, np.uint8)

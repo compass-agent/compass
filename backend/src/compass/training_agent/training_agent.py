@@ -111,7 +111,6 @@ class TrainingAgent:
     def __init__(self):
         """Initialize training agent with detectors and filters"""
         self.yolo_detector = YOLOIconDetector()
-        self.template_detector = TemplateDetector()
         
         self.filters = [
             EmptyImageFilter(),
@@ -228,6 +227,9 @@ class TrainingAgent:
 
     def process_screenshot(self, image_data: str, agent_name: str) -> Dict:
         """Process screenshot using detection pipeline"""
+        # Initialize template detector with agent_name filter
+        self.template_detector = TemplateDetector(agent_name=agent_name)
+        
         # Run detectors
         screen_data = ScreenData(image_data=image_data)
         template_results = self.template_detector.detect(screen_data)
