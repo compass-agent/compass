@@ -42,12 +42,13 @@ from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
 from compass.training_agent.training_agent import TrainingAgent
+from compass.services.workflow_manager import WorkflowManager
 
 # Initialize services
 training_agent = TrainingAgent()
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
-
+workflow_manager = WorkflowManager()
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
@@ -202,6 +203,18 @@ def handle_save_screenshot(data):
         emit('screenshot_saved', {'id': page_id})
     except Exception as e:
         logger.error(f"Error saving page: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('get_workflows')
+def handle_get_workflows():
+    logger.info('🔍 Received get_workflows request')
+    try:
+        workflows = workflow_manager.get_workflow_names()
+        logger.info(f'📋 Retrieved workflows: {workflows}')
+        emit('workflows_list', {'workflows': workflows})
+        logger.info('✅ Successfully sent workflows_list event')
+    except Exception as e:
+        logger.error(f"❌ Error getting workflows: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on_error()

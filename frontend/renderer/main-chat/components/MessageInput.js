@@ -17,14 +17,8 @@ function MessageInput() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showWorkflowSubmenu, setShowWorkflowSubmenu] = useState(false);
   
-  const WORKFLOW_LIST = [
-    "Data Analysis Flow",
-    "Image Processing",
-    "Text Generation",
-    "Code Review"
-  ];
+  const workflowList = state.workflows || [];
 
-  // Add logging for initial render and state changes
   useEffect(() => {
     console.log("MessageInput - Component mounted or updated");
     console.log("Current agentState:", agent.status);
@@ -32,14 +26,19 @@ function MessageInput() {
     setMessage(chat.currentInput);
   }, [agent, chat]);
 
-  // Add effect to clear input when processing completes
-  //SPZ TODO: it is commented. If working fine, remove it
-  // useEffect(() => {
-  //   if (agent.status === AgentStatus.STOPPED) {
-  //     console.log("MessageInput - Clearing input after processing completed");
-  //     resetAgentState();
-  //   }
-  // }, [agent.processing, agent.playing]);
+  // Add effect to handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && !event.target.closest('.dropdown-container')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const resetAgentState = () => {
     setMessage("");
@@ -47,7 +46,7 @@ function MessageInput() {
       type: ActionTypes.SET_CHAT_INPUT,
       payload: "",
     });
-   }
+  };
 
   const handleChange = (e) => {
     const newMessage = e.target.value;
@@ -71,17 +70,6 @@ function MessageInput() {
       textarea.classList.remove("overflow"); // Hide scrollbar if less than 4 lines
     }
   };
-
-  // const getPlayState = () => {
-  //   const playState =
-  //     !agent.processing && !agent.playing
-  //       ? AgentStatus.STOPPED
-  //       : agent.processing && agent.playing
-  //       ? AgentStatus.RUNNING
-  //       : AgentStatus.STOPPING;
-  //   console.log("MessageInput - getPlayState:", playState, "agent:", agent);
-  //   return playState;
-  // };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -107,10 +95,9 @@ function MessageInput() {
           const reader = new FileReader();
           reader.onload = (e) => {
             const base64Data = e.target.result;
-            // Strip the data URL prefix
             const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
             setImageData(cleanBase64);
-            setImagePreview(base64Data); // Keep the full data URL for preview
+            setImagePreview(base64Data);
           };
           reader.readAsDataURL(file);
           e.preventDefault();
@@ -122,7 +109,6 @@ function MessageInput() {
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    //const playState = getPlayState();
 
     if (!message.trim() || agent.status !== AgentStatus.STOPPED) {
       console.log("MessageInput - handleSubmit cancelled:", {
@@ -133,7 +119,6 @@ function MessageInput() {
     }
 
     try {
-      // Add logging before dispatch
       console.log("MessageInput - Dispatching user message");
 
       dispatch({
@@ -171,7 +156,6 @@ function MessageInput() {
       type: "STOP_PROCESSING",
       payload: "",
     });
-    // Clear the message input and update the state
     resetAgentState();
   };
   
@@ -191,7 +175,7 @@ function MessageInput() {
 
   const handleOptionClick = (option) => {
     setIsMenuOpen(false);
-    if (WORKFLOW_LIST.includes(option)) {
+    if (workflowList.includes(option)) {
       console.log(`Selected workflow: ${option}`);
     } else {
       switch (option) {
@@ -205,20 +189,6 @@ function MessageInput() {
       }
     }
   };
-
-  // Add this useEffect for handling clicks outside the dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isMenuOpen && !event.target.closest('.dropdown-container')) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMenuOpen]);
 
   return (
     <div className="message-input-container">
@@ -267,7 +237,7 @@ function MessageInput() {
                   </button>
                   {showWorkflowSubmenu && (
                     <div className="workflow-submenu">
-                      {WORKFLOW_LIST.map((workflow) => (
+                      {workflowList.map((workflow) => (
                         <button
                           key={workflow}
                           className="dropdown-item submenu-item"

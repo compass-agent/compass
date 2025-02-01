@@ -32,6 +32,8 @@ const initialState = {
     xFactor: 1.147,
     yFactor: 1.194
   },
+
+  workflows: [],
 };
 
 // Reducer
@@ -143,6 +145,12 @@ function appReducer(state, action) {
         }
       };
 
+    case ActionTypes.SET_WORKFLOWS:
+      return {
+        ...state,
+        workflows: action.payload,
+      };
+
     default:
       return state;
   }
@@ -154,11 +162,15 @@ export function AppProvider({ children }) {
   // Setup WebSocket handlers
   useEffect(() => {
     WebSocketService.setStateHandlers({
-      onConnect: () =>
+      onConnect: () => {
+        // When connection is established, update connection status and fetch workflows
         dispatch({
           type: ActionTypes.SET_CONNECTION_STATUS,
           payload: { connected: true, error: null },
-        }),
+        });
+        // Fetch workflows after connection is established
+        WebSocketService.getWorkflows();
+      },
 
       onDisconnect: () =>
         dispatch({
@@ -208,6 +220,14 @@ export function AppProvider({ children }) {
       onChatReset: () => {
         dispatch({
           type: ActionTypes.RESET_CHAT
+        });
+      },
+
+      onWorkflowsList: (data) => {
+        console.log("📦 Received workflows list:", data);
+        dispatch({
+          type: ActionTypes.SET_WORKFLOWS,
+          payload: data.workflows,
         });
       },
     });

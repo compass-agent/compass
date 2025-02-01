@@ -3,13 +3,31 @@ import io from "socket.io-client";
 class WebSocketService {
   constructor() {
     this.socket = null;
-    this.stateHandlers = null;
+    this.stateHandlers = {
+      onConnect: new Set(),
+      onDisconnect: new Set(),
+      onError: new Set(),
+      onWorkflowsList: new Set(),
+      onResponse: new Set(),
+      onStateUpdate: new Set(),
+      onCompassWindowState: new Set(),
+      onScalingFactors: new Set(),
+      onChatReset: new Set()
+    };
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
   }
 
-  setStateHandlers(handlers) {
-    this.stateHandlers = handlers;
+  addHandler(event, handler) {
+    if (this.stateHandlers[event]) {
+      this.stateHandlers[event].add(handler);
+    }
+  }
+
+  removeHandler(event, handler) {
+    if (this.stateHandlers[event]) {
+      this.stateHandlers[event].delete(handler);
+    }
   }
 
   connect() {
@@ -28,14 +46,14 @@ class WebSocketService {
     });
 
     this.socket.on("connect", () => {
-      console.log("WebSocket connected with ID:", this.socket.id);
+      console.log("📡 WebSocket connected with ID:", this.socket.id);
       this.reconnectAttempts = 0;
-      this.stateHandlers?.onConnect();
+      this.stateHandlers.onConnect.forEach(handler => handler());
     });
 
     this.socket.on("disconnect", (reason) => {
       console.log("WebSocket disconnected. Reason:", reason);
-      this.stateHandlers?.onDisconnect();
+      this.stateHandlers.onDisconnect.forEach(handler => handler(reason));
       
       if (reason === "io server disconnect") {
         // Server initiated disconnect, try reconnecting
@@ -52,9 +70,9 @@ class WebSocketService {
         this.socket.disconnect();
       }
 
-      this.stateHandlers?.onError({
+      this.stateHandlers.onError.forEach(handler => handler({
         message: `Connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}). ${error.message}`,
-      });
+      }));
     });
 
     // Add heartbeat to check connection
@@ -70,27 +88,27 @@ class WebSocketService {
 
     this.socket.on("state_update", (data) => {
       console.log("WebSocket received state update:", data);
-      this.stateHandlers?.onStateUpdate(data);
+      this.stateHandlers.onStateUpdate.forEach(handler => handler(data));
     });
 
     this.socket.on("response", (data) => {
       console.log("WebSocket received response:", data);
-      this.stateHandlers?.onResponse(data);
+      this.stateHandlers.onResponse.forEach(handler => handler(data));
     });
 
     this.socket.on("minimize-window", (data) => {
       console.log("WebSocket received Windows minimize action:", data);
-      this.stateHandlers?.onCompassWindowState(data);
+      this.stateHandlers.onCompassWindowState.forEach(handler => handler(data));
     });
 
     this.socket.on("restore-window", (data) => {
       console.log("WebSocket received Windows restore action:", data);
-      this.stateHandlers?.onCompassWindowState(data);
+      this.stateHandlers.onCompassWindowState.forEach(handler => handler(data));
     });
 
     this.socket.on("error", (error) => {
       console.error("WebSocket error:", error);
-      this.stateHandlers?.onError(error);
+      this.stateHandlers.onError.forEach(handler => handler(error));
     });
 
     this.socket.on("detection_result", (data) => {
@@ -106,16 +124,21 @@ class WebSocketService {
     this.socket.on("scaling_factors", (data) => {
       console.log("WebSocket: Raw scaling factors data received:", data);
       console.log("WebSocket: x_factor =", data.x_factor, "y_factor =", data.y_factor);
-      this.stateHandlers?.onScalingFactors?.(data);
+      this.stateHandlers.onScalingFactors.forEach(handler => handler(data));
     });
 
     this.socket.on('chat_reset', () => {
-      if (this.stateHandlers?.onChatReset) this.stateHandlers.onChatReset();
+      if (this.stateHandlers?.onChatReset) this.stateHandlers.onChatReset.forEach(handler => handler());
     });
 
     this.socket.on("screenshots_list", (data) => {
       console.log("WebSocket received screenshots list:", data);
       this.stateHandlers?.onScreenshotsList?.(data);
+    });
+
+    this.socket.on("workflows_list", (data) => {
+      console.log("📦 WebSocket: Received workflows_list event:", data);
+      this.stateHandlers.onWorkflowsList.forEach(handler => handler(data));
     });
   }
 
@@ -193,6 +216,23 @@ class WebSocketService {
       this.socket.emit("get_screenshots", {
         agent_name: agentName
       });
+    }
+  }
+
+  setStateHandlers(handlers) {
+    Object.entries(handlers).forEach(([event, handler]) => {
+      if (handler) {
+        this.addHandler(event, handler);
+      }
+    });
+  }
+
+  getWorkflows() {
+    if (this.socket?.connected) {
+      console.log("🔍 WebSocket sending get_workflows request");
+      this.socket.emit("get_workflows");
+    } else {
+      console.warn("Cannot get workflows - socket not connected");
     }
   }
 }
