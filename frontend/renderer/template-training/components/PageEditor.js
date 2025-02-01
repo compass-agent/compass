@@ -7,6 +7,7 @@ import Toolbar from './Toolbar';
 import { useImageHandling } from '../hooks/useImageHandling';
 import WebSocketService from '../../common/services/websocket';
 import { VIEW_STATES } from '../constants/viewStates';
+import SaveDialog from './SaveDialog';
 
 const PageEditor = ({ 
   onSave, 
@@ -33,6 +34,7 @@ const PageEditor = ({
   agentName = "FreeCAD"
 }) => {
   const [pageName, setPageName] = useState('');
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   const cleanupFunctions = {
     setDetections,
@@ -64,22 +66,19 @@ const PageEditor = ({
       return;
     }
 
-    if (!pageName.trim()) {
-      alert('Please enter a page name');
-      return;
-    }
-
     if (Object.keys(captions).length === 0) {
       alert('No templates to save');
       return;
     }
 
-    // Remove the data URL prefix if it exists
+    setIsSaveDialogOpen(true);
+  };
+
+  const handleFinalSave = (newPageName) => {
     const imageData = image.includes('base64,') 
       ? image.split('base64,')[1] 
       : image;
 
-    // Save each box as a template
     Object.entries(captions).forEach(([boxIndex, caption]) => {
       const box = boxes[boxIndex];
       if (!box) return;
@@ -95,12 +94,12 @@ const PageEditor = ({
         image: imageData,
         caption: caption,
         bbox: bbox,
-        page_name: pageName.trim(),
+        page_name: newPageName.trim(),
         agent_name: agentName
       });
     });
 
-    // Return to pages list
+    setIsSaveDialogOpen(false);
     setCurrentView(VIEW_STATES.PAGES_LIST);
   };
 
@@ -118,6 +117,15 @@ const PageEditor = ({
         onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
         pageName={pageName}
         setPageName={setPageName}
+        agentName={agentName}
+      />
+
+      <SaveDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        onSave={handleFinalSave}
+        initialPageName={pageName}
+        isExisting={!!currentScreenshot}
       />
 
       <div className="editor-content">

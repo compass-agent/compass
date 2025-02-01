@@ -1,6 +1,12 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faTrash, faSave, faTimes, faMagic } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faSave, 
+  faTimes, 
+  faChevronRight,
+  faObjectGroup,
+  faWandMagicSparkles
+} from '@fortawesome/free-solid-svg-icons';
 import '../styles/components/Toolbar.scss';
 
 const Toolbar = ({
@@ -11,30 +17,17 @@ const Toolbar = ({
   setInputValue,
   handleKeyPress,
   selectedBox,
-  onDeleteBox,
   onCancel,
   pageName,
-  setPageName
+  agentName
 }) => {
   return (
     <div className="toolbar">
       <div className="toolbar-top">
-        <div className="left-actions">
-          <input
-            type="text"
-            placeholder="Enter page name"
-            value={pageName}
-            onChange={(e) => setPageName(e.target.value)}
-            className="page-name-input"
-          />
-          <button 
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className="analyze-button"
-          >
-            <FontAwesomeIcon icon={faSearch} /> 
-            {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-          </button>
+        <div className="navigation-path">
+          <span className="agent-name">{agentName}</span>
+          <FontAwesomeIcon icon={faChevronRight} className="path-separator" />
+          <span className="page-name">{pageName || 'New Page'}</span>
         </div>
         
         <div className="right-actions">
@@ -47,7 +40,6 @@ const Toolbar = ({
           <button 
             onClick={handleSaveTemplates}
             className="save-button"
-            disabled={!pageName.trim()}
           >
             <FontAwesomeIcon icon={faSave} /> Save
           </button>
@@ -65,17 +57,18 @@ const Toolbar = ({
         />
         <div className="box-actions">
           <button 
-            onClick={onDeleteBox}
-            disabled={selectedBox === null}
-            className="delete-button"
+            onClick={handleAnalyze}
+            className="extract-button"
+            disabled={isAnalyzing}
           >
-            <FontAwesomeIcon icon={faTrash} /> Delete Box
+            <FontAwesomeIcon icon={faObjectGroup} />
+            {isAnalyzing ? 'Extracting...' : 'Extract Templates'}
           </button>
           <button 
-            disabled={selectedBox === null}
-            className="auto-caption-button"
+            className="caption-all-button"
+            disabled={selectedBox !== null}
           >
-            <FontAwesomeIcon icon={faMagic} /> Auto Caption
+            <FontAwesomeIcon icon={faWandMagicSparkles} /> Caption All
           </button>
         </div>
       </div>

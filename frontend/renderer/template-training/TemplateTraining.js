@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import AgentSetup from './components/AgentSetup';
 import PagesList from './components/PagesList';
 import PageEditor from './components/PageEditor';
-import NavigationBar from './components/NavigationBar';
 import { VIEW_STATES } from './constants/viewStates';
 import WebSocketService from '../common/services/websocket';
 import { useSocketConnection } from './hooks/useSocketConnection';
@@ -199,10 +198,6 @@ const TemplateTraining = () => {
           {saveStatus}
         </div>
       )}
-      <NavigationBar 
-        currentView={currentView}
-        agentName={agentData.name}
-      />
       <div className="content">
         {renderCurrentView()}
       </div>

@@ -40,6 +40,27 @@
       display: flex;
       gap: 10px;
     }
+
+    .navigation-path {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e0e0e0;
+      font-size: 1.1rem;
+
+      .agent-name {
+        font-weight: 600;
+      }
+
+      .path-separator {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .page-name {
+        color: #999;
+      }
+    }
   }
 
   .toolbar-bottom {
@@ -65,9 +86,8 @@
 
     .box-actions {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-width: 120px;
+      gap: 12px;
+      margin-top: 12px;
     }
   }
 
@@ -124,6 +144,47 @@
       background-color: #404040;
       &:hover:not(:disabled) {
         background-color: #505050;
+      }
+    }
+  }
+
+  .box-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+
+    button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      transition: background-color 0.2s;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.extract-button {
+        background-color: #2c5282;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background-color: #2b6cb0;
+        }
+      }
+
+      &.caption-all-button {
+        background-color: #2d3748;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background-color: #4a5568;
+        }
       }
     }
   }
