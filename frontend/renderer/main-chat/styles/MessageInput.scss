@@ -150,11 +150,60 @@
   padding: 4px;
   min-width: 150px;
   z-index: 1000;
+
+  .dropdown-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 2px 0;
+  }
+
+  .workflow-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .arrow {
+      float: right;
+      font-size: 10px;
+      opacity: 0.7;
+      margin-left: 8px;
+    }
+  }
+
+  .workflow-container {
+    position: relative;
+    
+    &:hover .workflow-submenu {
+      display: block;
+    }
+  }
+
+  .workflow-submenu {
+    position: absolute;
+    left: 100%;
+    bottom: -4px;
+    background-color: #2d2d2d;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 150px;
+    margin-left: 4px;
+    
+    .submenu-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #d0d0d0;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
 }
 
 .dropdown-item {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: none;
   border: none;
   color: #e0e0e0;

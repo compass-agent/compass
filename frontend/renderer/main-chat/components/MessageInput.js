@@ -3,12 +3,7 @@ import WebSocketService from "../../common/services/websocket";
 import { useAppState } from "../../common/context/AppContext";
 import "../styles/MessageInput.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faRotateRight,
-  faArrowUp,
-  faStop,
-  faPlus,
-} from "@fortawesome/free-solid-svg-icons";
+import {faPlus} from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, ActionTypes } from '../../common/constants'; 
 
 function MessageInput() {
@@ -20,6 +15,14 @@ function MessageInput() {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showWorkflowSubmenu, setShowWorkflowSubmenu] = useState(false);
+  
+  const WORKFLOW_LIST = [
+    "Data Analysis Flow",
+    "Image Processing",
+    "Text Generation",
+    "Code Review"
+  ];
 
   // Add logging for initial render and state changes
   useEffect(() => {
@@ -188,16 +191,18 @@ function MessageInput() {
 
   const handleOptionClick = (option) => {
     setIsMenuOpen(false);
-    switch (option) {
-      case 'Upload Photo':
-        fileInputRef.current.click();
-        break;
-      case 'Upload File':
-      case 'Take Photo':
-      case 'Attach Workflow':
-        // Placeholder for future implementation
-        console.log(`${option} feature coming soon`);
-        break;
+    if (WORKFLOW_LIST.includes(option)) {
+      console.log(`Selected workflow: ${option}`);
+    } else {
+      switch (option) {
+        case 'Upload Photo':
+          fileInputRef.current.click();
+          break;
+        case 'Upload File':
+        case 'Take Photo':
+          console.log(`${option} feature coming soon`);
+          break;
+      }
     }
   };
 
@@ -242,7 +247,7 @@ function MessageInput() {
             </button>
             {isMenuOpen && (
               <div className="dropdown-menu">
-                {['Upload File', 'Upload Photo', 'Take Photo', 'Attach Workflow'].map((option) => (
+                {['Upload File', 'Upload Photo', 'Take Photo'].map((option) => (
                   <button
                     key={option}
                     className="dropdown-item"
@@ -251,6 +256,29 @@ function MessageInput() {
                     {option}
                   </button>
                 ))}
+                <div className="dropdown-divider"></div>
+                <div 
+                  className="workflow-container"
+                  onMouseEnter={() => setShowWorkflowSubmenu(true)}
+                  onMouseLeave={() => setShowWorkflowSubmenu(false)}
+                >
+                  <button className="dropdown-item workflow-item">
+                    Attach Workflow <span className="arrow">▶</span>
+                  </button>
+                  {showWorkflowSubmenu && (
+                    <div className="workflow-submenu">
+                      {WORKFLOW_LIST.map((workflow) => (
+                        <button
+                          key={workflow}
+                          className="dropdown-item submenu-item"
+                          onClick={() => handleOptionClick(workflow)}
+                        >
+                          {workflow}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
