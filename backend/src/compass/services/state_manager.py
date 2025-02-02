@@ -22,6 +22,7 @@ class AgentState:
     status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
     pending_tools: int = 0
+    agent_type: str = "FreeCAD"  # Default agent type
 
 class StateManager:
     def __init__(self, socketio):
@@ -35,7 +36,8 @@ class StateManager:
             'highlightMode': self._state.highlight_mode,
             'status': self._state.status,
             'currentTask': self._state.current_task,
-            'pendingTools': self._state.pending_tools
+            'pendingTools': self._state.pending_tools,
+            'agentType': self._state.agent_type
         }
 
     def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
@@ -47,7 +49,8 @@ class StateManager:
             self._state.status = state_update['status']
         if 'mode' in state_update:
             self._state.mode = AgentMode[state_update['mode']]
-        # QUST?? there is any reason to send state where we have just received it?
+        if 'agentType' in state_update:
+            self._state.agent_type = state_update['agentType']
         self._emit_state_update()
         return self.get_state()
 
@@ -102,4 +105,8 @@ class StateManager:
             'y_factor': y_factor
         })
         logger.info(f"Broadcasting scaling factors: x={x_factor}, y={y_factor}")
+
+    @property
+    def agent_type(self) -> str:
+        return self._state.agent_type
   

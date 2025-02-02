@@ -68,7 +68,8 @@ function Header() {
   };
 
   const handleNewChat = () => {
-    WebSocketService.socket.emit('new_chat');
+    const selectedAgentName = state.selectedAgentName || "FreeCAD"; // Default fallback
+    WebSocketService.handleNewChat(selectedAgentName);
   };
 
   const handleShowSessions = () => {

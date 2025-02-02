@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 class AgentService:
     def __init__(self, state_manager: StateManager):
-        logger.info("Initializing Agent")
+        logger.info(f"Initializing Agent with name: {state_manager.agent_type}")
         self.state_manager = state_manager
         self.processing_task = None
         self.stop_event = asyncio.Event()
         self.messages: list[Union[SystemMessage, HumanMessage, AIMessage]] = []
         self.history_tracker = HistoryLogger()
         self.memory_manager = MemoryManager(self.history_tracker)
-        self.system_prompt = get_prompt_handler(AGENT_NAME)
+        self.system_prompt = get_prompt_handler(self.state_manager.agent_type)
         
         # Get both manual and auto system prompts
         manual_system_message = self.system_prompt.get_system_prompt(
@@ -39,7 +39,7 @@ class AgentService:
 
         # Configure tools based on agent type
         tools = []
-        agent_tool_config = AGENT_TOOLS.get(AGENT_NAME, ["computer", "file", "bash"])
+        agent_tool_config = AGENT_TOOLS.get(self.state_manager.agent_type, ["computer", "file", "bash"])
         
         if "computer" in agent_tool_config:
             tools.append(ComputerTool(state_manager))

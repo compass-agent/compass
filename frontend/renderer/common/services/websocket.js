@@ -236,6 +236,13 @@ class WebSocketService {
       console.warn("Cannot get workflows - socket not connected");
     }
   }
+
+  handleNewChat(agentName) {
+    if (this.socket?.connected) {
+      console.log("Starting new chat with agent:", agentName);
+      this.socket.emit('new_chat', { agent_name: agentName });
+    }
+  }
 }
 
 export default new WebSocketService();

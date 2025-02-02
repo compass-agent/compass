@@ -171,12 +171,15 @@ def handle_ping():
     emit('pong')
 
 @socketio.on('new_chat')
-def handle_new_chat():
+def handle_new_chat(data):
     logger.info('Starting new chat')
     try:
-        # Reinitialize the services
-        global agent_service, state_manager
-        state_manager = StateManager(socketio)
+        # Update state manager with new agent type
+        agent_name = data.get('agent_name', 'FreeCAD')  # Default to FreeCAD if not specified
+        state_manager.update_state({'agentType': agent_name})
+        
+        # Reinitialize just the agent service
+        global agent_service
         agent_service = AgentService(state_manager)
         emit('chat_reset', {'status': 'success'})
     except Exception as e:
