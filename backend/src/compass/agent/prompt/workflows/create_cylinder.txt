@@ -14,7 +14,7 @@ Each numbered step represents a separate iteration. Steps with decimals (e.g., 4
 2.2. Select XY Plane:
      Actions:
      - mouse_move(coordinate=...)  # Agent should locate the XY plane in the tree view
-     - left_click()
+     - double_click() # make sure to double click, not single click. If worked, the XY plane will be highlighted in the tree view.
 
 3.1. Open Python Console:
      Actions:
@@ -24,8 +24,10 @@ Each numbered step represents a separate iteration. Steps with decimals (e.g., 4
 3.2. Execute Python Script:
      Actions:
      - type(text='''import FreeCAD, Part, Sketcher
-doc = FreeCAD.ActiveDocument
-sketch = doc.getObject("Sketch")
+doc = FreeCAD.ActiveDocument''')
+     - type(text="return", action="key")
+     - type(text="return", action="key")  # IMPORTANT: Second return to handle autocomplete popup
+     - type(text='''sketch = doc.getObject("Sketch")
 circle = Part.Circle(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 5)
 sketch.addGeometry(circle, False)
 sketch.addConstraint(Sketcher.Constraint('Diameter', 0, 10.0))
@@ -35,23 +37,19 @@ doc.recompute()''')
 4. Close Sketch:
    Actions:
    - mouse_move(coordinate=...)  # Agent should locate the Close button
-   - left_click()
+   - left_click() # this will close the sketch and return to the Part Design Workbench
 
-5.1. Verify Part Design Workbench:
-     Actions:
-     - mouse_move(coordinate=...)  # Agent should locate the Workbench dropdown
-     - left_click()
-     - type(text="Part Design")
-     - type(text="return", action="key")
-
-5.2. Initialize Pad Operation:
+5.1. Initialize Pad Operation (Make sure you are in Part Design Workbench, it should automatically be selected when you exit the Sketch):
      Actions:
      - mouse_move(coordinate=...)  # Agent should locate the Pad button
      - left_click()
-     - type(text="10")
+     - type(text="10") # no need to move mouse, just type the number
      - type(text="return", action="key")
 
 6.3. Confirm Pad Operation:
      Actions:
      - mouse_move(coordinate=...)  # Agent should locate the OK button
      - left_click()
+
+
+
