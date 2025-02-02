@@ -196,14 +196,14 @@ class TrainingAgent:
                 
                 if existing_template:
                     existing_template.caption = caption
-                    existing_template.page_name = page_name  # Update page name
+                    existing_template.page_name = page_name
                     logger.info(f"Updated existing template caption to: {caption}")
                 else:
                     template = Template(
                         base64_image=cropped_image,
                         caption=caption,
                         agent_name=agent_name,
-                        page_name=page_name  # Add page name
+                        page_name=page_name
                     )
                     session.add(template)
                     logger.info(f"Saved new template with caption: {caption}")

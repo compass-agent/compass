@@ -178,6 +178,7 @@ const TemplateTraining = () => {
             setSelectedBox={setSelectedBox}
             setIsAnalyzing={setIsAnalyzing}
             currentScreenshot={currentScreenshot}
+            agentName={agentData.name}
           />
         );
       default:

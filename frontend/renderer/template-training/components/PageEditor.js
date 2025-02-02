@@ -31,7 +31,7 @@ const PageEditor = ({
   setSelectedBox,
   setIsAnalyzing,
   currentScreenshot,
-  agentName = "FreeCAD",
+  agentName,
   handleAutoCaption
 }) => {
   const [pageName, setPageName] = useState('');
