@@ -7,7 +7,7 @@ import {
   faRotateRight,
   faArrowUp,
   faStop,
-  faImage,
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, ActionTypes } from '../../common/constants'; 
 
@@ -19,6 +19,7 @@ function MessageInput() {
   const [imagePreview, setImagePreview] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Add logging for initial render and state changes
   useEffect(() => {
@@ -185,6 +186,35 @@ function MessageInput() {
     setImagePreview(null);
   };
 
+  const handleOptionClick = (option) => {
+    setIsMenuOpen(false);
+    switch (option) {
+      case 'Upload Photo':
+        fileInputRef.current.click();
+        break;
+      case 'Upload File':
+      case 'Take Photo':
+      case 'Attach Workflow':
+        // Placeholder for future implementation
+        console.log(`${option} feature coming soon`);
+        break;
+    }
+  };
+
+  // Add this useEffect for handling clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && !event.target.closest('.dropdown-container')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   return (
     <div className="message-input-container">
       {imagePreview && (
@@ -202,13 +232,28 @@ function MessageInput() {
             accept="image/*"
             style={{ display: 'none' }}
           />
-          <button
-            className="button image-button"
-            onClick={() => fileInputRef.current.click()}
-            disabled={!isInputEnabled}
-          >
-            <FontAwesomeIcon icon={faImage} />
-          </button>
+          <div className="dropdown-container">
+            <button
+              className="button plus-button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              disabled={!isInputEnabled}
+            >
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+            {isMenuOpen && (
+              <div className="dropdown-menu">
+                {['Upload File', 'Upload Photo', 'Take Photo', 'Attach Workflow'].map((option) => (
+                  <button
+                    key={option}
+                    className="dropdown-item"
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <textarea
           ref={textareaRef}
