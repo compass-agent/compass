@@ -3,12 +3,18 @@ import '../styles/components/AgentSetup.scss';
 
 const AgentSetup = ({ onNext }) => {
   const [agentName, setAgentName] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (agentName.trim()) {
       onNext(agentName);
     }
+  };
+
+  const handleDocumentationClick = () => {
+    // TODO: Implement documentation page navigation
+    console.log('Documentation button clicked - feature coming soon');
   };
 
   return (
@@ -30,13 +36,24 @@ const AgentSetup = ({ onNext }) => {
           <label htmlFor="description">Description</label>
           <textarea
             id="description"
-            disabled
-            placeholder="Coming soon..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter a short description of what this agent does"
+            rows={4}
           />
         </div>
-        <button type="submit" className="primary">
-          Continue
-        </button>
+        <div className="button-group">
+          <button 
+            type="button" 
+            className="secondary"
+            onClick={handleDocumentationClick}
+          >
+            Add Documentation
+          </button>
+          <button type="submit" className="primary">
+            Add Pages
+          </button>
+        </div>
       </form>
     </div>
   );
