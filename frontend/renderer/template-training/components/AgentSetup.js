@@ -19,7 +19,7 @@ const AgentSetup = ({ onNext }) => {
 
   return (
     <div className="agent-setup">
-      <h2>Create New Agent</h2>
+      <h2>Agent Setup</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="agentName">Agent Name</label>
