@@ -8,6 +8,7 @@ import { useSocketConnection } from './hooks/useSocketConnection';
 import { useImageHandling } from './hooks/useImageHandling';
 import { useBoxManagement } from './hooks/useBoxManagement';
 import AgentHub from './components/AgentHub';
+import TemplateNavigation from './components/TemplateNavigation';
 import './styles/TemplateTraining.scss';
 
 console.log('TemplateTraining component is rendering');
@@ -21,6 +22,7 @@ const TemplateTraining = () => {
   const [saveStatus, setSaveStatus] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [currentScreenshot, setCurrentScreenshot] = useState(null);
+  const [pageName, setPageName] = useState('');
 
   // Custom hooks
   const { 
@@ -127,6 +129,11 @@ const TemplateTraining = () => {
     }
   };
 
+  const handleNavigate = (view) => {
+    // Add any cleanup or state reset logic here if needed
+    setCurrentView(view);
+  };
+
   const renderCurrentView = () => {
     switch(currentView) {
       case VIEW_STATES.AGENT_HUB:
@@ -167,6 +174,7 @@ const TemplateTraining = () => {
                 ...prev,
                 pages: [...prev.pages, pageData]
               }));
+              setPageName(pageData.name || '');
               setCurrentView(VIEW_STATES.PAGES_LIST);
             }}
             onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
@@ -190,6 +198,8 @@ const TemplateTraining = () => {
             setIsAnalyzing={setIsAnalyzing}
             currentScreenshot={currentScreenshot}
             agentName={agentData.name}
+            pageName={pageName}
+            setPageName={setPageName}
           />
         );
       default:
@@ -199,6 +209,12 @@ const TemplateTraining = () => {
 
   return (
     <div className="template-training">
+      <TemplateNavigation 
+        currentView={currentView}
+        agentName={agentData.name}
+        pageName={pageName}
+        onNavigate={handleNavigate}
+      />
       {saveStatus && (
         <div className={`save-status ${saveStatus.includes('Error') ? 'error' : 'success'}`}>
           {saveStatus}

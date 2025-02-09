@@ -1,0 +1,35 @@
+.template-navigation {
+  background-color: #2a2a2a;
+  padding: 12px 20px;
+  border-bottom: 1px solid #404040;
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e0e0e0;
+
+    .nav-item {
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+
+      &:hover:not(.active) {
+        background-color: #404040;
+      }
+
+      &.active {
+        color: #fff;
+        font-weight: 500;
+        cursor: default;
+      }
+    }
+
+    .separator {
+      color: #666;
+      font-size: 12px;
+    }
+  }
+}

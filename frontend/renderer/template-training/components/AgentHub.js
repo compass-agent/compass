@@ -6,6 +6,7 @@ import '../styles/components/AgentHub.scss';
 
 const AgentHub = ({ onSelectAgent, onCreateNew }) => {
   const [agents, setAgents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     console.log('🏁 AgentHub component mounted');
@@ -14,6 +15,7 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
       console.log('📥 Received agents list in component:', data);
       if (data && data.agents) {
         setAgents(data.agents);
+        setIsLoading(false);
         console.log('👉 Updated agents state with:', data.agents);
       }
     };
@@ -31,11 +33,10 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
       onConnect: handleConnect
     });
 
-    // If socket is already connected, request agents immediately
-    if (WebSocketService.socket?.connected) {
-      console.log('🔍 Socket already connected, requesting agents list');
-      WebSocketService.getAgents();
-    }
+    // Always request agents when component mounts or re-mounts
+    console.log('🔍 Requesting agents list');
+    setIsLoading(true);
+    WebSocketService.getAgents();
 
     // Cleanup
     return () => {
@@ -60,26 +61,30 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
           <span>Create New Agent</span>
         </div>
 
-        {/* Existing Agents */}
-        {agents && agents.map((agent, index) => (
-          <div 
-            key={index}
-            className="agent-card"
-            onClick={() => onSelectAgent(agent.name)}
-          >
-            <div className="agent-info">
-              <h3>{agent.name || 'Unnamed Agent'}</h3>
-              <div className="last-modified">
-                <FontAwesomeIcon icon={faClock} />
-                <span>
-                  {agent.last_modified 
-                    ? new Date(agent.last_modified).toLocaleDateString()
-                    : 'No date'}
-                </span>
+        {/* Show loading state or agents */}
+        {isLoading ? (
+          <div className="loading-state">Loading agents...</div>
+        ) : (
+          agents.map((agent, index) => (
+            <div 
+              key={agent.name}
+              className="agent-card"
+              onClick={() => onSelectAgent(agent.name)}
+            >
+              <div className="agent-info">
+                <h3>{agent.name || 'Unnamed Agent'}</h3>
+                <div className="last-modified">
+                  <FontAwesomeIcon icon={faClock} />
+                  <span>
+                    {agent.last_modified 
+                      ? new Date(agent.last_modified).toLocaleDateString()
+                      : 'No date'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
