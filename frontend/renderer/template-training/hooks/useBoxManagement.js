@@ -18,8 +18,8 @@ export const useBoxManagement = (detections) => {
     const initialBoxes = {};
     const initialCaptions = {};
     detections.forEach((detection, index) => {
-      // Handle both array format and object format
       if (Array.isArray(detection)) {
+        // Handle legacy array format
         initialBoxes[index] = {
           x: detection[0] || 0,
           y: detection[1] || 0,
@@ -27,8 +27,10 @@ export const useBoxManagement = (detections) => {
           height: (detection[3] - detection[1]) || 0
         };
       } else if (detection && detection.bbox) {
+        // Use the template's UUID if it exists, otherwise use index
         const id = detection.id || index;
         initialBoxes[id] = {
+          id: detection.id, // Store the UUID
           x: detection.bbox[0] || 0,
           y: detection.bbox[1] || 0,
           width: (detection.bbox[2] - detection.bbox[0]) || 0,
@@ -36,7 +38,6 @@ export const useBoxManagement = (detections) => {
           source: detection.source
         };
         
-        // Store caption if it exists
         if (detection.caption) {
           initialCaptions[id] = detection.caption;
         }
@@ -105,10 +106,11 @@ export const useBoxManagement = (detections) => {
       y: Math.round(y * scaleY),
       width: Math.round(defaultWidth * scaleX),
       height: Math.round(defaultHeight * scaleY)
+      // Note: id will be assigned by the backend when saved
     };
 
     const nextIndex = Math.max(...Object.keys(boxes).map(Number), -1) + 1;
-    console.log('Creating new box with ID:', nextIndex);
+    console.log('Creating new box with temporary ID:', nextIndex);
     setBoxes(prevBoxes => ({
       ...prevBoxes,
       [nextIndex]: newBox

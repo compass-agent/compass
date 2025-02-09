@@ -97,14 +97,13 @@ const PageEditor = ({
       ? image.split('base64,')[1] 
       : image;
 
-    // Create templates array without duplicating the image and common data
-    // but keeping the id for each template
+    // Create templates array preserving the id if it exists
     const templates = Object.entries(captions).map(([boxIndex, caption]) => {
       const box = boxes[boxIndex];
       if (!box) return null;
 
       return {
-        id: boxIndex,  // Keep the id (using boxIndex as id)
+        id: box.id, // Include the existing id if present
         bbox: [
           box.x,
           box.y,

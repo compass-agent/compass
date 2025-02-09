@@ -13,6 +13,7 @@ class BoundingBox:
     confidence: float
     text: Optional[str] = None  # For text elements
     caption: Optional[str] = None  # For icon elements
+    template_id: Optional[str] = None  # For template matches
     
     @property
     def coordinates(self) -> dict:
@@ -65,13 +66,15 @@ class ScreenData:
         ))
     
     def add_icon_element(self, bbox: Tuple[float, float, float, float],
-                        confidence: float, caption: Optional[str] = None) -> None:
+                        confidence: float, caption: Optional[str] = None,
+                        template_id: Optional[str] = None) -> None:
         """Add an icon element"""
         self.elements.append(BoundingBox(
             bbox=bbox,
             element_type="icon",
             confidence=confidence,
-            caption=caption
+            caption=caption,
+            template_id=template_id
         ))
     
     @property

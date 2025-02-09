@@ -13,6 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from sqlalchemy.sql import func
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +251,6 @@ class TrainingAgent:
 
     def process_screenshot(self, image_data: str, agent_name: str) -> Dict:
         """Process screenshot using detection pipeline"""
-        # Initialize template detector with agent_name filter
         self.template_detector = TemplateDetector(agent_name=agent_name)
         
         # Run detectors
@@ -258,27 +258,28 @@ class TrainingAgent:
         template_results = self.template_detector.detect(screen_data)
         yolo_results = self.yolo_detector.detect(screen_data)
         
-        # Convert to Detection objects with simple incremental IDs
+        # Convert to Detection objects
         all_detections = []
-        for i, t in enumerate(template_results.icon_elements):
+        
+        # Use template IDs for template matches
+        for t in template_results.icon_elements:
             all_detections.append(Detection(
-                id=i,  # Simple incremental ID
+                id=t.template_id,  # Use the actual template ID from database
                 bbox=t.bbox,
                 confidence=t.confidence,
                 caption=t.caption,
                 source='template'
             ))
         
-        next_id = len(all_detections)
+        # Use UUID for YOLO detections
         for y in yolo_results.icon_elements:
             all_detections.append(Detection(
-                id=next_id,  # Continue incrementing
+                id=str(uuid.uuid4()),  # Generate unique UUID for each YOLO detection
                 bbox=y.bbox,
                 confidence=y.confidence,
                 caption=None,
                 source='yolo'
             ))
-            next_id += 1
         
         # Create filter context
         context = {
@@ -339,77 +340,94 @@ class TrainingAgent:
         
         return cropped_b64
 
+    def get_templates(self, agent_name: str) -> List[Dict]:
+        """Retrieve all templates for a given agent."""
+        with Session() as session:
+            templates = session.query(Template).filter_by(agent_name=agent_name).all()
+            return [template.to_dict() for template in templates]
+
     def save_templates(self, data: Dict) -> List[Dict]:
         """
-        Save full page and multiple templates at once
-        Returns list of results indicating success/failure for each template
+        Save templates with UUID handling.
+        - Updates existing templates if ID exists (updates caption/image)
+        - Creates new templates with new UUIDs for entries without IDs
+        - Creates new templates with provided UUIDs for YOLO detections that were captioned
         """
         templates = data['templates']
         agent_name = data['agent_name']
         page_name = data['page_name']
         image_data = data['image']
         results = []
-        
+
         with Session() as session:
             try:
                 for template_data in templates:
                     try:
+                        # Crop image for this template
+                        bbox = template_data['bbox']
                         cropped_image = self._crop_and_encode_image(
                             image_data, 
-                            template_data['bbox']
+                            bbox
                         )
+
+                        template_id = template_data.get('id')
                         
-                        # Check for existing template by ID first
-                        existing_template = None
-                        if 'id' in template_data:
+                        if template_id:
+                            # Check if template exists for this agent
                             existing_template = session.query(Template).filter_by(
-                                id=template_data['id'],
+                                id=template_id,
                                 agent_name=agent_name
                             ).first()
-                        
-                        # If no ID match, check by image content
-                        if not existing_template:
-                            existing_template = session.query(Template).filter_by(
-                                base64_image=cropped_image,
-                                agent_name=agent_name
-                            ).first()
-                        
-                        if existing_template:
-                            # Update existing template
-                            existing_template.caption = template_data['caption']
-                            existing_template.page_name = page_name
-                            results.append({
-                                'success': True,
-                                'message': 'Template updated',
-                                'id': existing_template.id
-                            })
+                            
+                            if existing_template:
+                                # Update existing template
+                                existing_template.caption = template_data['caption']
+                                existing_template.base64_image = cropped_image
+                                existing_template.page_name = page_name
+                                existing_template.updated_at = datetime.utcnow()
+                                message = 'Template updated'
+                            else:
+                                # Create new template with provided UUID (from YOLO detection)
+                                new_template = Template(
+                                    id=template_id,
+                                    agent_name=agent_name,
+                                    page_name=page_name,
+                                    caption=template_data['caption'],
+                                    base64_image=cropped_image
+                                )
+                                session.add(new_template)
+                                message = 'New template created with provided ID'
                         else:
-                            # Create new template
+                            # Create new template with new UUID (user-created box)
+                            new_id = str(uuid.uuid4())
                             new_template = Template(
-                                base64_image=cropped_image,
-                                caption=template_data['caption'],
+                                id=new_id,
                                 agent_name=agent_name,
-                                page_name=page_name
+                                page_name=page_name,
+                                caption=template_data['caption'],
+                                base64_image=cropped_image
                             )
                             session.add(new_template)
-                            results.append({
-                                'success': True,
-                                'message': 'New template created',
-                                'id': new_template.id
-                            })
-                            
+                            template_id = new_id
+                            message = 'New template created with new ID'
+
+                        results.append({
+                            'success': True,
+                            'message': message,
+                            'id': template_id
+                        })
+
                     except Exception as e:
-                        logger.error(f"Failed to save template: {e}")
+                        logger.error(f"Failed to save template: {str(e)}")
                         results.append({
                             'success': False,
-                            'message': str(e)
+                            'message': f"Failed to save template: {str(e)}"
                         })
-                
+
                 session.commit()
-                
+                return results
+
             except Exception as e:
-                logger.error(f"Failed during save operation: {e}")
+                logger.error(f"Database error: {str(e)}")
                 session.rollback()
                 raise
-        
-        return results

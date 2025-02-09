@@ -155,11 +155,11 @@ def handle_screenshot_upload(data):
 def handle_save_templates(data):
     try:
         # First save the full page once
-        training_agent.save_page(
-            image_data=data['image'],
-            agent_name=data['agent_name'],
-            page_name=data['page_name']
-        )
+        # training_agent.save_page(
+        #     image_data=data['image'],
+        #     agent_name=data['agent_name'],
+        #     page_name=data['page_name']
+        # )
         
         # Then save all templates
         results = training_agent.save_templates(data)
