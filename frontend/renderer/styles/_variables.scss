@@ -1,17 +1,37 @@
-$buttons-bar-height: 38px;
+// Font and Label styles
+$font-family-primary: 'Courier New', Courier, monospace;
+$font-family-secondary: 'Arial', sans-serif;
+$font-size-base: 14px;
+$font-size-large: 18px;
+$font-size-small: 12px;
+$font-weight-normal: 400;
+$font-weight-bold: 700;
+$color-text-primary: #ffffff;
+$color-text-secondary: #e0e0e0;
+$color-background-primary: #1e1e1e;
+$color-background-secondary: #2a2a2a;
+
 $tab-width: 70px;
 $vertical-padding: 12px;
 $disabled-bg-color: #e0e0e0; 
 $button-color: #e0e0e0;
+$button-color-hover: #f0f0f0;
 $button-size-normal: 24px;
 $button-size-small: 18px;
 $button-background-color:#fcfbfb;
+$button-background-color-hover: #333;
+$button-background-color-active: #2c2c2c;
+
+$border-color: #444;
+
+// UI Element size
+$buttons-bar-height: 38px;
 $min-window-height: 154px;
 
-// Need to be use
+// Need to be use // Not used yet
 $primary-bg-color: rgba(20, 20, 20, 0.85);
 $secondary-bg-color: rgba(45, 45, 45, 0.85);
-$border-color: #333;
+// $border-color: #333;
 $text-color: #e0e0e0;
 $placeholder-color: #888;
 $hover-bg-color: rgba(218, 218, 218, 0.397);

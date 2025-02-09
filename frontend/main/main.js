@@ -4,10 +4,10 @@ const {
   default: installExtension,
   REACT_DEVELOPER_TOOLS,
 } = require("electron-devtools-installer");
-const { handleCoordinatePreview } = require("./coordinatePreview");
-const { handleTerminalEvents } = require("./terminalEvents");
-const setupFileHandlers = require('./fileHandlers'); 
-const setupWindowHandlers = require('./windowHandler');
+const { handleCoordinatePreview } = require("./components/coordinatePreview");
+const { handleTerminalEvents } = require("./components/terminalEvents");
+const setupFileHandlers = require('./components/fileHandlers'); 
+const setupWindowHandlers = require('./components/windowHandler');
 require("dotenv").config();
 
 const WINDOW_CONFIG = {

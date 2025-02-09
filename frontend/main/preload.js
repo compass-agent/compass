@@ -19,28 +19,48 @@ contextBridge.exposeInMainWorld("electron", {
         "open-file-editor",
         "save-file-content",
         "close-editor-window",
-        "run-command", // Allow sending commands to run in the terminal
       ];
       if (validChannels.includes(channel)) {
-        if (channel !== "toggle-fullscreen" && channel !== "move-to-bottom-right") {
+        if (
+          channel !== "toggle-fullscreen" &&
+          channel !== "move-to-bottom-right"
+        ) {
           ipcRenderer.send(channel, data);
         }
       }
     },
     on: (channel, func) => {
-      const validChannels = ["move-to-bottom-right-done", "load-file-content", "save-file-success", "command-output"];
+      const validChannels = [
+        "move-to-bottom-right-done",
+        "load-file-content",
+        "save-file-success",
+        "terminal.output",
+      ];
       if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
     },
     invoke: (channel, data) => {
-      const validChannels = ['open-file-dialog', 'save-file', 'read-file', 'save-file-dialog'];
+      const validChannels = [
+        "open-file-dialog",
+        "save-file",
+        "read-file",
+        "save-file-dialog",
+        "terminal.create",
+        "terminal.resize",
+        "terminal.input",
+        "terminal.close",
+      ];
       if (validChannels.includes(channel)) {
         return ipcRenderer.invoke(channel, data);
       }
     },
     removeListener: (channel, func) => {
-      const validChannels = ["move-to-bottom-right-done", "load-file-content", "save-file-success"];
+      const validChannels = [
+        "move-to-bottom-right-done",
+        "load-file-content",
+        "save-file-success",
+      ];
       if (validChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, func);
       }
@@ -51,19 +71,28 @@ contextBridge.exposeInMainWorld("electron", {
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
   toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"), // Expose toggle function
   templateTraining: {
-    saveTemplate: (data) => ipcRenderer.send('save-template', data),
-    onTemplateSaved: (callback) => ipcRenderer.on('template-saved', callback),
+    saveTemplate: (data) => ipcRenderer.send("save-template", data),
+    onTemplateSaved: (callback) => ipcRenderer.on("template-saved", callback),
   },
   terminal: {
-    runCommand: (command) => ipcRenderer.send("run-command", command), // Send a command to run
-    onCommandOutput: (callback) => ipcRenderer.on("command-output", (event, data) => callback(data)), // Listen for command outputs
-    removeCommandOutputListener: (callback) =>
-      ipcRenderer.removeListener("command-output", callback), // remove a previously added listener for command-output events.
-  }
+    create: ({id, command}) => ipcRenderer.invoke("terminal.create", {id, command}),
+    input: ({id, input}) => ipcRenderer.invoke("terminal.input", { id, input }),
+    sendSignal: (id, signal) => ipcRenderer.invoke("terminal.sendSignal", { id, signal }),
+    close: (id) => ipcRenderer.invoke("terminal.close", id),
+    kill: (id) => ipcRenderer.invoke("terminal.kill", id),
+    onOutput: (id, callback) => {
+      if (typeof callback !== "function") {
+        console.error(`Invalid callback provided to onOutput for terminal ${id}`);
+        return;
+      }
+      ipcRenderer.on(`terminal.output.${id}`, (event, data) => callback(data))},
+    onError: (id, callback) =>
+      ipcRenderer.on(`terminal.error.${id}`, (event, data) => callback(data)),
+  },
 });
 
 // Add coordinate preview API
-contextBridge.exposeInMainWorld('coordinatePreview', {
-  showPreview: (x, y) => ipcRenderer.send('show-coordinate-preview', { x, y }),
-  hidePreview: () => ipcRenderer.send('hide-coordinate-preview')
+contextBridge.exposeInMainWorld("coordinatePreview", {
+  showPreview: (x, y) => ipcRenderer.send("show-coordinate-preview", { x, y }),
+  hidePreview: () => ipcRenderer.send("hide-coordinate-preview"),
 });

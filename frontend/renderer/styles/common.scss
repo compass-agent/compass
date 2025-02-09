@@ -18,8 +18,10 @@ button:focus {
 
 // Need to be use
 @mixin custom-scrollbar {
+  /* Optional: Custom scrollbar styles */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px; /* Narrow scrollbar width */
+    height: 6px; /* Small scrollbar height */
   }
   &::-webkit-scrollbar-thumb {
     background-color: #666;

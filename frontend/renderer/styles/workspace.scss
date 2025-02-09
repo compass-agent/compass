@@ -1,177 +1,170 @@
 @use 'variables' as *;
+@use 'common' as *;
 
-
-.file-editor-panel {
+.workspace-panel {
   position: fixed;
   top: $buttons-bar-height;
   right: 0;
   height: 100%;
   max-width: 75%;
-  background-color: #1e1e1e;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-left: 1px solid #444;
+  border-left: 1px solid $border-color;
+  font-family: $font-family-primary;
+  // font-size: $font-size-base;
+  color: $color-text-primary;
+  background-color: $color-background-primary;
 
-  .file-editor-header {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    background-color: transparent;
-    padding: 10px;
+  .file-editor-container {
 
-    &-top {
+    .file-editor-header {
+      flex-shrink: 0;
       display: flex;
-      justify-content: end;
-      align-items: center;
-      margin-bottom: 5px;
-      gap: 16px;
-      
-      .file-editor-btn {
-        background: none;
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
+      flex-direction: column;
+      background-color: transparent;
+      padding: 10px;
+
+      &-top {
         display: flex;
+        justify-content: end;
         align-items: center;
-        gap: 5px;
-
-        &:hover {
-          color: #f0f0f0;
-        }
-      }
-    }
-  }
-
-  .file-editor-tabs {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #444;
-    height: calc($buttons-bar-height - 1px); //  border-bottom: 1px 
-    padding-left: 5px;
-
-      .tab {
-        padding: 10px 12px;
-        background: #1e1e1e;
-        color: white;
-        border: 1px solid #444;
-        cursor: pointer;
-        height: 100%;
-        width: 100px;
-        white-space: nowrap; /* Prevent text wrapping */
-        text-overflow: ellipsis;
-
-        &:hover {
-          background-color: #333;
-        }
-
-        &.active {
-          background-color: #2c2c2c;
-          border-color: #444;
-          border-bottom: 1px solid #2c2c2c; // Seamless bottom border with header
-          font-weight: bold;
-        }
-        .tab-content {
+        margin-bottom: 5px;
+        gap: 16px;
+        
+        .file-editor-btn {
+          background: none;
+          color: $button-color;
+          border: none;
+          cursor: pointer;
+          font-size: 14px;
           display: flex;
           align-items: center;
-          width: 100%;
+          gap: 5px;
 
-          .tab-label {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding-right: 3px;
+          &:hover {
+            color: $button-color-hover;
           }
-          
-          .close-tab-btn {
-            background: none;
-            border: none;
-            margin-left: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            color: white;
-            position: relative;
+        }
+      }
+    }
+
+    .file-editor-tabs {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid $border-color;
+      height: calc($buttons-bar-height - 1px); //  border-bottom: 1px 
+      padding-left: 5px;
+
+        .tab {
+          padding: 10px 12px;
+          background-color: $color-background-primary;
+          color: $color-text-primary;
+          border: 1px solid $border-color;
+          cursor: pointer;
+          height: 100%;
+          width: 100px;
+          white-space: nowrap; /* Prevent text wrapping */
+          text-overflow: ellipsis;
+
+          &:hover {
+            background-color: $button-background-color-hover;
+          }
+
+          &.active {
+            background-color: $button-background-color-active;
+            border-bottom: 1px solid $button-background-color-active; // Seamless bottom border with header
+            font-weight: bold;
+          }
+          .tab-content {
             display: flex;
             align-items: center;
-            justify-content: center;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+            width: 100%;
 
-          }
-          
-          .unsaved-indicator {
-            color: transparent;
-            width: 10px;
-            height: 10px;
-            background-color: white;
-
-            &:hover {
-              background-color: transparent;
-              color: white;
+            .tab-label {
+              flex: 1;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              padding-right: 3px;
+              font-weight: $font-weight-bold;
+              font-size: $font-size-base;
+              font-family: $font-family-primary;
+              color: $color-text-secondary;
+            }
+            
+            .close-tab-btn {
+              background: none;
+              border: none;
+              margin-left: 5px;
+              cursor: pointer;
               font-size: 14px;
+              color: white;
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+
+            }
+            
+            .unsaved-indicator {
+              color: transparent;
+              width: 10px;
+              height: 10px;
+              background-color: white;
+
+              &:hover {
+                background-color: transparent;
+                color: white;
+                font-size: 14px;
+              }
             }
           }
+
         }
 
-      }
+        .file-editor-btn {
+          background: none;
+          color: $color-text-primary;
+          border: none;
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 5px;
 
-      .file-editor-btn {
-        background: none;
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-
-        &:hover {
-          //background-color: #333;
+          &:hover {
+            //background-color: #333;
+          }
         }
-      }
 
-      .add-tab-btn {
-        height: 100%;
-        width: $buttons-bar-height;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 5px 10px;
-        background-color: #1e1e1e;
-        color: white;
-        cursor: pointer;
-        }
-  }
-  .tab-panels {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-
-    .tab-panel {
-      flex-grow: 1; /* Allow it to grow to fit the space */
+        .add-tab-btn {
+          height: 100%;
+          width: $buttons-bar-height;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 5px 10px;
+          background-color: $color-background-primary;
+          color: $color-text-primary;
+          cursor: pointer;
+          }
+    }
+    .tab-panels {
+      height: 100%;
       display: flex;
-    }
-  }
+      flex-direction: column;
 
-  .terminal-container {
-    background-color: #1e1e1e;
-    border-top: 1px solid #444;
-    overflow: auto;
-    display: flex;
-    flex-direction: column;
-
-    .terminal-resize-handle {
-      height: 5px;
-      background: #444;
-      width: 100%;
-      cursor: ns-resize; /* Vertical resize cursor */
+      .tab-panel {
+        flex-grow: 1; /* Allow it to grow to fit the space */
+        display: flex;
+      }
     }
-  }
- 
-  .file-editor-resize-handle {
+
+    .file-editor-resize-handle {
       position: absolute;
       left: 0;
       top: 0;
@@ -184,7 +177,186 @@
       &:hover {
         background-color: rgba(255, 255, 255, 0.3);
       }
+    }
   }
+  .terminal-container {
+    position: fixed;
+    bottom: 0;
+    background-color: $color-background-primary;
+    border-top: 1px solid $border-color;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    .terminal-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1; 
+      overflow: hidden; 
+      position: relative;
+
+      .tabs {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid $border-color;
+        height: calc($buttons-bar-height - 1px); //  border-bottom: 1px 
+        padding-left: 5px;
+        position: -webkit-sticky; /* For Safari */
+        position: sticky;
+        top: 0;
+        z-index: 10;
+
+        .tab {
+          padding: 0px 12px;
+          background-color: $color-background-primary;
+          color: $color-text-primary;
+          border: 1px solid $border-color;
+          cursor: pointer;
+          height: 100%;
+          width: 100px;
+          min-width: 100px;
+          max-width: 100px;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          flex: 1;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+
+          &:hover {
+            background-color: $button-background-color-hover;
+          }
+  
+          &.active {
+            background-color: $button-background-color-active;
+            border-color: $border-color;
+            border-bottom: 1px solid $border-color; // Seamless bottom border with header
+            font-weight: bold;
+          }
+
+          .tab-label {
+            flex: 1;
+            padding-right: 3px;
+            color: $color-text-secondary;
+            font-weight: $font-weight-bold;
+            font-size: $font-size-base;
+            font-family: $font-family-primary;
+          }
+          
+          .close-tab-btn {
+            background: none;
+            border: none;
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: $button-color;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+
+          }
+        }
+
+        .add-tab-btn {
+          color: $button-color;
+          background-color: transparent;
+          border: none;
+          gap: 5px;
+          height: 100%;
+          width: $buttons-bar-height;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 5px 10px;
+          cursor: pointer;
+        }
+      }
+
+      .terminal-views {
+        flex-grow: 1;
+        overflow: hidden;
+        max-height: calc(100% - $buttons-bar-height);
+        position: relative;
+        padding: 2px;
+        padding-left: 18px;
+        position: relative; 
+
+        overflow-y: auto; /* ✅ Allows vertical scrolling */
+        overflow-x: hidden !important; /* ✅ Prevents horizontal scrolling */
+        white-space: pre-wrap !important; /* ✅ Preserves spaces while allowing wrapping */
+        word-break: break-word !important; /* ✅ Breaks long words properly */
+        max-width: 100% !important;
+        @include custom-scrollbar;
+        
+        .xterm-viewport {
+          overflow-y: visible !important;
+          //@include custom-scrollbar;
+          // width: 100%;
+          // white-space: pre-wrap !important;
+          // word-wrap: break-word !important;
+          // overflow-wrap: break-word !important;
+          // overflow-y: auto !important; /* Ensure scrolling works */
+        }
+
+        .xterm-screen {
+          width: 100%;
+          white-space: pre-wrap !important;
+          word-break: break-word !important;
+
+          .xterm-rows {
+            // display: flex !important;
+            // flex-direction: column !important;
+            // flex-wrap: wrap !important;
+            // width: 100% !important;
+            display: block !important; /* ✅ Ensures block-level rendering */
+            white-space: pre-wrap !important; /* ✅ Forces text to wrap */
+            word-break: break-word !important; 
+            line-height: 1.2 !important;
+          }
+
+          /* This forces overriding inline styles */
+          .xterm-rows > div[style*="overflow: hidden"] {
+            overflow: visible !important;
+          }
+
+          .xterm-rows > div {
+            position: relative !important;
+            display: block !important;
+            // overflow: visible !important;
+            // overflow-x: hidden !important;
+            max-width: 100% !important; 
+            overflow-wrap: break-word !important; 
+            white-space: pre-wrap !important; 
+            // word-break: break-word !important;
+
+          }
+        }
+        
+      }
+
+    }
+
+    .terminal-resize-handle {
+      position: absolute;
+      right: 0;
+      height: 5px;
+      width: 100%;
+      cursor: ns-resize; /* Vertical resize cursor */
+      background-color: rgba(255, 255, 255, 0.1);
+      z-index: 10;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+  }
+ 
+
 }
 
 
