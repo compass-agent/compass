@@ -7,12 +7,13 @@ import WebSocketService from '../common/services/websocket';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useImageHandling } from './hooks/useImageHandling';
 import { useBoxManagement } from './hooks/useBoxManagement';
+import AgentHub from './components/AgentHub';
 import './styles/TemplateTraining.scss';
 
 console.log('TemplateTraining component is rendering');
 
 const TemplateTraining = () => {
-  const [currentView, setCurrentView] = useState(VIEW_STATES.SETUP);
+  const [currentView, setCurrentView] = useState(VIEW_STATES.AGENT_HUB);
   const [agentData, setAgentData] = useState({
     name: '',
     pages: []
@@ -128,6 +129,16 @@ const TemplateTraining = () => {
 
   const renderCurrentView = () => {
     switch(currentView) {
+      case VIEW_STATES.AGENT_HUB:
+        return (
+          <AgentHub 
+            onSelectAgent={(name) => {
+              setAgentData(prev => ({ ...prev, name }));
+              setCurrentView(VIEW_STATES.PAGES_LIST);
+            }}
+            onCreateNew={() => setCurrentView(VIEW_STATES.SETUP)}
+          />
+        );
       case VIEW_STATES.SETUP:
         return (
           <AgentSetup 

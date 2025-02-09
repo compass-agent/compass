@@ -222,6 +222,28 @@ def handle_get_workflows():
         logger.error(f"❌ Error getting workflows: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
+@socketio.on('get_agents')
+def handle_get_agents():
+    logger.info('🔍 Received get_agents request')
+    try:
+        # For now, just return a mock response
+        agents = [
+            {
+                'name': 'agent1',
+                'last_modified': '2024-03-20T10:00:00Z'
+            },
+            {
+                'name': 'agent2',
+                'last_modified': '2024-03-19T15:30:00Z'
+            }
+        ]
+        logger.info(f'📋 Retrieved agents: {agents}')
+        emit('agents_list', {'agents': agents})
+        logger.info('✅ Successfully sent agents_list event')
+    except Exception as e:
+        logger.error(f"❌ Error getting agents: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
 @socketio.on_error()
 def error_handler(e):
     logger.error(f"SocketIO error: {str(e)}")

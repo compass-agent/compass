@@ -12,7 +12,8 @@ class WebSocketService {
       onStateUpdate: new Set(),
       onCompassWindowState: new Set(),
       onScalingFactors: new Set(),
-      onChatReset: new Set()
+      onChatReset: new Set(),
+      onAgentsList: new Set()
     };
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
@@ -140,6 +141,11 @@ class WebSocketService {
       console.log("📦 WebSocket: Received workflows_list event:", data);
       this.stateHandlers.onWorkflowsList.forEach(handler => handler(data));
     });
+
+    this.socket.on("agents_list", (data) => {
+      console.log("WebSocket received agents list:", data);
+      this.stateHandlers?.onAgentsList?.forEach(handler => handler(data));
+    });
   }
 
   disconnect() {
@@ -241,6 +247,15 @@ class WebSocketService {
     if (this.socket?.connected) {
       console.log("Starting new chat with agent:", agentName);
       this.socket.emit('new_chat', { agent_name: agentName });
+    }
+  }
+
+  getAgents() {
+    if (this.socket?.connected) {
+      console.log("🚀 WebSocket: Sending get_agents request");
+      this.socket.emit("get_agents");
+    } else {
+      console.warn("⚠️ WebSocket: Cannot get agents - socket not connected");
     }
   }
 }
