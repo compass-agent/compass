@@ -13,7 +13,8 @@ class WebSocketService {
       onCompassWindowState: new Set(),
       onScalingFactors: new Set(),
       onChatReset: new Set(),
-      onAgentsList: new Set()
+      onAgentsList: new Set(),
+      onScreenshotsList: new Set()
     };
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
@@ -134,7 +135,7 @@ class WebSocketService {
 
     this.socket.on("screenshots_list", (data) => {
       console.log("WebSocket received screenshots list:", data);
-      this.stateHandlers?.onScreenshotsList?.(data);
+      this.stateHandlers?.onScreenshotsList?.forEach(handler => handler(data));
     });
 
     this.socket.on("workflows_list", (data) => {

@@ -17,23 +17,24 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
       }
     };
 
-    const prevHandlers = { ...WebSocketService.stateHandlers };
-    
-    WebSocketService.setStateHandlers({
-      ...prevHandlers,
-      onAgentsList: handleAgentsList,
-      onConnect: () => {
-        if (isComponentMounted) {
-          WebSocketService.getAgents();
-        }
+    const handleConnect = () => {
+      if (isComponentMounted) {
+        WebSocketService.getAgents();
       }
-    });
+    };
 
+    // Add handlers
+    WebSocketService.addHandler('onAgentsList', handleAgentsList);
+    WebSocketService.addHandler('onConnect', handleConnect);
+
+    // Get initial agents list
     WebSocketService.getAgents();
 
     return () => {
       isComponentMounted = false;
-      WebSocketService.setStateHandlers(prevHandlers);
+      // Remove handlers on cleanup
+      WebSocketService.removeHandler('onAgentsList', handleAgentsList);
+      WebSocketService.removeHandler('onConnect', handleConnect);
     };
   }, []);
 
@@ -48,7 +49,7 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
             <div 
               key={agent.name}
               className="agent-card"
-              onClick={() => onSelectAgent(agent.name, true)}
+              onClick={() => onSelectAgent(agent.name)}
             >
               <div className="agent-info">
                 <h3>{agent.name || 'Unnamed Agent'}</h3>
