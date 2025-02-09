@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, cast, Union
 
 from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool
-from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS, LLM_PROVIDER
+from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_TOOLS, LLM_PROVIDER
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
@@ -85,7 +85,7 @@ class AgentService:
         self.stop_event.clear()
 
         logger.info("Taking screenshot and cursor position before calling AI")
-        if PRE_RUN_SCREENSHOTS and "computer" in AGENT_TOOLS.get(AGENT_NAME, []):
+        if PRE_RUN_SCREENSHOTS and "computer" in AGENT_TOOLS.get(self.state_manager.agent_type, []):
             await self._take_screenshot()
 
         if self.state_manager.mode == AgentMode.AUTO:

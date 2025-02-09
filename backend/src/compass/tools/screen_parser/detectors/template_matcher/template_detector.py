@@ -9,7 +9,6 @@ from compass.tools.screen_parser.models import ScreenData
 from pathlib import Path
 import yaml
 from compass.database.models import Session, Template
-from compass.constants import AGENT_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class TemplateDetector:
             raise RuntimeError("Template matching is not enabled in config")
             
         self.threshold = config.get('threshold', 0.8)
-        self.agent_name = agent_name if agent_name is not None else AGENT_NAME
+        self.agent_name = agent_name if agent_name is not None else "FreeCAD"
         self.templates = self._load_templates()
         logger.info(f"Loaded {len(self.templates)} templates for agent '{self.agent_name}'")
         

@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 function SettingsMenu({ onClose }) {
-  const [agentName, setAgentName] = React.useState('Generic');
+  const [agentName, setAgentName] = React.useState('FreeCAD'); // TODO: update it to Generic later
   const [showAgentOptions, setShowAgentOptions] = React.useState(false);
   const [viewScreen, setViewScreen] = React.useState(false);
   const [modelName, setModelName] = React.useState('Claude Sonnet 3.5');

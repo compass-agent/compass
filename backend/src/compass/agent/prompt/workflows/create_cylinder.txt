@@ -39,14 +39,14 @@ doc.recompute()''')
    - mouse_move(coordinate=...)  # Agent should locate the Close button
    - left_click() # this will close the sketch and return to the Part Design Workbench
 
-5.1. Initialize Pad Operation (Make sure you are in Part Design Workbench, it should automatically be selected when you exit the Sketch):
+5. Initialize Pad Operation (Make sure you are in Part Design Workbench, it should automatically be selected when you exit the Sketch):
      Actions:
      - mouse_move(coordinate=...)  # Agent should locate the Pad button
      - left_click()
      - type(text="10") # no need to move mouse, just type the number
      - type(text="return", action="key")
 
-6.3. Confirm Pad Operation:
+6. Confirm Pad Operation:
      Actions:
      - mouse_move(coordinate=...)  # Agent should locate the OK button
      - left_click()
