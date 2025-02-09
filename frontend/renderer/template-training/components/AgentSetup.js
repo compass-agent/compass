@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/components/AgentSetup.scss';
 
-const AgentSetup = ({ onNext }) => {
+const AgentSetup = ({ onNext, existingAgent }) => {
   const [agentName, setAgentName] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (existingAgent) {
+      setAgentName(existingAgent);
+    }
+  }, [existingAgent]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,7 +25,7 @@ const AgentSetup = ({ onNext }) => {
 
   return (
     <div className="agent-setup">
-      <h2>Agent Setup</h2>
+      <h2>{existingAgent ? 'Edit Agent' : 'Agent Setup'}</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="agentName">Agent Name</label>
@@ -51,7 +57,7 @@ const AgentSetup = ({ onNext }) => {
             Add Documentation
           </button>
           <button type="submit" className="primary">
-            Add Pages
+            {existingAgent ? 'Continue to Pages' : 'Add Pages'}
           </button>
         </div>
       </form>

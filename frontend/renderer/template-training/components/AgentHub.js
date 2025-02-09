@@ -41,11 +41,6 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
     <div className="agent-hub">
       <h2>Agent Hub</h2>
       <div className="agents-grid">
-        <div className="agent-card new-agent" onClick={onCreateNew}>
-          <FontAwesomeIcon icon={faPlus} className="add-icon" />
-          <span>Create New Agent</span>
-        </div>
-
         {agents.length === 0 ? (
           <div className="no-agents">No agents found</div>
         ) : (
@@ -53,7 +48,7 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
             <div 
               key={agent.name}
               className="agent-card"
-              onClick={() => onSelectAgent(agent.name)}
+              onClick={() => onSelectAgent(agent.name, true)}
             >
               <div className="agent-info">
                 <h3>{agent.name || 'Unnamed Agent'}</h3>
@@ -69,6 +64,11 @@ const AgentHub = ({ onSelectAgent, onCreateNew }) => {
             </div>
           ))
         )}
+        
+        <div className="agent-card new-agent" onClick={onCreateNew}>
+          <FontAwesomeIcon icon={faPlus} className="add-icon" />
+          <span>Create New Agent</span>
+        </div>
       </div>
     </div>
   );

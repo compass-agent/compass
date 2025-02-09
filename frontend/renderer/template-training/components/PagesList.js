@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import WebSocketService from '../../common/services/websocket';
 import '../styles/components/PagesList.scss';
 
@@ -12,36 +10,28 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
     WebSocketService.setStateHandlers({
       ...WebSocketService.stateHandlers,
       onScreenshotsList: (data) => {
+        console.log('Received screenshots data:', data);
         setPages(data.screenshots || []);
       }
     });
 
     // Get initial pages
     if (agentName) {
+      console.log('Requesting screenshots for agent:', agentName);
       WebSocketService.getScreenshots(agentName);
     }
   }, [agentName]);
 
+  console.log('Current pages state:', pages);
+
   return (
     <div className="pages-list">
-      <div className="navigation-path">
-        <span className="agent-name">{agentName}</span>
-        <FontAwesomeIcon icon={faChevronRight} className="path-separator" />
-        <span className="page-name">Pages</span>
-      </div>
-
       <div className="pages-header">
         <h2>Pages</h2>
       </div>
       
       <div className="pages-container">
         <div className="pages-grid">
-          {/* Add New Card */}
-          <div className="page-card add-card" onClick={onAddPage}>
-            <div className="add-icon">+</div>
-            <span>Add New Page</span>
-          </div>
-
           {/* Existing Pages */}
           {pages.map((page) => (
             <div 
@@ -63,6 +53,12 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
               </div>
             </div>
           ))}
+
+          {/* Add New Card */}
+          <div className="page-card add-card" onClick={onAddPage}>
+            <div className="add-icon">+</div>
+            <span>Add New Page</span>
+          </div>
         </div>
       </div>
     </div>

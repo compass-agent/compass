@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
+from sqlalchemy.sql import func
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,28 @@ class TrainingAgent:
                 } for p in pages]
         except Exception as e:
             logger.error(f"Failed to get pages: {e}")
+            raise
+
+    def get_agent_names(self) -> List[Dict]:
+        """Get all unique agent names with their latest modification time"""
+        try:
+            with Session() as session:
+                # Query distinct agent names and their latest update times
+                results = (
+                    session.query(
+                        Page.agent_name,
+                        func.max(Page.updated_at).label('last_modified')
+                    )
+                    .group_by(Page.agent_name)
+                    .all()
+                )
+                
+                return [{
+                    'name': agent_name,
+                    'last_modified': last_modified.isoformat()
+                } for agent_name, last_modified in results]
+        except Exception as e:
+            logger.error(f"Failed to get agent names: {e}")
             raise
 
     def save_page(self, image_data: str, agent_name: str, page_name: str = "") -> int:

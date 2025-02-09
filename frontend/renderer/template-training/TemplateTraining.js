@@ -141,7 +141,7 @@ const TemplateTraining = () => {
           <AgentHub 
             onSelectAgent={(name) => {
               setAgentData(prev => ({ ...prev, name }));
-              setCurrentView(VIEW_STATES.PAGES_LIST);
+              setCurrentView(VIEW_STATES.SETUP);
             }}
             onCreateNew={() => setCurrentView(VIEW_STATES.SETUP)}
           />
@@ -149,6 +149,7 @@ const TemplateTraining = () => {
       case VIEW_STATES.SETUP:
         return (
           <AgentSetup 
+            existingAgent={agentData.name}
             onNext={(name) => {
               setAgentData(prev => ({ ...prev, name }));
               setCurrentView(VIEW_STATES.PAGES_LIST);
