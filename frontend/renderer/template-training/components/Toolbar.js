@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSave, 
   faTimes, 
-  faChevronRight,
   faObjectGroup,
   faWandMagicSparkles
 } from '@fortawesome/free-solid-svg-icons';
@@ -24,12 +23,6 @@ const Toolbar = ({
   return (
     <div className="toolbar">
       <div className="toolbar-top">
-        <div className="navigation-path">
-          <span className="agent-name">{agentName}</span>
-          <FontAwesomeIcon icon={faChevronRight} className="path-separator" />
-          <span className="page-name">{pageName || 'New Page'}</span>
-        </div>
-        
         <div className="right-actions">
           <button 
             onClick={onCancel}

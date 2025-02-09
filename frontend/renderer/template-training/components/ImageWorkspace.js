@@ -176,10 +176,6 @@ const ImageWorkspace = ({
             top: 0,
             width: `${scaledBox.width}px`,
             height: `${scaledBox.height}px`,
-            border: selectedBox === id ? '2px solid #ff0000' : 
-                   captions[id] ? '2px solid #0088ff' : 
-                   '2px solid #00ff00',
-            backgroundColor: 'rgba(0, 255, 0, 0.1)',
             transform: `translate(${scaledBox.x}px, ${scaledBox.y}px)`
           }}
           onClick={(e) => {
@@ -190,7 +186,13 @@ const ImageWorkspace = ({
             e.stopPropagation();
             handleContextMenu(e);
           }}
-        />
+        >
+          {captions[id] && (
+            <div className="caption-preview">
+              {captions[id]}
+            </div>
+          )}
+        </div>
       );
     });
   };

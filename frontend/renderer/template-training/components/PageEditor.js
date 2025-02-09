@@ -10,10 +10,7 @@ import { VIEW_STATES } from '../constants/viewStates';
 import SaveDialog from './SaveDialog';
 
 const PageEditor = ({ 
-  onSave, 
-  onCancel, 
   handleAnalyze,
-  handleSaveTemplates,
   isAnalyzing,
   boxes,
   selectedBox,
@@ -64,6 +61,22 @@ const PageEditor = ({
   useEffect(() => {
     console.log('Number of boxes:', Object.keys(boxes).length);
   }, [boxes]);
+
+  useEffect(() => {
+    const handleDetectionResult = (data) => {
+      console.log("Handling detection result:", data);
+      if (data.detections) {
+        setDetections(data.detections);
+        setIsAnalyzing(false);
+      }
+    };
+
+    WebSocketService.stateHandlers.onDetectionResult = handleDetectionResult;
+
+    return () => {
+      WebSocketService.stateHandlers.onDetectionResult = null;
+    };
+  }, [setDetections, setIsAnalyzing]);
 
   const handleSave = () => {
     if (!image) {

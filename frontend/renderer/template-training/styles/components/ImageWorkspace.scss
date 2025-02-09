@@ -26,28 +26,70 @@
     }
   }
 
-  .box {
-    border: 2px solid #00ff00;
-    background-color: rgba(0, 255, 0, 0.1);
+  .detection-box {
+    position: absolute;
     cursor: pointer;
+    transition: all 0.2s ease;
+    border-width: 2px;
+    border-style: solid;
     
+    // Default state (uncaptioned) - Amazon Orange
+    &:not(.labeled):not(.selected) {
+      border-color: rgba(255, 153, 0, 0.8); // Amazon Orange
+      background-color: rgba(255, 153, 0, 0.05);
+
+      &:hover {
+        border-color: rgba(255, 153, 0, 1);
+        background-color: rgba(255, 153, 0, 0.1);
+      }
+    }
+
+    // Captioned state - Amazon Purple
+    &.labeled:not(.selected) {
+      border-color: rgba(86, 57, 153, 0.8); // Amazon Purple
+      background-color: rgba(86, 57, 153, 0.05);
+
+      &:hover {
+        border-color: rgba(86, 57, 153, 1);
+        background-color: rgba(86, 57, 153, 0.1);
+      }
+    }
+
+    // Selected state - Amazon Blue
     &.selected {
-      border-color: #ff0000;
-      background-color: rgba(255, 0, 0, 0.1);
+      border-color: rgba(0, 119, 204, 0.8); // Amazon Blue
+      background-color: rgba(0, 119, 204, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 119, 204, 0.3);
+
+      &:hover {
+        border-color: rgba(0, 119, 204, 1);
+        background-color: rgba(0, 119, 204, 0.15);
+      }
     }
 
     .caption-preview {
       position: absolute;
-      bottom: -20px;
+      bottom: -28px;
       left: 0;
-      right: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
+      background-color: rgba(35, 47, 62, 0.95); // Amazon Dark
+      color: #fff;
       font-size: 12px;
-      padding: 2px 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 200px;
+      transform: translateY(0);
+      opacity: 0;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    &:hover .caption-preview {
+      opacity: 1;
+      transform: translateY(-4px);
     }
   }
 } 

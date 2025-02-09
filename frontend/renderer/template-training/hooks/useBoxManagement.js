@@ -7,6 +7,7 @@ export const useBoxManagement = (detections) => {
   const [editingCaptionId, setEditingCaptionId] = useState(null);
   const [defaultIcon, setDefaultIcon] = useState(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
 
   useEffect(() => {
     if (!detections || !Array.isArray(detections)) {
@@ -16,30 +17,37 @@ export const useBoxManagement = (detections) => {
     
     const initialBoxes = {};
     const initialCaptions = {};
-
-    detections.forEach((detection) => {
-      if (detection && detection.bbox) {
-        // Use numeric ID from backend
-        const id = detection.id;
-        
-        // Create box with source information
+    detections.forEach((detection, index) => {
+      // Handle both array format and object format
+      if (Array.isArray(detection)) {
+        initialBoxes[index] = {
+          x: detection[0] || 0,
+          y: detection[1] || 0,
+          width: (detection[2] - detection[0]) || 0,
+          height: (detection[3] - detection[1]) || 0
+        };
+      } else if (detection && detection.bbox) {
+        const id = detection.id || index;
         initialBoxes[id] = {
           x: detection.bbox[0] || 0,
           y: detection.bbox[1] || 0,
           width: (detection.bbox[2] - detection.bbox[0]) || 0,
           height: (detection.bbox[3] - detection.bbox[1]) || 0,
-          source: detection.source // Store source information
+          source: detection.source
         };
-
-        // If detection has a caption, add it
+        
+        // Store caption if it exists
         if (detection.caption) {
           initialCaptions[id] = detection.caption;
         }
       }
     });
 
+    console.log('Setting boxes from detections:', initialBoxes);
+    console.log('Setting captions from detections:', initialCaptions);
     setBoxes(initialBoxes);
     setCaptions(initialCaptions);
+    setIsAnalyzing(false);
   }, [detections]);
 
   const handleBoxClick = (index) => {
@@ -241,6 +249,8 @@ export const useBoxManagement = (detections) => {
     createNewBox,
     deleteBox,
     updateImageSize,
-    imageSize
+    imageSize,
+    isAnalyzing,
+    setIsAnalyzing
   };
 }; 
