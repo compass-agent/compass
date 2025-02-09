@@ -1,1 +1,1 @@
-SELECT * FROM pages;
+SELECT * FROM templates;

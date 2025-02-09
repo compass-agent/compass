@@ -151,19 +151,22 @@ def handle_screenshot_upload(data):
         logger.error(f"Error processing screenshot: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
-@socketio.on('save_template')
-def handle_save_template(data):
+@socketio.on('save_templates')
+def handle_save_templates(data):
     try:
-        training_agent.save_template(
+        # First save the full page once
+        training_agent.save_page(
             image_data=data['image'],
-            caption=data['caption'],
-            bbox=data['bbox'],
-            page_name=data['page_name'],
-            agent_name=data['agent_name']
+            agent_name=data['agent_name'],
+            page_name=data['page_name']
         )
-        emit('template_saved', {'success': True})
+        
+        # Then save all templates
+        results = training_agent.save_templates(data)
+        
+        emit('templates_saved', {'success': True, 'results': results})
     except Exception as e:
-        logger.error(f"Error saving template: {e}", exc_info=True)
+        logger.error(f"Error saving templates: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on('ping')
@@ -195,19 +198,6 @@ def handle_get_screenshots(data):
         emit('screenshots_list', {'screenshots': screenshots})
     except Exception as e:
         logger.error(f"Error getting screenshots: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
-@socketio.on('save_screenshot')
-def handle_save_screenshot(data):
-    try:
-        page_id = training_agent.save_page(
-            image_data=data['image'],
-            agent_name=data['agent_name'],
-            page_name=data['page_name']
-        )
-        emit('screenshot_saved', {'id': page_id})
-    except Exception as e:
-        logger.error(f"Error saving page: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on('get_workflows')

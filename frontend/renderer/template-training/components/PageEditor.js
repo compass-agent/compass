@@ -97,24 +97,30 @@ const PageEditor = ({
       ? image.split('base64,')[1] 
       : image;
 
-    Object.entries(captions).forEach(([boxIndex, caption]) => {
+    // Create templates array without duplicating the image and common data
+    // but keeping the id for each template
+    const templates = Object.entries(captions).map(([boxIndex, caption]) => {
       const box = boxes[boxIndex];
-      if (!box) return;
+      if (!box) return null;
 
-      const bbox = [
-        box.x,
-        box.y,
-        box.x + box.width,
-        box.y + box.height
-      ];
+      return {
+        id: boxIndex,  // Keep the id (using boxIndex as id)
+        bbox: [
+          box.x,
+          box.y,
+          box.x + box.width,
+          box.y + box.height
+        ],
+        caption: caption
+      };
+    }).filter(template => template !== null);
 
-      WebSocketService.saveTemplate({
-        image: imageData,
-        caption: caption,
-        bbox: bbox,
-        page_name: newPageName.trim(),
-        agent_name: agentName
-      });
+    // Send data with image only at the top level
+    WebSocketService.saveTemplates({
+      image: imageData,
+      agent_name: agentName,
+      page_name: newPageName.trim(),
+      templates: templates
     });
 
     setIsSaveDialogOpen(false);

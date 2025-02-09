@@ -14,7 +14,9 @@ class WebSocketService {
       onScalingFactors: new Set(),
       onChatReset: new Set(),
       onAgentsList: new Set(),
-      onScreenshotsList: new Set()
+      onScreenshotsList: new Set(),
+      onDetectionResult: null,
+      onTemplatesSaved: null
     };
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 10;
@@ -147,6 +149,11 @@ class WebSocketService {
       console.log("WebSocket received agents list:", data);
       this.stateHandlers?.onAgentsList?.forEach(handler => handler(data));
     });
+
+    this.socket.on("templates_saved", (data) => {
+      console.log("WebSocket templates saved response:", data);
+      this.stateHandlers?.onTemplatesSaved?.(data);
+    });
   }
 
   disconnect() {
@@ -209,15 +216,6 @@ class WebSocketService {
     }
   }
 
-  saveTemplate(templateData) {
-    if (this.socket?.connected) {
-      console.log("WebSocket sending save_template with data:", templateData);
-      this.socket.emit("save_template", templateData);
-    } else {
-      console.error("Socket not connected when trying to save template");
-    }
-  }
-
   getScreenshots(agentName) {
     if (this.socket?.connected) {
       console.log("WebSocket sending get_screenshots");
@@ -257,6 +255,16 @@ class WebSocketService {
       this.socket.emit("get_agents");
     } else {
       console.warn("⚠️ WebSocket: Cannot get agents - socket not connected");
+    }
+  }
+
+  saveTemplates(data) {
+    console.log('saveTemplates', data);
+    if (this.socket?.connected) {
+      console.log("Before saveTemplates:  WebSocket connection status:", this.socket.connected);
+      this.socket.emit("save_templates", data); //data
+    } else {
+      console.error("Socket not connected when trying to save templates");
     }
   }
 }

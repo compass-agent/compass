@@ -5,7 +5,6 @@ import PageEditor from './components/PageEditor';
 import { VIEW_STATES } from './constants/viewStates';
 import WebSocketService from '../common/services/websocket';
 import { useSocketConnection } from './hooks/useSocketConnection';
-import { useImageHandling } from './hooks/useImageHandling';
 import { useBoxManagement } from './hooks/useBoxManagement';
 import AgentHub from './components/AgentHub';
 import TemplateNavigation from './components/TemplateNavigation';
@@ -67,7 +66,7 @@ const TemplateTraining = () => {
   useEffect(() => {
     WebSocketService.setStateHandlers({
       ...WebSocketService.stateHandlers,
-      onTemplateSaved: (data) => {
+      onTemplatesSaved: (data) => {
         if (data.success) {
           setSaveStatus('Templates saved successfully!');
           setTimeout(() => setSaveStatus(''), 3000);
@@ -87,35 +86,6 @@ const TemplateTraining = () => {
     
     const base64Image = imageData.split(',')[1] || imageData;
     WebSocketService.uploadScreenshot(base64Image, agentData.name);
-  };
-
-  const handleSaveTemplates = (imageData) => {
-    if (!imageData || Object.keys(captions).length === 0) {
-      alert('No templates to save');
-      return;
-    }
-
-    setSaveStatus('Saving templates...');
-    
-    Object.entries(captions).forEach(([boxIndex, caption]) => {
-      const box = boxes[boxIndex];
-      if (!box) return;
-
-      const bbox = [
-        box.x,
-        box.y,
-        box.x + box.width,
-        box.y + box.height
-      ];
-
-      WebSocketService.saveTemplate({
-        image: imageData,
-        caption: caption,
-        bbox: bbox,
-        agent_name: agentData.name,
-        page_name: 'default'
-      });
-    });
   };
 
   const handleKeyPress = (e) => {
@@ -180,7 +150,6 @@ const TemplateTraining = () => {
             }}
             onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
             handleAnalyze={handleAnalyze}
-            handleSaveTemplates={handleSaveTemplates}
             isAnalyzing={isAnalyzing}
             boxes={boxes}
             selectedBox={selectedBox}

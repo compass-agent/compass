@@ -338,3 +338,78 @@ class TrainingAgent:
         cropped_b64 = base64.b64encode(buffer).decode('utf-8')
         
         return cropped_b64
+
+    def save_templates(self, data: Dict) -> List[Dict]:
+        """
+        Save full page and multiple templates at once
+        Returns list of results indicating success/failure for each template
+        """
+        templates = data['templates']
+        agent_name = data['agent_name']
+        page_name = data['page_name']
+        image_data = data['image']
+        results = []
+        
+        with Session() as session:
+            try:
+                for template_data in templates:
+                    try:
+                        cropped_image = self._crop_and_encode_image(
+                            image_data, 
+                            template_data['bbox']
+                        )
+                        
+                        # Check for existing template by ID first
+                        existing_template = None
+                        if 'id' in template_data:
+                            existing_template = session.query(Template).filter_by(
+                                id=template_data['id'],
+                                agent_name=agent_name
+                            ).first()
+                        
+                        # If no ID match, check by image content
+                        if not existing_template:
+                            existing_template = session.query(Template).filter_by(
+                                base64_image=cropped_image,
+                                agent_name=agent_name
+                            ).first()
+                        
+                        if existing_template:
+                            # Update existing template
+                            existing_template.caption = template_data['caption']
+                            existing_template.page_name = page_name
+                            results.append({
+                                'success': True,
+                                'message': 'Template updated',
+                                'id': existing_template.id
+                            })
+                        else:
+                            # Create new template
+                            new_template = Template(
+                                base64_image=cropped_image,
+                                caption=template_data['caption'],
+                                agent_name=agent_name,
+                                page_name=page_name
+                            )
+                            session.add(new_template)
+                            results.append({
+                                'success': True,
+                                'message': 'New template created',
+                                'id': new_template.id
+                            })
+                            
+                    except Exception as e:
+                        logger.error(f"Failed to save template: {e}")
+                        results.append({
+                            'success': False,
+                            'message': str(e)
+                        })
+                
+                session.commit()
+                
+            except Exception as e:
+                logger.error(f"Failed during save operation: {e}")
+                session.rollback()
+                raise
+        
+        return results
