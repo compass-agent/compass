@@ -1,0 +1,6 @@
+export const VIEW_STATES = {
+  AGENT_HUB: 'AGENT_HUB',
+  SETUP: 'SETUP',
+  PAGES_LIST: 'PAGES_LIST',
+  PAGE_EDITOR: 'PAGE_EDITOR'
+}; 

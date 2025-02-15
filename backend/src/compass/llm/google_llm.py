@@ -1,8 +1,8 @@
 import json
 import logging
-from typing import Generator, Dict, Any, Union, List, Optional
+from typing import Generator, Dict, Any, Union, List
 import google.generativeai as genai
-from google.generativeai.types import GenerationConfig, FunctionDeclaration, Tool
+from google.generativeai.types import FunctionDeclaration, Tool
 
 from compass.llm.base import BaseLLMInterface
 from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult

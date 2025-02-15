@@ -10,6 +10,10 @@ const setupFileHandlers = require('./components/fileHandlers');
 const setupWindowHandlers = require('./components/windowHandler');
 require("dotenv").config();
 
+if (process.platform === 'darwin') {
+  app.setName('Compass');
+}
+
 const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
@@ -20,6 +24,41 @@ const WINDOW_CONFIG = {
 let mainWindow;
 let previewWindow = null;
 let templateTrainingWindow = null;
+
+function createMenu() {
+  const template = [
+    {
+      label: 'Compass',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'delete' },
+        { role: 'selectAll' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -45,11 +84,15 @@ function createWindow() {
 
   mainWindow.setResizable(true);
 
-  const indexPath = path.join(__dirname, "../renderer/index.html");
+  const indexPath = path.join(__dirname, '../renderer/main-chat/index.html');
   mainWindow.loadFile(indexPath);
 
-  // Remove the default menu
-  Menu.setApplicationMenu(null);
+  // Instead of Menu.setApplicationMenu(null), call createMenu
+  if (process.platform === 'darwin') {
+    createMenu();
+  } else {
+    Menu.setApplicationMenu(null);
+  }
 
   if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
@@ -69,19 +112,26 @@ function createTemplateTrainingWindow() {
     width: 1024,
     height: 768,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,  // Changed to false for security
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false  // Add this for development
     },
-    show: false, // Don't show until ready
+    show: false,
   });
 
-  templateTrainingWindow.loadFile(
-    path.join(__dirname, '../renderer/template-training/index.html')
-  );
+  const templateTrainingPath = path.join(__dirname, '../renderer/template-training/index.html');
+  console.log('Loading template training from:', templateTrainingPath);
+  templateTrainingWindow.loadFile(templateTrainingPath);
 
-  // Center the window and show when ready
+  // Add these lines for debugging
+  templateTrainingWindow.webContents.on('did-finish-load', () => {
+    console.log('Template training window finished loading');
+    templateTrainingWindow.webContents.openDevTools();  // Force open dev tools
+  });
+
   templateTrainingWindow.once('ready-to-show', () => {
+    console.log('Template training window ready to show');
     templateTrainingWindow.center();
     templateTrainingWindow.show();
   });
@@ -97,6 +147,9 @@ function createTemplateTrainingWindow() {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'darwin') {
+    app.name = 'Compass';
+  }
   createWindow();
   handleCoordinatePreview(ipcMain);
   handleTerminalEvents(ipcMain);

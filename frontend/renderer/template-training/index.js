@@ -1,7 +1,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import TemplateTraining from '../components/template-training/TemplateTraining';
+import TemplateTraining from './TemplateTraining';
 
-const container = document.getElementById('template-training-root');
-const root = createRoot(container);
-root.render(<TemplateTraining />); 
+console.log('Template Training index.js is executing');
+
+const container = document.getElementById('root');
+if (!container) {
+    console.error('Root element not found');
+} else {
+    console.log('Root element found, creating React root');
+    const root = createRoot(container);
+    root.render(<TemplateTraining />);
+} 

@@ -1,0 +1,55 @@
+Each numbered step represents a separate iteration. Steps with decimals (e.g., 4.1, 4.2) are separate iterations.
+# Within each step, multiple computer actions will execute in sequence during the same iteration.
+
+1. Create New Document:
+   Actions:
+   - move_mouse(coordinate=...)  # Agent should locate the Parametric Part Create a part ... button
+   - left_click()
+
+2.1. Create a New Sketch:
+     Actions:
+     - mouse_move(coordinate=...)  # Agent should locate the Create new sketch button
+     - left_click()
+
+2.2. Select XY Plane:
+     Actions:
+     - mouse_move(coordinate=...)  # Agent should locate the XY plane in the tree view
+     - double_click() # make sure to double click, not single click. If worked, the XY plane will be highlighted in the tree view.
+
+3.1. Open Python Console:
+     Actions:
+     - move_mouse(coordinate=...)  # Agent should locate the Python Console button
+     - left_click()
+
+3.2. Execute Python Script:
+     Actions:
+     - type(text='''import FreeCAD, Part, Sketcher
+doc = FreeCAD.ActiveDocument''')
+     - type(text="return", action="key")
+     - type(text="return", action="key")  # IMPORTANT: Second return to handle autocomplete popup
+     - type(text='''sketch = doc.getObject("Sketch")
+circle = Part.Circle(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 5)
+sketch.addGeometry(circle, False)
+sketch.addConstraint(Sketcher.Constraint('Diameter', 0, 10.0))
+doc.recompute()''')
+     - type(text="return", action="key")
+
+4. Close Sketch:
+   Actions:
+   - mouse_move(coordinate=...)  # Agent should locate the Close button
+   - left_click() # this will close the sketch and return to the Part Design Workbench
+
+5. Initialize Pad Operation (Make sure you are in Part Design Workbench, it should automatically be selected when you exit the Sketch):
+     Actions:
+     - mouse_move(coordinate=...)  # Agent should locate the Pad button
+     - left_click()
+     - type(text="10") # no need to move mouse, just type the number
+     - type(text="return", action="key")
+
+6. Confirm Pad Operation:
+     Actions:
+     - mouse_move(coordinate=...)  # Agent should locate the OK button
+     - left_click()
+
+
+

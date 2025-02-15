@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 import logging
+import uuid
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -11,12 +13,24 @@ Base = declarative_base()
 class Template(Base):
     __tablename__ = 'templates'
     
-    id = Column(Integer, primary_key=True)
-    base64_image = Column(String, nullable=False)
-    caption = Column(String, nullable=False)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     agent_name = Column(String, nullable=False)
-    page_name = Column(String, nullable=False)
+    page_name = Column(String)
+    base64_image = Column(String, nullable=False)
+    caption = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'agent_name': self.agent_name,
+            'page_name': self.page_name,
+            'caption': self.caption,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
     @classmethod
     def delete_templates(cls, session, agent_name: str = None, page_name: str = None) -> int:
         """

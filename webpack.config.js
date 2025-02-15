@@ -4,7 +4,7 @@ module.exports = {
   mode: "development",
   entry: {
     app: './frontend/renderer/index.js',
-    templateTraining: './frontend/renderer/components/template-training/TemplateTraining.js'
+    templateTraining: './frontend/renderer/template-training/index.js'
   },
   output: {
     path: path.resolve(__dirname, "frontend/renderer/dist"),

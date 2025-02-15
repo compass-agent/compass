@@ -42,12 +42,13 @@ from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
 from compass.utils.utility import HistoryLogger
 from compass.training_agent.training_agent import TrainingAgent
+from compass.services.workflow_manager import WorkflowManager
 
 # Initialize services
 training_agent = TrainingAgent()
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
-
+workflow_manager = WorkflowManager()
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
@@ -79,11 +80,13 @@ def handle_message(data):
         logger.info("Handling new message")
         text = data.get('text', '')
         image_data = data.get('image_data')
+        workflow_name = data.get('workflow_name')
         
-        # Create a HumanMessage with both text and image
+        # Create a message with text, image, and workflow
         message = {
             'text': text,
-            'image_data': image_data
+            'image_data': image_data,
+            'workflow_name': workflow_name
         }
         
         with app.app_context():
@@ -148,17 +151,22 @@ def handle_screenshot_upload(data):
         logger.error(f"Error processing screenshot: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
-@socketio.on('save_template')
-def handle_save_template(data):
+@socketio.on('save_templates')
+def handle_save_templates(data):
     try:
-        training_agent.save_template(
-            image_data=data['image'],
-            caption=data['caption'],
-            bbox=data['bbox']
-        )
-        emit('template_saved', {'success': True})
+        # First save the full page once
+        # training_agent.save_page(
+        #     image_data=data['image'],
+        #     agent_name=data['agent_name'],
+        #     page_name=data['page_name']
+        # )
+        
+        # Then save all templates
+        results = training_agent.save_templates(data)
+        
+        emit('templates_saved', {'success': True, 'results': results})
     except Exception as e:
-        logger.error(f"Error saving template: {e}", exc_info=True)
+        logger.error(f"Error saving templates: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on('ping')
@@ -166,16 +174,54 @@ def handle_ping():
     emit('pong')
 
 @socketio.on('new_chat')
-def handle_new_chat():
+def handle_new_chat(data):
     logger.info('Starting new chat')
     try:
-        # Reinitialize the services
-        global agent_service, state_manager
-        state_manager = StateManager(socketio)
+        # Update state manager with new agent type
+        agent_name = data.get('agent_name', 'FreeCAD')  # Default to FreeCAD if not specified
+        state_manager.update_state({'agentType': agent_name})
+        
+        # Reinitialize just the agent service
+        global agent_service
         agent_service = AgentService(state_manager)
         emit('chat_reset', {'status': 'success'})
     except Exception as e:
         logger.error(f"Error starting new chat: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('get_screenshots')
+def handle_get_screenshots(data):
+    try:
+        screenshots = training_agent.get_screenshots(
+            agent_name=data['agent_name']
+        )
+        emit('screenshots_list', {'screenshots': screenshots})
+    except Exception as e:
+        logger.error(f"Error getting screenshots: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('get_workflows')
+def handle_get_workflows():
+    logger.info('🔍 Received get_workflows request')
+    try:
+        workflows = workflow_manager.get_workflow_names()
+        logger.info(f'📋 Retrieved workflows: {workflows}')
+        emit('workflows_list', {'workflows': workflows})
+        logger.info('✅ Successfully sent workflows_list event')
+    except Exception as e:
+        logger.error(f"❌ Error getting workflows: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('get_agents')
+def handle_get_agents():
+    logger.info('🔍 Received get_agents request')
+    try:
+        agents = training_agent.get_agent_names()
+        logger.info(f'📋 Retrieved agents: {agents}')
+        emit('agents_list', {'agents': agents})
+        logger.info('✅ Successfully sent agents_list event')
+    except Exception as e:
+        logger.error(f"❌ Error getting agents: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on_error()

@@ -1,0 +1,118 @@
+.pages-list {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+
+  .navigation-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    color: #e0e0e0;
+
+    .agent-name {
+      font-weight: 500;
+    }
+
+    .path-separator {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .page-name {
+      color: #888;
+    }
+  }
+
+  .pages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  .pages-container {
+    flex: 1;
+    overflow-y: auto;
+
+    .empty-state {
+      color: #808080;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .pages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 20px;
+
+      .page-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .page-thumbnail {
+          width: 100%;
+          height: 150px;
+          overflow: hidden;
+          
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+
+        .page-info {
+          padding: 0.8rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: #e0e0e0;
+
+          .page-number {
+            font-weight: 500;
+          }
+
+          .box-count {
+            color: #808080;
+            font-size: 0.9rem;
+          }
+        }
+
+        &.add-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 200px;
+          border: 2px dashed #ddd;
+          background: #f9f9f9;
+
+          .add-icon {
+            font-size: 40px;
+            color: #666;
+          }
+
+          span {
+            margin-top: 10px;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+} 

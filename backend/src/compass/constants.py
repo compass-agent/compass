@@ -32,14 +32,7 @@ TIME_TO_WAIT_AFTER_CLICK_BEFORE_SCREENSHOT = 0.1
 ENABLE_SCREEN_DESCRIPTION_SCREENSHOT = True
 ENABLE_SCREENSHOT_COMPARISON_SCREENSHOT = True
 
-
-
 ## PARAMETERS SET  BY USER
-# For now, we only set these here. But in the future, we will allow set them in the UI.
-
-# Agent selection. For now, we only have OpenFoam. But in the future, we will have more agents.
-AGENT_NAME = "FreeCAD" # OpenFoam Or Generic or FreeCAD  # Generic is the default basic agent
-
 # Below are the parameters for the OpenFoam agent
 DOCKER_CONTAINER_NAME = "recursing_mirzakhani"
 DOCKER_WORKING_DIR = "/home/openfoam/run"

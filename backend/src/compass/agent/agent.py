@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, cast, Union
 
 from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool
-from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_NAME, AGENT_TOOLS, LLM_PROVIDER
+from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_TOOLS, LLM_PROVIDER
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
 from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 class AgentService:
     def __init__(self, state_manager: StateManager):
-        logger.info("Initializing Agent")
+        logger.info(f"Initializing Agent with name: {state_manager.agent_type}")
         self.state_manager = state_manager
         self.processing_task = None
         self.stop_event = asyncio.Event()
         self.messages: list[Union[SystemMessage, HumanMessage, AIMessage]] = []
         self.history_tracker = HistoryLogger()
         self.memory_manager = MemoryManager(self.history_tracker)
-        self.system_prompt = get_prompt_handler(AGENT_NAME)
+        self.system_prompt = get_prompt_handler(self.state_manager.agent_type)
         
         # Get both manual and auto system prompts
         manual_system_message = self.system_prompt.get_system_prompt(
@@ -39,7 +39,7 @@ class AgentService:
 
         # Configure tools based on agent type
         tools = []
-        agent_tool_config = AGENT_TOOLS.get(AGENT_NAME, ["computer", "file", "bash"])
+        agent_tool_config = AGENT_TOOLS.get(self.state_manager.agent_type, ["computer", "file", "bash"])
         
         if "computer" in agent_tool_config:
             tools.append(ComputerTool(state_manager))
@@ -62,11 +62,13 @@ class AgentService:
         if isinstance(message, str):
             text = message
             image_data = None
+            workflow_name = None
         else:
             text = message.get('text', '')
             image_data = message.get('image_data')
+            workflow_name = message.get('workflow_name')
         
-        logger.info(f"New message received: {text}")
+        logger.info(f"New message received: {text} with workflow: {workflow_name}")
         await self.stop_processing()
 
         # Skip appending empty messages if last message was from user
@@ -76,11 +78,14 @@ class AgentService:
             self.memory_manager.add_message(
                 HumanMessage(content=text, image_data=image_data)
             )
+        
+        self._current_workflow = workflow_name
+        
         self.state_manager.set_status(AgentStatus.RUNNING, text)
         self.stop_event.clear()
 
         logger.info("Taking screenshot and cursor position before calling AI")
-        if PRE_RUN_SCREENSHOTS and "computer" in AGENT_TOOLS.get(AGENT_NAME, []):
+        if PRE_RUN_SCREENSHOTS and "computer" in AGENT_TOOLS.get(self.state_manager.agent_type, []):
             await self._take_screenshot()
 
         if self.state_manager.mode == AgentMode.AUTO:
@@ -176,7 +181,9 @@ class AgentService:
     async def _next_step_proposal(self) -> list[ToolCall]:
         system_message = self.system_prompt.get_system_prompt(
             manual_mode=self.state_manager.mode == AgentMode.MANUAL, 
-            highlight_mode=False)
+            highlight_mode=False,
+            workflow_name=self._current_workflow
+        )
         
         response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
         text_response_content = []
