@@ -18,7 +18,7 @@ if (process.platform === 'darwin') {
 const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
-  MIN_WIDTH: 500,
+  MIN_WIDTH: 300,
   MIN_HEIGHT: 45,
   MINIMAL_HEIGHT: 45 
 };

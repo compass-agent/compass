@@ -2,7 +2,7 @@ const { ipcMain, screen } = require("electron");
 const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
-  MIN_WIDTH: 500,
+  MIN_WIDTH: 300,
   MIN_HEIGHT: 45,
   MINIMAL_HEIGHT: 45,
 };
@@ -76,10 +76,10 @@ module.exports = (mainWindow) => {
     // Keep original x position
     const x = windowBounds.x;
 
-    // Calculate half width
-    const halfWidth = Math.floor(windowBounds.width * 0.5);
+    // Calculate reduced width (30% of original width)
+    const reducedWidth = Math.floor(windowBounds.width * 0.3);
 
-    // Calculate the y position where the input box wasHi
+    // Calculate the y position where the input box was
     const previousBottom = windowBounds.y + windowBounds.height;
     const newY = previousBottom - WINDOW_CONFIG.MINIMAL_HEIGHT;
 
@@ -94,12 +94,12 @@ module.exports = (mainWindow) => {
 
     // Set both size and position in one call to avoid flickering
     mainWindow.setBounds({
-      x: x,                              // Keep original x position
+      x: x, // Keep original x position
       y: adjustedY,
-      width: halfWidth,
-      height: WINDOW_CONFIG.MINIMAL_HEIGHT
+      width: reducedWidth, // Use 30% of original width
+      height: WINDOW_CONFIG.MINIMAL_HEIGHT,
     });
-};
+  };
 
   ipcMain.on("toggle-minimal-view", (_, isMinimal) => {
     if (!mainWindow) return;
