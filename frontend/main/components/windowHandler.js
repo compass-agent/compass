@@ -3,8 +3,8 @@ const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
   MIN_WIDTH: 500,
-  MIN_HEIGHT: 43,
-  MINIMAL_HEIGHT: 43,
+  MIN_HEIGHT: 45,
+  MINIMAL_HEIGHT: 45,
 };
 module.exports = (mainWindow) => {
 let previousBounds = null; // To store the previous window bounds
@@ -65,34 +65,48 @@ ipcMain.on("move-to-bottom-right", () => {
     }
   });
 
-  const moveToCenter = () => {
+  const moveToVerticalInputPosition = () => {
     if (!mainWindow) return;
-    
-    const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
-    const windowBounds = mainWindow.getBounds();
-    
-    // Calculate position to center the window both horizontally and vertically
-    const x = Math.round((screenWidth - windowBounds.width) / 2);
-    const y = Math.round((screenHeight - windowBounds.height) / 2);
 
+    const { width: screenWidth, height: screenHeight } =
+      screen.getPrimaryDisplay().workAreaSize;
+    const windowBounds = mainWindow.getBounds();
+
+    // Keep x position the same to avoid horizontal movement
+    const x = windowBounds.x;
+
+    // Calculate the y position where the input box was
+    const previousBottom = windowBounds.y + windowBounds.height;
+    const newY = previousBottom - WINDOW_CONFIG.MINIMAL_HEIGHT;
+
+    // Add 500px offset toward bottom
+    const offsetY = newY + 400;
+
+    // Ensure window stays within screen bounds
+    const adjustedY = Math.min(
+      Math.max(0, offsetY),
+      screenHeight - WINDOW_CONFIG.MINIMAL_HEIGHT
+    );
+
+    // Set both size and position in one call to avoid flickering
     mainWindow.setBounds({
       x,
-      y,
+      y: adjustedY,
       width: windowBounds.width,
-      height: windowBounds.height
+      height: WINDOW_CONFIG.MINIMAL_HEIGHT,
     });
   };
 
   ipcMain.on("toggle-minimal-view", (_, isMinimal) => {
     if (!mainWindow) return;
-    
+
     if (isMinimal) {
       // Store current bounds before minimizing
       previousBounds = mainWindow.getBounds();
-      
-      // Set minimal height and center the window
+
+      // Set minimal height while maintaining x position and calculating y position
       mainWindow.setSize(previousBounds.width, WINDOW_CONFIG.MINIMAL_HEIGHT);
-      moveToCenter();
+      moveToVerticalInputPosition();
     } else {
       // Restore original size and position
       if (previousBounds) {

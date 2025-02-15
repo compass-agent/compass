@@ -30,7 +30,7 @@ function AppContent() {
 
   if (isMinimalView) {
     return (
-      <div className="app minimal">
+      <div className="app"  style={{ border: '2px solid rgb(145, 144, 144)' }}>
         <div className="control-panel-wrapper">
           <ControlPanel isMinimal={isMinimalView} />
         </div>
