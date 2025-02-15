@@ -17,7 +17,8 @@ import {
   faScrewdriverWrench,
   faWandMagic,
   faForwardFast,
-  faBolt
+  faBolt,
+  faUser
 } from "@fortawesome/free-solid-svg-icons";
 
 const MODES = {
@@ -134,9 +135,9 @@ function ControlPanel({ isMinimal }) {
 
   const getModeIcon = () => {
     if (mode === MODES.MANUAL.mode) {
-      return faBolt;//faGear;
+      return faUser;//faBolt;//faGear;
     } else if (mode === MODES.SEMI_AUTO.mode) {
-      return faWandMagic;
+      return faBolt;//faWandMagic;
     } else if (mode === MODES.AUTO.mode) {
       return faMagicWandSparkles;
     }
