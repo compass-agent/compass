@@ -89,12 +89,10 @@ function createWindow() {
 
   const indexPath = path.join(__dirname, '../renderer/main-chat/index.html');
   mainWindow.loadFile(indexPath);
-
+  Menu.setApplicationMenu(null);
   // Instead of Menu.setApplicationMenu(null), call createMenu
   if (process.platform === 'darwin') {
     createMenu();
-  } else {
-    Menu.setApplicationMenu(null);
   }
 
   if (process.env.NODE_ENV === "development") {

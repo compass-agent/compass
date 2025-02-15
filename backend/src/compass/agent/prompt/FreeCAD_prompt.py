@@ -40,6 +40,13 @@ class FreeCADPrompt(BasePrompt):
     - mouse_move ONLY moves the cursor - you must explicitly specify any following action (click, type, etc.) within the same tool use block (unless you're only hovering over an element).
     - Important: Keep your all instructions as short and concise as possible while maintaining clarity.
     - Important: NEVER use numerical coordinates in instructions (e.g., "click at [289, 102]"). Instead, just use mouse_move action.
-    </IMPORTANT_GUIDELINES>""")
+    </IMPORTANT_GUIDELINES>
+    <IMPORTANT-TIPS>    
+    If the user asks a question like "I have this 2D circle; can you help me create a 3D cylinder with a length of 100mm?", your response might be:
+       Ensure that the circle is visible and that you are in the Part Design workbench.
+       Then, click the Pad icon to create a pad. After that, type "100 mm" in the length field and press the return key (or click OK).
+       Finally, verify that the cylinder has been created and is visible in the model.
+    </IMPORTANT-TIPS>
+    """)
 
     

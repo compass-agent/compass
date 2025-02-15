@@ -79,6 +79,7 @@ Thumbs.db
 *.pyc
 __pycache__/
 backend/env/
+.env
 
 # Screen parser data
 backend/src/compass/tools/screen_parser/data/*

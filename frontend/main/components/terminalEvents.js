@@ -8,10 +8,20 @@ const startupMessages = [
   "Try the new cross-platform PowerShell https://aka.ms/pscore6",
 ];
 
+const shellPromptMessages = {
+  win32: startupMessages,
+  darwin: [], // Mac doesn't need to filter startup messages
+  linux: []
+};
+
+const currentPlatformMessages = shellPromptMessages[process.platform] || [];
+
 // Store terminal instances and logs
 let terminals = {}; // Store terminal instances by ID
 const lastOutputs = {};
-const shell = process.platform === "win32" ? "powershell.exe" : "/bin/bash";
+const shell = process.platform === "win32" 
+  ? "powershell.exe" 
+  : process.env.SHELL || "/bin/zsh"; // Prefer user's default shell, fallback to zsh
 function handleTerminalEvents(ipcMain) {
 
   // Handle terminal creation
@@ -25,20 +35,24 @@ function handleTerminalEvents(ipcMain) {
     const terminalProcess = spawn(shell, [], {
       shell: true,
       env: process.env,
+      cwd: process.cwd(),
+      windowsHide: true,
+      stdio: ['pipe', 'pipe', 'pipe']
     });
 
     terminals[id] = terminalProcess; // Store the terminal instance
 
     // Send terminal output to the renderer
     terminalProcess.stdout.on("data", (data) => {
-      const output = data.toString().trim();
-      console.log(`Main Terminal: terminal.create output ${output}`);
+      const output = data.toString();
+      console.log(`Main Terminal: terminal.create raw output: ${output}`);
+      
       if (
         output.length === 0 ||
         output === lastOutputs[id] ||
-        startupMessages.some((msg) => output.includes(msg))
-      )
-        return;
+        currentPlatformMessages.some((msg) => output.includes(msg))
+      ) return;
+      
       lastOutputs[id] = output;
       event.sender.send(`terminal.output.${id}`, output);
     });
