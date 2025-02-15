@@ -19,8 +19,8 @@ const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
   MIN_WIDTH: 500,
-  MIN_HEIGHT: 36,
-  MINIMAL_HEIGHT: 36 
+  MIN_HEIGHT: 43,
+  MINIMAL_HEIGHT: 43 
 };
 
 let mainWindow;

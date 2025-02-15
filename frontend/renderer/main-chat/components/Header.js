@@ -8,12 +8,14 @@ import {
   faMinimize,
   faMaximize,
   faEllipsisVertical,
+  faUsersCog,
   faExpand,
   faCompress,
   faUpRightAndDownLeftFromCenter,
   faMinus,
   faImage,
   faMessage,
+  faArrowsRotate,
   faRobot,
   faEdit,
 } from "@fortawesome/free-solid-svg-icons";
@@ -194,7 +196,7 @@ function Header() {
               onClick={handleSettingsClick}
               title="Settings"
             >
-              <FontAwesomeIcon icon={faEllipsisVertical} />
+              <FontAwesomeIcon icon={faUsersCog} />
             </button>
 
             {showSettingsMenu && (
@@ -207,7 +209,7 @@ function Header() {
             onClick={handleNewChat}
             title="New Chat"
           >
-            <FontAwesomeIcon icon={faMessage} />
+            <FontAwesomeIcon icon={faArrowsRotate} />
           </button>
         </div>
       ) : (
@@ -218,7 +220,7 @@ function Header() {
               onClick={handleSettingsClick}
               title="Settings"
             >
-              <FontAwesomeIcon icon={faEllipsisVertical} />
+              <FontAwesomeIcon icon={faUsersCog} />
             </button>
 
             {showSettingsMenu && (
@@ -248,7 +250,7 @@ function Header() {
             onClick={handleNewChat}
             title="New Chat"
           >
-            <FontAwesomeIcon icon={faMessage} />
+            <FontAwesomeIcon icon={faArrowsRotate} />
           </button>
         </div>
       )}
