@@ -25,6 +25,16 @@
     align-items: center;
   }
 
+  .minimal-status {
+    color: #e0e0e0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    padding-left: 12px;
+    animation: pulse 1s infinite;
+  }
+
   .right-controls {
     display: flex;
     align-items: center;

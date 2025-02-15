@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("electron", {
         "close-window",
         "minimize-window",
         "maximize-window",
+        'toggle-minimal-view',
         "show-coordinate-preview",
         "hide-coordinate-preview",
         "open-template-training",
@@ -69,7 +70,8 @@ contextBridge.exposeInMainWorld("electron", {
   restoreWindow: () => ipcRenderer.send("restore-window"),
   closeWindow: () => ipcRenderer.send("close-window"),
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
-  toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"), // Expose toggle function
+  toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"),
+  minimalWindow: (isMinimal) => ipcRenderer.send("toggle-minimal-view", isMinimal),
   templateTraining: {
     saveTemplate: (data) => ipcRenderer.send("save-template", data),
     onTemplateSaved: (callback) => ipcRenderer.on("template-saved", callback),

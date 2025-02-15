@@ -19,7 +19,8 @@ const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
   MIN_WIDTH: 500,
-  MIN_HEIGHT: 120,
+  MIN_HEIGHT: 36,
+  MINIMAL_HEIGHT: 36 
 };
 
 let mainWindow;
@@ -177,3 +178,4 @@ ipcMain.on('open-template-training', () => {
     createTemplateTrainingWindow();
   }
 });
+

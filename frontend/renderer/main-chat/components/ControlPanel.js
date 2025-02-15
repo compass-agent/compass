@@ -25,7 +25,7 @@ const MODES = {
   HIGHLIGHT: {mode: "HighLight", title: "Highlight Mode" }
 };
 
-function ControlPanel() {
+function ControlPanel({ isMinimal }) {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
   const [isWindowMoved, setIsWindowMoved] = useState(false);
@@ -42,6 +42,11 @@ function ControlPanel() {
     hanldeFullscrenToggle(isAutoMode);
   }, [agentState.status, chat.currentInput]);
   */
+
+  useEffect(() => {
+    console.log("ControlPanel - IsMinimal:", { isMinimal });
+    
+  }, [isMinimal]);
 
   const handleToolsClick = () => {
     WebSocketService.executeNextTool();
@@ -200,6 +205,9 @@ function ControlPanel() {
 
   return (
     <div className="control-panel">
+      {isMinimal ? (
+        <span className="minimal-status">In Progress...</span>
+      ) : (
       <div className="left-controls">
         <button
           className="button active"
@@ -225,7 +233,7 @@ function ControlPanel() {
           />
         </button>)}
       </div>
-
+      )}
       <div className="right-controls">
         {!isAutoMode && agentState.pendingTools > 0 && (
           <button

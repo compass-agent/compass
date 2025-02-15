@@ -16,11 +16,27 @@ function AppContent() {
   const { state } = useAppState();
   const { connection, chat, agent } = state;
   const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
-  const isAutoMode = agent.mode === AgentMode.AUTO;
   const [editorWidth, setEditorWidth] = useState(0);
   // Use custom hooks
   useUpdateContainerHeight(chatHistoryRef);
   useScrollToBottom(chatHistoryRef, chat.messages);
+  const isAutoMode = agent.mode === AgentMode.AUTO;
+  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED;
+  useEffect(() => {
+    if (window.electron.minimalWindow) {
+      window.electron.minimalWindow(isMinimalView);
+    }
+  }, [isMinimalView]);
+
+  if (isMinimalView) {
+    return (
+      <div className="app minimal">
+        <div className="control-panel-wrapper">
+          <ControlPanel isMinimal={isMinimalView} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -48,10 +64,10 @@ function AppContent() {
         </div>
         <div
           className="input-box-wrapper"
-          style={{
-            display:
-              isAutoMode && agent.status !== AgentStatus.STOPPED ? "none" : "",
-          }}
+          // style={{
+          //   display:
+          //     isAutoMode && agent.status !== AgentStatus.STOPPED ? "none" : "",
+          // }}
         >
           <MessageInput />
         </div>
