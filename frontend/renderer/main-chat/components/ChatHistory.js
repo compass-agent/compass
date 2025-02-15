@@ -16,7 +16,7 @@ import {
   TOOL_ACTION_MAPPING,
 } from "../constants/toolActionMappings";
 import WorkspaceWindow from "./workspace/workspace";
-import { formatScriptForPlatform, getNameFromPath } from "./../utils/utils";
+import { formatScriptForPlatform, getNameFromPath } from "./../../utils/utils";
 import { v4 as uuidv4 } from "uuid";
 
 function ChatHistory({onEditorWidthChange }) {

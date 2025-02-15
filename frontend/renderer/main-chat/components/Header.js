@@ -87,6 +87,25 @@ function Header() {
     window.electron.ipcRenderer.send("open-template-training");
   };
 
+  const handleSettingsClick = (e) => {
+    e.stopPropagation();
+    setShowSettingsMenu(!showSettingsMenu);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSettingsMenu(false);
+    };
+
+    if (showSettingsMenu) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showSettingsMenu]);
+
   return (
     <div className={`header ${isMac ? "macos" : "windows"}`}>
       {/* Window Controls: Positioned on Left for MacOS and Right for Windows */}
