@@ -8,7 +8,7 @@ from .base import BaseComputerAction
 
 logger = logging.getLogger(__name__)
 
-TYPING_DELAY_MS = 1
+TYPING_DELAY_MS = 10
 TYPING_GROUP_SIZE = 50
 
 class KeyboardInputAction(BaseComputerAction):

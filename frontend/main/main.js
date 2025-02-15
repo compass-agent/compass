@@ -74,8 +74,8 @@ function createWindow() {
       enableHardwareAcceleration: true,
     },
     alwaysOnTop: true,
-    frame: false, // Turned into true as had conflict with maximize button restore
-    // transparent: true, // Turned into true as had conflict with maximize button restore
+    frame: false,
+    transparent: true, // Enable window transparency
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
     hasShadow: true,
     resizable: true,
@@ -96,9 +96,10 @@ function createWindow() {
   }
 
   if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
-    // Install React DevTools
-    // ISSUE: The React tab does not apprear!
+    // Comment out or remove this line to stop opening dev tools
+    // mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
+    
+    // Install React DevTools (you can keep this)
     installExtension(REACT_DEVELOPER_TOOLS)
       .then((name) => console.log(`Added Extension: ${name}`))
       .catch((err) => console.error("Failed to install React DevTools:", err));
@@ -125,10 +126,10 @@ function createTemplateTrainingWindow() {
   console.log('Loading template training from:', templateTrainingPath);
   templateTrainingWindow.loadFile(templateTrainingPath);
 
-  // Add these lines for debugging
+  // Remove or comment out these lines
   templateTrainingWindow.webContents.on('did-finish-load', () => {
     console.log('Template training window finished loading');
-    templateTrainingWindow.webContents.openDevTools();  // Force open dev tools
+    // templateTrainingWindow.webContents.openDevTools();  // Remove this line
   });
 
   templateTrainingWindow.once('ready-to-show', () => {
@@ -137,10 +138,10 @@ function createTemplateTrainingWindow() {
     templateTrainingWindow.show();
   });
 
-  // Dev tools for debugging
-  if (process.env.NODE_ENV === 'development') {
-    templateTrainingWindow.webContents.openDevTools();
-  }
+  // Remove or comment out this block
+  // if (process.env.NODE_ENV === 'development') {
+  //   templateTrainingWindow.webContents.openDevTools();
+  // }
 
   templateTrainingWindow.on('closed', () => {
     templateTrainingWindow = null;
