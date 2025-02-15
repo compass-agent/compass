@@ -73,18 +73,18 @@ module.exports = (mainWindow) => {
       screen.getPrimaryDisplay().workAreaSize;
     const windowBounds = mainWindow.getBounds();
 
-    // Keep x position the same to avoid horizontal movement
+    // Keep original x position
     const x = windowBounds.x;
 
-    // Calculate reduced width (75% of original width)
-    const reducedWidth = Math.floor(windowBounds.width * 0.65);
+    // Calculate half width
+    const halfWidth = Math.floor(windowBounds.width * 0.5);
 
-    // Calculate the y position where the input box was
+    // Calculate the y position where the input box wasHi
     const previousBottom = windowBounds.y + windowBounds.height;
     const newY = previousBottom - WINDOW_CONFIG.MINIMAL_HEIGHT;
 
-    // Add 400px offset toward bottom
-    const offsetY = newY + 400;
+    // Add 500px offset toward bottom
+    const offsetY = newY + 500;
 
     // Ensure window stays within screen bounds
     const adjustedY = Math.min(
@@ -92,17 +92,14 @@ module.exports = (mainWindow) => {
       screenHeight - WINDOW_CONFIG.MINIMAL_HEIGHT
     );
 
-    // Adjust x position to keep window centered after width reduction
-    const adjustedX = x + (windowBounds.width - reducedWidth) / 2;
-
     // Set both size and position in one call to avoid flickering
     mainWindow.setBounds({
-      x: adjustedX,
+      x: x,                              // Keep original x position
       y: adjustedY,
-      width: reducedWidth,
-      height: WINDOW_CONFIG.MINIMAL_HEIGHT,
+      width: halfWidth,
+      height: WINDOW_CONFIG.MINIMAL_HEIGHT
     });
-  };
+};
 
   ipcMain.on("toggle-minimal-view", (_, isMinimal) => {
     if (!mainWindow) return;
