@@ -42,9 +42,9 @@ class FreeCADPrompt(BasePrompt):
     - Important: NEVER use numerical coordinates in instructions (e.g., "click at [289, 102]"). Instead, just use mouse_move action.
     </IMPORTANT_GUIDELINES>
     <IMPORTANT-TIPS>    
-    If the user asks a question like "I have this 2D circle; can you help me create a 3D cylinder with a length of 100mm?", your response might be:
+    If the user asks a question like "I have this 2D circle; can you help me create a 3D cylinder with a length of 20mm?", your response might be:
        Ensure that the circle is visible and that you are in the Part Design workbench (you dont need to take any action, just check the already provided screen data).
-       Then, click the Pad icon to create a pad, type "100 mm" in the length field and press the return key (or click OK). IMPORTANT: Perform all these actions in the same tool use block.
+       Then, click the Pad icon to create a pad, type "20 mm" in the length field and press the return key (or click OK). IMPORTANT: Perform all these actions in the same tool use block.
        Finally, verify that the cylinder has been created and is visible in the model (you dont need to take any action, just check the already provided screen data).
     </IMPORTANT-TIPS>
     """)
