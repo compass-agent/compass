@@ -12,6 +12,7 @@ require("dotenv").config();
 
 if (process.platform === 'darwin') {
   app.setName('Compass');
+  app.name = 'Compass';
 }
 
 const WINDOW_CONFIG = {
@@ -80,6 +81,7 @@ function createWindow() {
     minWidth: WINDOW_CONFIG.MIN_WIDTH,
     minHeight: WINDOW_CONFIG.MIN_HEIGHT,
     backgroundColor: "#00000000", // Ensure a transparent background
+    title: 'Compass'
   });
 
   mainWindow.setResizable(true);
