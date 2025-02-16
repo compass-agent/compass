@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowUpRightFromSquare,
@@ -6,24 +6,25 @@ import {
   faEyeSlash,
   faCog,
 } from "@fortawesome/free-solid-svg-icons";
+import "../styles/Header.scss";
 
 function SettingsMenu({ onClose }) {
-  const [agentName, setAgentName] = React.useState('FreeCAD'); // TODO: update it to Generic later
+  const [agentName, setAgentName] = React.useState("FreeCAD"); // TODO: update it to Generic later
   const [showAgentOptions, setShowAgentOptions] = React.useState(false);
   const [viewScreen, setViewScreen] = React.useState(false);
-  const [modelName, setModelName] = React.useState('Claude Sonnet 3.5');
+  const [modelName, setModelName] = React.useState("Claude Sonnet 3.5");
   const [showModelOptions, setShowModelOptions] = React.useState(false);
-
-  const agentOptions = ['Generic', 'FreeCAD', 'OpenFoam'];
+  let isMac = window.electron.platform === "darwin";
+  const agentOptions = ["Generic", "FreeCAD", "OpenFoam"];
   const modelOptions = [
-    'Claude Sonnet 3.5',
-    'OpenAI GPT-4O',
-    'Google Gemini 2.0',
-    'DeepSeek R1'
+    "Claude Sonnet 3.5",
+    "OpenAI GPT-4O",
+    "Google Gemini 2.0",
+    "DeepSeek R1",
   ];
 
   const handleTrainAgent = () => {
-    window.electron.ipcRenderer.send('open-template-training');
+    window.electron.ipcRenderer.send("open-template-training");
   };
 
   const handleAgentSettings = (e, agent) => {
@@ -32,10 +33,16 @@ function SettingsMenu({ onClose }) {
   };
 
   return (
-    <div className="settings-menu" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`settings-menu ${isMac ? "mac" : "win"}`}
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Agent Selection */}
       <div className="menu-section">
-        <div className="model-selector" onClick={() => setShowAgentOptions(!showAgentOptions)}>
+        <div
+          className="model-selector"
+          onClick={() => setShowAgentOptions(!showAgentOptions)}
+        >
           <span>Agent: {agentName}</span>
         </div>
         {showAgentOptions && (
@@ -47,11 +54,13 @@ function SettingsMenu({ onClose }) {
                   setAgentName(agent);
                   setShowAgentOptions(false);
                 }}
-                className={`agent-option ${agentName === agent ? 'selected' : ''}`}
+                className={`agent-option ${
+                  agentName === agent ? "selected" : ""
+                }`}
               >
                 <span>{agent}</span>
-                <FontAwesomeIcon 
-                  icon={faCog} 
+                <FontAwesomeIcon
+                  icon={faCog}
                   className="settings-icon"
                   onClick={(e) => handleAgentSettings(e, agent)}
                 />
@@ -63,7 +72,10 @@ function SettingsMenu({ onClose }) {
 
       {/* Model Selection */}
       <div className="menu-section">
-        <div className="model-selector" onClick={() => setShowModelOptions(!showModelOptions)}>
+        <div
+          className="model-selector"
+          onClick={() => setShowModelOptions(!showModelOptions)}
+        >
           <span>Model: {modelName}</span>
         </div>
         {showModelOptions && (
@@ -75,7 +87,7 @@ function SettingsMenu({ onClose }) {
                   setModelName(model);
                   setShowModelOptions(false);
                 }}
-                className={modelName === model ? 'selected' : ''}
+                className={modelName === model ? "selected" : ""}
               >
                 {model}
               </button>
@@ -86,13 +98,13 @@ function SettingsMenu({ onClose }) {
 
       {/* View Screen Toggle */}
       <div className="menu-section">
-        <button 
+        <button
           className="toggle-button"
           onClick={() => setViewScreen(!viewScreen)}
         >
-          <FontAwesomeIcon 
+          <FontAwesomeIcon
             icon={viewScreen ? faEye : faEyeSlash}
-            className={viewScreen ? 'enabled' : ''}
+            className={viewScreen ? "enabled" : ""}
           />
           <span>View Screen</span>
         </button>
@@ -104,12 +116,18 @@ function SettingsMenu({ onClose }) {
       <div className="menu-section">
         <button className="action-button" onClick={handleTrainAgent}>
           <span>Train Agent</span>
-          <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="arrow-icon" />
+          <FontAwesomeIcon
+            icon={faArrowUpRightFromSquare}
+            className="arrow-icon"
+          />
         </button>
-        
+
         <button className="action-button">
           <span>Create Workflow</span>
-          <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="arrow-icon" />
+          <FontAwesomeIcon
+            icon={faArrowUpRightFromSquare}
+            className="arrow-icon"
+          />
         </button>
       </div>
 
@@ -125,4 +143,4 @@ function SettingsMenu({ onClose }) {
   );
 }
 
-export default SettingsMenu; 
+export default SettingsMenu;

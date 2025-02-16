@@ -170,12 +170,19 @@
 .settings-menu {
   position: absolute;
   top: 100%;
-  right: 0;
   background-color: #2c2c2c;
   border-radius: 4px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   min-width: 200px;
+
+  &.mac {
+    right: 12px;
+  }
+
+  &.win {
+    left: 12px;
+  }
   
   button {
     width: 100%;
