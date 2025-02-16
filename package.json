@@ -1,5 +1,6 @@
 {
   "name": "compass",
+  "productName": "Compass",
   "version": "1.0.0",
   "main": "frontend/main/main.js",
   "scripts": {

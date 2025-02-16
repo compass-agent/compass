@@ -29,18 +29,10 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
       }
     };
 
-    // Clear any existing handlers first
-    WebSocketService.stateHandlers.onScreenshotsList.clear();
+    // Set up the handler immediately
+    WebSocketService.stateHandlers.onScreenshotsList = new Set([screenshotsHandler]);
 
-    // Register new handler
-    console.log('📝 Registering screenshots handler...');
-    WebSocketService.addHandler('onScreenshotsList', screenshotsHandler);
-    
-    // Verify handler registration
-    console.log('🔍 Current handlers after registration:', 
-      Array.from(WebSocketService.stateHandlers.onScreenshotsList).length);
-
-    // Get initial pages
+    // Request screenshots if we have an agent name
     if (agentName) {
       console.log('🔍 Requesting screenshots for agent:', agentName);
       WebSocketService.getScreenshots(agentName);
@@ -51,8 +43,7 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
 
     // Cleanup handler when component unmounts
     return () => {
-      console.log('🧹 Cleaning up PagesList handlers');
-      WebSocketService.removeHandler('onScreenshotsList', screenshotsHandler);
+      WebSocketService.stateHandlers.onScreenshotsList.clear();
     };
   }, [agentName]);
 

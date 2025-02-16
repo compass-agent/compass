@@ -97,13 +97,12 @@ const PageEditor = ({
       ? image.split('base64,')[1] 
       : image;
 
-    // Create templates array preserving the id if it exists
     const templates = Object.entries(captions).map(([boxIndex, caption]) => {
       const box = boxes[boxIndex];
       if (!box) return null;
 
       return {
-        id: box.id, // Include the existing id if present
+        id: box.id,
         bbox: [
           box.x,
           box.y,
@@ -114,16 +113,20 @@ const PageEditor = ({
       };
     }).filter(template => template !== null);
 
-    // Send data with image only at the top level
+    // Add a success handler for saveTemplates
+    WebSocketService.stateHandlers.onTemplatesSaved = () => {
+      setIsSaveDialogOpen(false);
+      // Trigger a refresh of screenshots before changing view
+      WebSocketService.getScreenshots(agentName);
+      setCurrentView(VIEW_STATES.PAGES_LIST);
+    };
+
     WebSocketService.saveTemplates({
       image: imageData,
       agent_name: agentName,
       page_name: newPageName.trim(),
       templates: templates
     });
-
-    setIsSaveDialogOpen(false);
-    setCurrentView(VIEW_STATES.PAGES_LIST);
   };
 
   const handleBoxChange = (boxId, newBox) => {

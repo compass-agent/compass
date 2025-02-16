@@ -8,6 +8,10 @@ const {
 const { handleCoordinatePreview } = require("./coordinatePreview");
 require("dotenv").config();
 
+if (process.platform === 'darwin') {
+  app.setName('Compass');
+}
+
 const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
@@ -18,6 +22,41 @@ const WINDOW_CONFIG = {
 let mainWindow;
 let previewWindow = null;
 let templateTrainingWindow = null;
+
+function createMenu() {
+  const template = [
+    {
+      label: 'Compass',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'delete' },
+        { role: 'selectAll' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -46,8 +85,12 @@ function createWindow() {
   const indexPath = path.join(__dirname, '../renderer/main-chat/index.html');
   mainWindow.loadFile(indexPath);
 
-  // Remove the default menu
-  Menu.setApplicationMenu(null);
+  // Instead of Menu.setApplicationMenu(null), call createMenu
+  if (process.platform === 'darwin') {
+    createMenu();
+  } else {
+    Menu.setApplicationMenu(null);
+  }
 
   if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
@@ -99,6 +142,9 @@ function createTemplateTrainingWindow() {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'darwin') {
+    app.name = 'Compass';
+  }
   createWindow();
   handleCoordinatePreview(ipcMain);
 });
