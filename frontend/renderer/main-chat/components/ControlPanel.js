@@ -15,7 +15,9 @@ import {
   faStop,
   faMagicWandSparkles,
   faScrewdriverWrench,
-  faWandMagic
+  faWandMagic,
+  faForwardFast,
+  faBolt
 } from "@fortawesome/free-solid-svg-icons";
 
 const MODES = {
@@ -132,7 +134,7 @@ function ControlPanel({ isMinimal }) {
 
   const getModeIcon = () => {
     if (mode === MODES.MANUAL.mode) {
-      return faGear;
+      return faBolt;//faGear;
     } else if (mode === MODES.SEMI_AUTO.mode) {
       return faWandMagic;
     } else if (mode === MODES.AUTO.mode) {
@@ -158,7 +160,7 @@ function ControlPanel({ isMinimal }) {
     if (isAgentStatePlaying) {
       return { icon: faStop, loading: true, title: 'Processing...', action: handleStop };
     } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
-      return { icon: faScrewdriverWrench, title: 'Execute Pending Tools & Generate Next Action', action: handleToolsAndNextActionClick };
+      return { icon:  faForwardFast , title: 'Execute Pending Tools & Generate Next Action', action: handleToolsAndNextActionClick };//faScrewdriverWrench
     } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
       return { icon: faPlay, title: 'Process Message & Update Tools', action: handlePlayClick }; // LLM Response: new tools
     } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
@@ -241,7 +243,8 @@ function ControlPanel({ isMinimal }) {
             onClick={handleToolsClick}
             title={getToolsButtonTitle()}
           >
-            <FontAwesomeIcon icon={faWrench} />
+            <FontAwesomeIcon icon={faPlay} />
+            {/* //faWrench */}
           </button>
         )}
         <button
