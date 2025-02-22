@@ -84,7 +84,7 @@ module.exports = (mainWindow) => {
     const newY = previousBottom - WINDOW_CONFIG.MINIMAL_HEIGHT;
 
     // Add 500px offset toward bottom
-    const offsetY = newY + 500;
+    const offsetY = newY + 400;
 
     // Ensure window stays within screen bounds
     const adjustedY = Math.min(
