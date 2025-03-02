@@ -7,6 +7,9 @@ from typing import Tuple
 import logging
 from dataclasses import dataclass
 from time import time
+import cv2
+import numpy as np
+import json
 
 from compass.types.agent import ToolResult, ScalingSource
 from compass.services.state_manager import StateManager
@@ -60,6 +63,7 @@ class BaseComputerAction(ABC):
             self._save_original_screenshot(screenshot)
             
             description = None
+            screen_data = None
             if self._enable_screen_description and self.screen_parser:
                 # Run screen parsing on original screenshot before scaling
                 logger.info("Running light screen parsing on original image")
@@ -75,6 +79,9 @@ class BaseComputerAction(ABC):
                     y_scaling_factor=self._y_scaling_factor
                 )
                 description = parsed_data.description
+                # Save processed screenshot with bounding boxes
+                if parsed_data.elements:
+                    self._save_processed_screenshot(screenshot, parsed_data)
 
             has_changed = None
             if self._enable_screenshot_comparison and self._last_screenshot is not None:
@@ -139,6 +146,57 @@ class BaseComputerAction(ABC):
                 logger.info(f"Saved original screenshot with timestamp {timestamp}")
         except Exception as e:
             logger.error(f"Failed to save screenshot: {e}")
+
+    def _save_processed_screenshot(self, screenshot: Image.Image, screen_data: ScreenData) -> None:
+        """Helper method to save the processed screenshot with bounding boxes to the session directory."""
+        try:
+            history_tracker = SessionManager.get_history_tracker()
+            if history_tracker and screen_data.elements:
+                # Convert PIL Image to cv2 format
+                cv2_image = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+                
+                # Prepare data for JSON
+                bounding_boxes = []
+
+                # Draw rectangles for each detected element
+                for element in screen_data.elements:
+                    coords = element.coordinates
+                    x1, y1 = int(coords['x1']), int(coords['y1'])
+                    x2, y2 = int(coords['x2']), int(coords['y2'])
+                    
+                    # Draw green rectangle
+                    cv2.rectangle(cv2_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    
+                    # Add caption/text above the box
+                    label = element.text or element.caption or "unnamed"
+                    cv2.putText(cv2_image, label, (x1, y1-10), 
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                    # Append bounding box data
+                    bounding_boxes.append({
+                        "label": label,
+                        "coordinates": {
+                            "x1": x1,
+                            "y1": y1,
+                            "x2": x2,
+                            "y2": y2
+                        }
+                    })
+
+                # Save the annotated image
+                timestamp = history_tracker.get_timestamp_filename()
+                screenshot_path = history_tracker.screenshots_dir / f"screenshot_{timestamp}_annotated.png"
+                cv2.imwrite(str(screenshot_path), cv2_image)
+                logger.info(f"Saved annotated screenshot with timestamp {timestamp}")
+
+                # Save bounding box data as JSON
+                json_path = history_tracker.screenshots_dir / f"screenshot_{timestamp}_bounding_boxes.json"
+                with open(json_path, 'w') as json_file:
+                    json.dump(bounding_boxes, json_file, indent=4)
+                logger.info(f"Saved bounding box data as JSON with timestamp {timestamp}")
+
+        except Exception as e:
+            logger.error(f"Failed to save annotated screenshot or bounding box data: {e}")
 
     def _image_to_base64(self, image: Image.Image) -> str:
         """Helper method to convert PIL Image to base64 string"""
