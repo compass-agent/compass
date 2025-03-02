@@ -55,14 +55,27 @@ module.exports = (mainWindow) => {
     }
   });
 
-  ipcMain.on("maximize-window", () => {
+  ipcMain.on("toggle-maximize-window", () => {
     if (mainWindow) {
       if (mainWindow.isMaximized()) {
-        mainWindow.restore(); // Restore to the previous size
+        try {
+          mainWindow.unmaximize();
+        } catch (error) {
+          try {
+            mainWindow.restore();
+          } catch (restoreError) {
+            console.error("Error restoring window:", restoreError);
+          }
+        }
       } else {
-        console.log("Main Process: Maximizing the window...");
-        mainWindow.maximize();
+        try {
+          mainWindow.maximize();
+        } catch (error) {
+          console.error("Error maximizing window:", error);
+        }
       }
+    } else {
+      console.error("Main Process: mainWindow is not defined");
     }
   });
 

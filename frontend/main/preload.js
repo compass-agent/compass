@@ -70,7 +70,7 @@ contextBridge.exposeInMainWorld("electron", {
   restoreWindow: () => ipcRenderer.send("restore-window"),
   closeWindow: () => ipcRenderer.send("close-window"),
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
-  toggleMaximizeWindow: () => ipcRenderer.send("maximize-window"),
+  toggleMaximizeWindow: () => ipcRenderer.send("toggle-maximize-window"),
   minimalWindow: (isMinimal) => ipcRenderer.send("toggle-minimal-view", isMinimal),
   templateTraining: {
     saveTemplate: (data) => ipcRenderer.send("save-template", data),
