@@ -1,6 +1,6 @@
 import pyautogui
 import logging
-from typing import Optional, Tuple, Literal
+from typing import Optional, Tuple, Literal, List, Union
 import time
 from compass.types.agent import ToolResult
 from .base import BaseComputerAction
@@ -25,25 +25,49 @@ class MouseClickAction(BaseComputerAction):
 
     async def execute(self, 
                 action: Literal["left_click", "right_click", "middle_click", "double_click"],
-                coordinate: Optional[Tuple[int, int]] = None) -> ToolResult:
-        """Handle mouse click actions at the current cursor position."""
+                coordinate: Optional[Union[Tuple[int, int], List[int]]] = None,
+                text: Optional[str] = None) -> ToolResult:
+        """Handle mouse click actions at the specified coordinates.
+        
+        Args:
+            action: The type of click action to perform
+            coordinate: The [x, y] coordinates where the click should be performed
+            text: Optional key modifier (e.g., "ctrl", "shift") to hold during click
+        
+        Returns:
+            ToolResult containing screenshot and description
+        """
 
         try:
             logger.info(f"Executing click action: {action}")
-            if coordinate is not None:
-                logger.error(f"coordinate is not accepted for {action}")
-                return ToolResult(error=f"coordinate is not accepted for {action}")
             
-            # Execute click actions
+            # Process coordinates if provided
+            if coordinate is not None:
+                x, y = coordinate[0], coordinate[1]
+                logger.info(f"Clicking at coordinates: ({x}, {y})")
+                
+                # Move to the specified coordinates first
+                pyautogui.moveTo(x, y)
+            
+            # Execute click actions with optional key modifier
             if action == "double_click":
-                pyautogui.doubleClick()
+                if text:
+                    with pyautogui.hold(text):
+                        pyautogui.doubleClick()
+                else:
+                    pyautogui.doubleClick()
             else:
                 button = {
                     "left_click": "left",
                     "right_click": "right",
                     "middle_click": "middle"
                 }[action]
-                pyautogui.click(button=button)
+                
+                if text:
+                    with pyautogui.hold(text):
+                        pyautogui.click(button=button)
+                else:
+                    pyautogui.click(button=button)
                 
             logger.info(f"Click action completed: {action}")
 

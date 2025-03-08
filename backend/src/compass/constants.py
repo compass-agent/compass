@@ -10,8 +10,8 @@ MAX_TOKENS = 1024
 
 # Anthropic Provider:
 PROMPT_CACHING = True
-ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest"
-ANTHROPIC_MODEL_NAME_AUTO = "claude-3-5-sonnet-latest"
+ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-7-sonnet-20250219" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
+ANTHROPIC_MODEL_NAME_AUTO = "claude-3-7-sonnet-20250219" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
 
 # Google Provider:
 GOOGLE_MODEL_NAME = "gemini-2.0-flash-exp"

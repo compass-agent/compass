@@ -66,7 +66,7 @@ class ComputerTool(BaseTool):
     """
 
     name: Literal["computer"] = "computer"
-    api_type: Literal["computer_20241022"] = "computer_20241022"
+    api_type: Literal["computer_20250124"] = "computer_20250124" # computer_20250124  computer_20241022
     width: int
     height: int
 
@@ -92,7 +92,10 @@ Required parameters per action:
 - 'screenshot': No additional parameters needed
 - 'cursor_position': Optional 'coordinate' [x, y] to validate position
 - 'mouse_move': Requires 'coordinate' [x, y] for cursor destination
-- 'left_click', 'right_click', 'middle_click', 'double_click': No additional paramater. DO NOT provide coordinates. Call mouse_move with coordinates first.
+- 'left_click': Requires 'coordinate' [x, y], optional 'text' for key combinations (e.g., "ctrl")
+- 'right_click': Requires 'coordinate' [x, y]
+- 'middle_click': Requires 'coordinate' [x, y]
+- 'double_click': Requires 'coordinate' [x, y]
 - 'type': Requires 'text' parameter for typing full strings
 - 'key': Requires 'text' parameter for individual keystrokes""",
             "input_schema": {
@@ -115,7 +118,7 @@ Required parameters per action:
                     },
                     "text": {
                         "type": "string",
-                        "description": "Text to type or key to press for keyboard actions"
+                        "description": "Text to type, key to press for keyboard actions, or key modifier for click actions"
                     },
                     "coordinate": {
                         "type": "array",
@@ -217,7 +220,7 @@ Required parameters per action:
         if action == "screenshot":
             return await self.screenshot_action.execute()
         elif action in ("left_click", "right_click", "middle_click", "double_click"):
-            return await self.mouse_click_action.execute(action=action, coordinate=processed_coordinate)
+            return await self.mouse_click_action.execute(action=action, coordinate=processed_coordinate, text=text)
         elif action in ("key", "type"):
             return await self.keyboard_input_action.execute(action=action, text=text)
         elif action == "mouse_move":

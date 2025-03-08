@@ -15,7 +15,10 @@ IDEAS FOR IDENTIFYING UI ELEMENTS
    - Pros:
      Straightforward, easy to implement, good for small numbers of templates.
    - Cons:
-     Potentially slow if you have many templates (e.g., 1,000); can be sensitive to small visual changes.
+     Potentially slow if you have many templates (e.g., 1,000); 
+     can be sensitive to small visual changes.
+     Does not consider surrounding context, making it hard to distinguish identical elements in different contexts.
+     Limited to static elements; dynamic or slightly changing UI components may not match accurately.
 
 2. TRAIN A CUSTOM OBJECT DETECTION MODEL
    - Description:

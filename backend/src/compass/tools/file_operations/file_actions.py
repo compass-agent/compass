@@ -26,7 +26,7 @@ class FileState:
     exists: bool
 
 class FileOperationsTool(BaseTool):
-    api_type: Literal["text_editor_20241022"] = "text_editor_20241022"
+    api_type: Literal["text_editor_20250124"] = "text_editor_20250124"
     name: Literal["str_replace_editor"] = "str_replace_editor"
 
     def __init__(self):

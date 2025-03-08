@@ -106,25 +106,57 @@ export const TOOL_ACTION_MAPPING = {
 
   // Mouse clicks
   left_click: {
-    label: () => <><FaMouse /> left click</>,
+    label: (tool) => {
+      if (!tool.input?.coordinate) return <><FaMouse /> left click</>;
+      const [x, y] = tool.input.coordinate;
+      return (
+        <>
+          <FaMouse /> left click <CoordinatePreviewButton x={x} y={y} />
+        </>
+      );
+    },
     description: (tool) => tool.input?.coordinate ? 
       `Click at coordinates (${tool.input.coordinate[0]}, ${tool.input.coordinate[1]})` : 
       'Left mouse click'
   },
   right_click: {
-    label: () => <><FaMouse /> right click</>,
+    label: (tool) => {
+      if (!tool.input?.coordinate) return <><FaMouse /> right click</>;
+      const [x, y] = tool.input.coordinate;
+      return (
+        <>
+          <FaMouse /> right click <CoordinatePreviewButton x={x} y={y} />
+        </>
+      );
+    },
     description: (tool) => tool.input?.coordinate ? 
       `Right click at coordinates (${tool.input.coordinate[0]}, ${tool.input.coordinate[1]})` : 
       'Right mouse click'
   },
   middle_click: {
-    label: () => <><FaMouse /> middle click</>,
+    label: (tool) => {
+      if (!tool.input?.coordinate) return <><FaMouse /> middle click</>;
+      const [x, y] = tool.input.coordinate;
+      return (
+        <>
+          <FaMouse /> middle click <CoordinatePreviewButton x={x} y={y} />
+        </>
+      );
+    },
     description: (tool) => tool.input?.coordinate ? 
       `Middle click at coordinates (${tool.input.coordinate[0]}, ${tool.input.coordinate[1]})` : 
       'Middle mouse click'
   },
   double_click: {
-    label: () => <><FaMouse /> double click</>,
+    label: (tool) => {
+      if (!tool.input?.coordinate) return <><FaMouse /> double click</>;
+      const [x, y] = tool.input.coordinate;
+      return (
+        <>
+          <FaMouse /> double click <CoordinatePreviewButton x={x} y={y} />
+        </>
+      );
+    },
     description: (tool) => tool.input?.coordinate ? 
       `Double click at coordinates (${tool.input.coordinate[0]}, ${tool.input.coordinate[1]})` : 
       'Double mouse click'

@@ -19,7 +19,7 @@ from compass.key import ANTHROPIC_API_KEY
 from compass.utils.utility import log_execution_time
 from compass.utils.utility import TokenTracker
 
-COMPUTER_USE_BETA_FLAG = "computer-use-2024-10-22"
+COMPUTER_USE_BETA_FLAG = "computer-use-2025-01-24" # computer-use-2025-01-24  computer-use-2024-10-22
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class AnthropicLLM(BaseLLMInterface):
                 "name": tool["name"],
                 **({"display_width_px": tool["display_width_px"], 
                     "display_height_px": tool["display_height_px"]} 
-                   if tool["type"] == "computer_20241022" else {})
+                   if tool["type"] == "computer_20250124" else {})
             }
             if tool["name"] in ["computer", "str_replace_editor"]
             else tool
