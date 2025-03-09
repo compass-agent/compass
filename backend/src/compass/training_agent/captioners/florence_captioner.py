@@ -12,7 +12,7 @@ class FlorenceCaptioner(BaseCaptioner):
         self.logger = logging.getLogger("florence_captioner")
         self.logger.setLevel(logging.INFO)
         
-        config_path = Path(__file__).parent.parent / 'config.yaml'
+        config_path = Path(__file__).parent.parent.parent / 'tools' / 'screen_parser' / 'config.yaml'
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         

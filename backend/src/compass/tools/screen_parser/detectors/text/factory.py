@@ -2,8 +2,6 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any
 from .base import BaseTextDetector
-from .paddle_detector import PaddleTextDetector
-from .easyocr_detector import EasyOCRDetector
 from .google_detector import GoogleCloudTextDetector
 
 class TextDetectorFactory:
@@ -30,11 +28,7 @@ class TextDetectorFactory:
         config = TextDetectorFactory.load_config()
         detector_type = config['default']
         
-        if detector_type == 'easyocr':
-            return EasyOCRDetector()
-        elif detector_type == 'paddle':
-            return PaddleTextDetector()
-        elif detector_type == 'google':
+        if detector_type == 'google':
             return GoogleCloudTextDetector()
         
         raise ValueError(f"Unknown detector type: {detector_type}") 

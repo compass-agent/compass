@@ -13,7 +13,6 @@ template_matching:
 icon_detection:
   default: "template"
   available_detectors:
-    - yolo
     - template
   yolo:
     model_path: "src/compass/tools/screen_parser/data/icon_detect_v1_5/model_v1_5.pt"
@@ -27,35 +26,15 @@ icon_detection:
 text_detection:
   default: "google"
   available_detectors:
-    - easyocr
-    - paddle
     - google
-  easyocr:
-    languages: ["en"]
-    gpu: false
-  paddle:
-    use_angle_cls: false
-    use_gpu: false
-    max_batch_size: 32
-    use_dilation: true
-    det_db_score_mode: "fast"
-    rec_batch_num: 32
   google:
-    region: "us-west1" 
+    region: "us-west1"
 
 captioning:
   enabled: true
   default: "claude"
   available_captioners:
-    - blip2
-    - florence
     - claude
-  blip2:
-    model_path: "src/compass/tools/screen_parser/data/blip2-opt-2.7b"
-    batch_size: 32
-  florence:
-    model_path: "src/compass/tools/screen_parser/data/Florence-2-base"
-    batch_size: 32
   claude:
     model: "claude-3-5-sonnet-20241022"
     batch_size: 1

@@ -3,7 +3,7 @@ import base64
 from typing import Dict, List, Protocol
 import numpy as np
 import cv2
-from compass.tools.screen_parser.detectors.icon.yolo_detector import YOLOIconDetector
+from compass.training_agent.detectors.icon.yolo_detector import YOLOIconDetector
 from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
 from compass.tools.screen_parser.models import ScreenData, BoundingBox
 from compass.tools.screen_parser.utils.box_utils import calculate_iou

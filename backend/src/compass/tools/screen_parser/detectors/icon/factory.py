@@ -2,7 +2,6 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any
 from .base import BaseIconDetector
-from .yolo_detector import YOLOIconDetector
 
 class IconDetectorFactory:
     @staticmethod
@@ -27,8 +26,5 @@ class IconDetectorFactory:
         """
         config = IconDetectorFactory.load_config()
         detector_type = config['default']
-        
-        if detector_type == 'yolo':
-            return YOLOIconDetector()
         
         raise ValueError(f"Unknown detector type: {detector_type}") 

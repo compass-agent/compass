@@ -1,7 +1,7 @@
 from .base import BaseIconDetector
-from .factory import IconDetectorFactory
+from .yolo_detector import YOLOIconDetector
 
 __all__ = [
     'BaseIconDetector',
-    'IconDetectorFactory'
+    'YOLOIconDetector'
 ] 

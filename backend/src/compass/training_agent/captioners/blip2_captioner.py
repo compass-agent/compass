@@ -17,7 +17,7 @@ class BLIP2Captioner(BaseCaptioner):
         logger.setLevel(logging.INFO)
         
         # Load config to get device setting and model path
-        config_path = Path(__file__).parent.parent / 'config.yaml'
+        config_path = Path(__file__).parent.parent.parent / 'tools' / 'screen_parser' / 'config.yaml'
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         

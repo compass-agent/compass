@@ -12,8 +12,6 @@ numpy
 wheel
 pandas
 PyYAML
-paddlepaddle==2.6.2
-paddleocr
 ultralytics
 easyocr
 google-cloud

@@ -82,9 +82,28 @@ backend/env/
 .env
 
 # Screen parser data
-backend/src/compass/tools/screen_parser/data/*
-!backend/src/compass/tools/screen_parser/data/icon_detect_v1_5/
+backend/src/compass/tools/screen_parser/data/**/*.pt
+backend/src/compass/tools/screen_parser/data/**/*.safetensors
+backend/src/compass/tools/screen_parser/data/**/*.pth
+backend/src/compass/tools/screen_parser/data/**/*.onnx
+backend/src/compass/tools/screen_parser/data/**/*.bin
 backend/src/compass/tools/screen_parser/imgs/
+
+# Training agent data
+backend/src/compass/training_agent/data/**/*.pt
+backend/src/compass/training_agent/data/**/*.safetensors
+backend/src/compass/training_agent/data/**/*.pth
+backend/src/compass/training_agent/data/**/*.onnx
+backend/src/compass/training_agent/data/**/*.bin
+
+# Any other model files in data directories
+**/data/**/*.pt
+**/data/**/*.safetensors
+**/data/**/*.pth
+**/data/**/*.onnx
+**/data/**/*.bin
+
+# Key file
 backend/src/compass/key.py
 !config/
 experiments/
