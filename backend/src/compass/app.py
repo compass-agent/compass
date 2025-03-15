@@ -1,11 +1,19 @@
 import eventlet
 import os
 
-# Configure eventlet for debugging
-if os.environ.get('FLASK_DEBUG') == '1':
-    eventlet.monkey_patch(all=True, thread=False, os=True)  # Don't patch threading in debug mode
-else:
-    eventlet.monkey_patch(all=True, thread=True, os=True)
+# Windows-specific optimizations
+eventlet.monkey_patch(
+    os=False,  # Reduce OS-level monkey patching on Windows
+    select=True,
+    socket=True,
+    thread=False,  # Don't patch threading by default
+    time=True
+)
+
+# Configure DNS resolution for Windows
+if os.name == 'nt':  # Windows-specific configuration
+    import dns.resolver
+    dns.resolver.get_default_resolver().cache = dns.resolver.Cache()
 
 import signal
 import sys
@@ -24,7 +32,7 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 app.config.from_object('compass.config.config.Config')
 
-# Initialize SocketIO with debug-specific settings
+# Initialize SocketIO with Windows-optimized settings
 socketio = SocketIO(
     app, 
     cors_allowed_origins="*",
@@ -34,7 +42,9 @@ socketio = SocketIO(
     ping_timeout=60,
     ping_interval=25,
     debug=True,
-    async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True  # Disable async handlers in debug mode
+    async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True,  # Disable async handlers in debug mode
+    max_http_buffer_size=1e4,  # Reduce buffer size
+    manage_session=False  # Disable session management if not needed
 )
 
 # Now import application modules

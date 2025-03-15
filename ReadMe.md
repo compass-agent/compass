@@ -118,3 +118,14 @@ The above commands will concurrently run:
    ```bash
    git push origin feature/your-feature-name
    ```
+
+## Running the Backend Server
+
+### Windows (Optimized Performance)
+For better performance on Windows systems, run the backend server using:
+```powershell
+cd backend
+$env:EVENTLET_NO_GREENDNS="yes"; $env:EVENTLET_THREADPOOL_SIZE="20"; $env:EVENTLET_WEBSOCKET="false"; $env:PYTHONPATH="src"; ./venv/Scripts/python.exe src/compass/app.py
+```
+
+This command includes optimizations for Windows systems to improve startup time and overall performance.
