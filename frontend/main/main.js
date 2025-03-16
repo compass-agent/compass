@@ -97,7 +97,7 @@ function createWindow() {
 
   if (process.env.NODE_ENV === "development") {
     // Comment out or remove this line to stop opening dev tools
-    mainWindow.webContents.openDevTools(); //{ mode: 'detach' }
+    mainWindow.webContents.openDevTools({ mode: 'detach' }); //{ mode: 'detach' }
     
     // Install React DevTools (you can keep this)
     installExtension(REACT_DEVELOPER_TOOLS)
