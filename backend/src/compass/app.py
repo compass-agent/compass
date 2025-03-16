@@ -50,9 +50,9 @@ socketio = SocketIO(
 # Now import application modules
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
-from compass.utils.utility import HistoryLogger
 from compass.training_agent.training_agent import TrainingAgent
 from compass.services.workflow_manager import WorkflowManager
+from compass.constants import DEFAULT_AGENT_TYPE
 
 # Initialize services
 training_agent = TrainingAgent()
@@ -188,7 +188,7 @@ def handle_new_chat(data):
     logger.info('Starting new chat')
     try:
         # Update state manager with new agent type
-        agent_name = data.get('agent_name', 'FreeCAD')  # Default to FreeCAD if not specified
+        agent_name = data.get('agent_name', DEFAULT_AGENT_TYPE)  # Use default from constants if not specified
         state_manager.update_state({'agentType': agent_name})
         
         # Reinitialize just the agent service

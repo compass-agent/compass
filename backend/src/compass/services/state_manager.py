@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 import logging
+from compass.constants import DEFAULT_AGENT_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class AgentState:
     status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
     pending_tools: int = 0
-    agent_type: str = "FreeCAD"  # Default agent type
+    agent_type: str = DEFAULT_AGENT_TYPE  # Use default agent type from constants
 
 class StateManager:
     def __init__(self, socketio):

@@ -2,7 +2,7 @@ import logging
 import asyncio
 from typing import Any, cast, Union
 
-from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool
+from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperationsTool, SAPComTool
 from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_TOOLS, LLM_PROVIDER
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
@@ -47,6 +47,8 @@ class AgentService:
             tools.append(FileOperationsTool())
         if "bash" in agent_tool_config:
             tools.append(BashExecutor())
+        if "sap_com" in agent_tool_config:
+            tools.append(SAPComTool())
         
         self.tool_collection = ToolCollection(*tools)
         self.llm = LLMFactory.create_llm(

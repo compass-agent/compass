@@ -2,6 +2,7 @@ import os
 
 # Agent constants:
 MAX_ITERATIONS = 20 # Maximum number of iterations for the agent in auto Mode
+DEFAULT_AGENT_TYPE = "structural-engineer"  # Default agent type to use
 
 
 # LLM constants:
@@ -10,8 +11,8 @@ MAX_TOKENS = 1024
 
 # Anthropic Provider:
 PROMPT_CACHING = True
-ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-7-sonnet-20250219" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
-ANTHROPIC_MODEL_NAME_AUTO = "claude-3-7-sonnet-20250219" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
+ANTHROPIC_MODEL_NAME_MANUAL = "claude-3-5-sonnet-latest" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
+ANTHROPIC_MODEL_NAME_AUTO = "claude-3-5-sonnet-latest" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
 
 # Google Provider:
 GOOGLE_MODEL_NAME = "gemini-2.0-flash-exp"
@@ -46,7 +47,8 @@ HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
 AGENT_TOOLS = {
     "OpenFoam": ["bash", "file"],
     "FreeCAD": ["computer", "bash", "file"],
-    "Generic": ["computer", "file", "bash"]
+    "Generic": ["computer", "file", "bash"],
+    "structural-engineer": ["sap_com"]  # Needs all these tools
 }
 
 # LLM Provider Configuration
