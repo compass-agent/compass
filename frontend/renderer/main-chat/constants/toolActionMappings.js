@@ -285,6 +285,63 @@ export const TOOL_ACTION_MAPPING = {
     }
   },
   
+  // SAP2000 tool actions
+  run_sap_com_python: {
+    label: (tool) => <><FaBuilding /> SAP Script</>,
+    description: (tool) => ({
+      text: 'Execute SAP2000 Python script',
+      component: (
+        <div style={{ fontFamily: 'monospace' }}>
+          <strong>Script:</strong>
+          <pre style={{ 
+            backgroundColor: 'rgba(20, 20, 20, 0.8)', 
+            color: '#e0e0e0',
+            padding: '8px',
+            borderRadius: '5px',
+            marginTop: '4px',
+            border: 'none',
+            overflow: 'auto'
+          }}>
+            {tool.input.script_command}
+          </pre>
+        </div>
+      )
+    })
+  },
+  
+  get_model_info: {
+    label: (tool) => <><FaBuilding /> SAP Model Info</>,
+    description: (tool) => ({
+      text: 'Request information about the current SAP2000 model',
+      component: (
+        <div style={{ fontFamily: 'monospace' }}>
+          <strong>Action:</strong> Retrieving model information
+        </div>
+      )
+    })
+  },
+  
+  query_api_info: {
+    label: (tool) => <><FaBuilding /> SAP API Query</>,
+    description: (tool) => ({
+      text: 'Query SAP2000 API documentation',
+      component: (
+        <div style={{ fontFamily: 'monospace' }}>
+          <strong>Queries:</strong>
+          <ul style={{ 
+            margin: '4px 0 0 0',
+            paddingLeft: '24px'
+          }}>
+            {tool.input.query?.map((q, idx) => (
+              <li key={idx}>{q}</li>
+            ))}
+          </ul>
+        </div>
+      )
+    })
+  },
+  
+  // Keep the original sap_com entry as fallback
   sap_com: {
     label: (tool) => {
       const actionLabels = {
@@ -305,10 +362,13 @@ export const TOOL_ACTION_MAPPING = {
               <div style={{ fontFamily: 'monospace' }}>
                 <strong>Script:</strong>
                 <pre style={{ 
-                  backgroundColor: '#f5f5f5', 
+                  backgroundColor: 'rgba(20, 20, 20, 0.8)', 
+                  color: '#e0e0e0',
                   padding: '8px',
-                  borderRadius: '4px',
-                  marginTop: '4px'
+                  borderRadius: '5px',
+                  marginTop: '4px',
+                  border: 'none',
+                  overflow: 'auto'
                 }}>
                   {tool.input.script_command}
                 </pre>

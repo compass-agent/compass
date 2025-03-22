@@ -220,6 +220,8 @@ function ChatHistory({onEditorWidthChange }) {
 
   const renderToolUse = (tool) => {
     console.log("renderToolUse - Received tool:", tool);
+    console.log("renderToolUse - Tool name:", tool.name);
+    console.log("renderToolUse - Tool input:", tool.input);
     console.log("Rendering WorkspaceWindow:", isWorkspaceOpen, editorTabs);
 
     const toolId = tool.id;
@@ -238,6 +240,10 @@ function ChatHistory({onEditorWidthChange }) {
       script = formatScriptForPlatform(window.electron.platform, script);
       console.log("renderToolUse - script:", script);
     }
+
+    // Debug the tool mapping itself
+    console.log("TOOL_ACTION_MAPPING keys:", Object.keys(TOOL_ACTION_MAPPING));
+    console.log("Looking up tool in mapping:", TOOL_ACTION_MAPPING[action]);
 
     const toolInfo = TOOL_ACTION_MAPPING[action] || {
       label: "Unknown Action",
