@@ -30,15 +30,14 @@ class SAPComTool(BaseTool):
         """Attempt to connect to a running SAP2000 instance."""
         try:
             import comtypes.client
-            
+            import comtypes.gen.SAP2000v1
             logger.info("Attempting to connect to SAP2000...")
-            
-            # Using Helper object to connect to SAP2000
-            helper = comtypes.client.CreateObject("SAP2000v1.Helper")
-            helper.CreateObject("SAP2000.SapObject")
+            helper = comtypes.client.CreateObject('SAP2000v1.Helper')
+            helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
             self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
             self.sap_model = self.sap_object.SapModel
-            
+            APIPath = R'C:\Users\sadoughi\Projects\compass\experiment'
+            self.ModelPath = APIPath + os.sep + 'compass_model.sdb'
             # Test if the connection is valid by getting program info
             info = self.sap_model.GetProgramInfo()
             
@@ -57,7 +56,7 @@ class SAPComTool(BaseTool):
     async def __call__(
         self,
         *,
-        script: str
+        sap_com_python_script: str
     ) -> ToolResult:
         """
         Execute the given Python script with direct access to the SAP2000 model.
@@ -94,12 +93,13 @@ class SAPComTool(BaseTool):
                 'sys': sys,
                 'traceback': traceback,
                 'os': os,
-                'StringIO': StringIO
+                'StringIO': StringIO,
+                'ModelPath': self.ModelPath
             }
             
             try:
                 # Execute the user script with access to the SAP objects
-                exec(script, exec_globals)
+                exec(sap_com_python_script, exec_globals)
                 result_text = stdout_buffer.getvalue()
                 error_text = stderr_buffer.getvalue()
             except Exception as e:
@@ -132,32 +132,26 @@ class SAPComTool(BaseTool):
             "description": """Execute Python scripts to interact with a running SAP2000 instance via its COM API.
 The connection to SAP2000 is established when the agent starts, so you don't need to check the connection.
 The script is given direct access to the SAP2000 model via the 'sap_model' variable.
+available variables:
+- sap_model: The SAP2000 model object
+- sap_object: The SAP2000 object
+- os: The os module
+- ModelPath: The path to the model file
 
-Example format for scripts:
-```python
-# Create a new model
-ret = sap_model.File.NewBlank()
 
-# Define units (kip, in)
-ret = sap_model.SetPresentUnits(6)  
-
-# Add a point at coordinates (0,0,0)
-ret = sap_model.PointObj.AddCartesian(0, 0, 0, "P1")
-
-# Get information about the model
-info = sap_model.GetProgramInfo()
-print(f"SAP2000 Version: {info[0]}")
-```
-Always capture return values with 'ret = ' and include proper error handling.
-Always format code with proper indentation and helpful comments.""",
+Important notes:
+- Always save the model before running any analysis. Otherwise the analysis wont be performed. A following command is sufficient:
+ret = sap_model.File.Save(ModelPath)
+- Always try to return the "ret" value of the command in the script and print it. So you can check if the command was successful.
+""",
             "input_schema": {
                 "type": "object",
                 "properties": {
-                    "script": {
+                    "sap_com_python_script": {
                         "type": "string",
                         "description": "The Python script to execute with access to SAP2000 API (via sap_model variable). Format properly with indentation and comments."
                     }
                 },
-                "required": ["script"]
+                "required": ["sap_com_python_script"]
             }
         } # type: ignore 

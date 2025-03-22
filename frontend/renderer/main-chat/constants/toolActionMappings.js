@@ -1,5 +1,5 @@
 import CoordinatePreviewButton from '../components/preview/components/CoordinatePreviewButton';
-import { FaMouse, FaKeyboard, FaFile, FaPlus, FaEdit, FaArrowRight, FaUndo, FaTerminal, FaCode, FaCube } from 'react-icons/fa';
+import { FaMouse, FaKeyboard, FaFile, FaPlus, FaEdit, FaArrowRight, FaUndo, FaTerminal, FaCode, FaCube, FaBuilding } from 'react-icons/fa';
 
 // Helper function to get filename from path
 const getFileName = (filepath) => {
@@ -284,6 +284,29 @@ export const TOOL_ACTION_MAPPING = {
               marginTop: '4px'
             }}>
               {tool.input.script}
+            </pre>
+          </div>
+        )
+      };
+    }
+  },
+  
+  sap_com: {
+    label: (tool) => <><FaBuilding /> SAP Model</>,
+    description: (tool) => {
+      if (!tool.input) return 'Execute SAP2000 modeling script';
+      return {
+        text: 'Execute SAP2000 modeling script',
+        component: (
+          <div style={{ fontFamily: 'monospace' }}>
+            <strong>Script:</strong>
+            <pre style={{ 
+              backgroundColor: '#f5f5f5', 
+              padding: '8px',
+              borderRadius: '4px',
+              marginTop: '4px'
+            }}>
+              {tool.input.sap_com_python_script}
             </pre>
           </div>
         )

@@ -107,3 +107,4 @@ backend/src/compass/training_agent/data/**/*.bin
 backend/src/compass/key.py
 !config/
 experiments/
+experiment/

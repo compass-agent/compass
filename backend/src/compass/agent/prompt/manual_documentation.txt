@@ -1,0 +1,144 @@
+<SapObject.SapModel.PropMaterial.SetMaterial>
+<Syntax>SapObject.SapModel.PropMaterial.SetMaterial</Syntax>
+<VB6Procedure>Function SetMaterial(ByVal Name As String, ByVal MatTypeAs eMatType, Optional ByVal Color As Long = -1, Optional ByVal Notes AsString = "", Optional ByVal GUID As String = "") AsLong</VB6Procedure>
+<Parameters>
+<Name>The name of an existing or new material property. Ifthis is an existing property, that property is modified; otherwise, anew property is added.</Name>
+<MatType>This is one of the following items in the eMatType enumeration.
+eMatType_Steel= 1
+eMatType_Concrete= 2
+eMatType_NoDesign= 3
+eMatType_Aluminum= 4
+eMatType_ColdFormed= 5
+eMatType_Rebar= 6
+eMatType_Tendon= 7</MatType>
+</Parameters>
+</SapObject.SapModel.PropMaterial.SetMaterial>
+
+<SapObject.SapModel.PropMaterial.SetMPIsotropic>
+<Syntax>SapObject.SapModel.PropMaterial.SetMPIsotropic</Syntax>
+<VB6Procedure>Function SetMPIsotropic(ByVal Name As String, ByVal e As Double, ByVal u As Double, ByVal a As Double, Optional ByVal Temp As Double = 0) As Long</VB6Procedure>
+<Parameters>
+<Name>The name of an existing material property.</Name>
+<e>The modulus of elasticity. [F/L2]</e>
+<u>Poisson's ratio.</u>
+<a>The thermal coefficient. [1/T]</a>
+<Temp>This item applies only if the specified material has properties that are temperature dependent. That is, it applies only if properties are specified for the material at more than one temperature.
+This item is the temperature at which the specified data applies. The temperature must have been defined previously for the material.</Temp>
+</Parameters>
+</SapObject.SapModel.PropMaterial.SetMPIsotropic>
+
+<SapObject.SapModel.PropFrame.SetRectangle>
+<Syntax>SapObject.SapModel.PropFrame.SetRectangle</Syntax>
+<VB6Procedure>Function SetRectangle(ByVal Name As String, ByVal MatProp As String, ByVal t3 As Double, ByVal t2 As Double, Optional ByVal Color As Long = -1, Optional ByVal Notes As String = "", Optional ByVal GUID As String = "") As Long</VB6Procedure>
+<Parameters>
+<Name>The name of an existing or new frame section property. If this is an existing property, that property is modified; otherwise, a new property is added.</Name>
+<MatProp>The name of the material property for the section.</MatProp>
+<t3>The section depth. [L]</t3>
+<t2>The section width. [L]</t2>
+<Color>The display color assigned to the section. If Color is specified as -1, the program will automatically assign a color.</Color>
+<Notes>The notes, if any, assigned to the section.</Notes>
+<GUID>The GUID (global unique identifier), if any, assigned to the section. If this item is input as Default, the program assigns a GUID to the section.</GUID>
+</Parameters>
+</SapObject.SapModel.PropFrame.SetRectangle>
+
+<SapObject.SapModel.PointObj.SetRestraint>
+<Syntax>SapObject.SapModel.PointObj.SetRestraint</Syntax>
+<VB6Procedure>Function SetRestraint(ByVal Name As String, ByRef Value() As Boolean, Optional ByVal ItemType As eItemType = object) As Long</VB6Procedure>
+<Parameters>
+<Name>The name of an existing point object or group depending on the value of the ItemType item.</Name>
+<Value>This is an array of six restraint values.
+Value(0) = U1
+Value(1) = U2
+Value(2) = U3
+Value(3) = R1
+Value(4) = R2
+Value(5) = R3</Value>
+<ItemType>This is one of the following items in the eItemType enumeration:
+Object = 0
+Group = 1
+SelectedObjects = 2
+If this item is Object, the restraint assignment is made to the point object specified by the Name item.
+If this item is Group, the restraint assignment is made to all point objects in the group specified by the Name item.
+If this item is SelectedObjects, the restraint assignment is made to all selected point objects and the Name item is ignored.</ItemType>
+</Parameters>
+<Remarks>This function assigns the restraint assignments for a point object. The restraint assignments are always set in the point local coordinate system.
+The function returns zero if the restraint assignments are successfully assigned, otherwise it returns a nonzero value.</Remarks>
+</SapObject.SapModel.PointObj.SetRestraint>
+
+<SapObject.SapModel.LoadPatterns.Add>
+<Syntax>SapObject.SapModel.LoadPatterns.Add</Syntax>
+<VB6Procedure>Function Add(ByVal Name As String, ByVal MyType As eLoadPatternType, Optional ByVal SelfWTMultiplier As Double = 0, Optional ByVal AddLoadCase As Boolean = True) As Long</VB6Procedure>
+<Parameters>
+<Name>The name for the new load pattern.</Name>
+<MyType>This is one of the following items in the eLoadPatternType enumeration:
+LTYPE_DEAD = 1
+LTYPE_SUPERDEAD = 2
+LTYPE_LIVE = 3
+LTYPE_REDUCELIVE = 4
+LTYPE_QUAKE = 5
+LTYPE_WIND= 6
+LTYPE_SNOW = 7
+LTYPE_OTHER = 8
+LTYPE_MOVE = 9
+LTYPE_TEMPERATURE = 10
+LTYPE_ROOFLIVE = 11
+LTYPE_NOTIONAL = 12
+LTYPE_PATTERNLIVE = 13
+LTYPE_WAVE= 14
+LTYPE_BRAKING = 15
+LTYPE_CENTRIFUGAL = 16
+LTYPE_FRICTION = 17
+LTYPE_ICE = 18
+LTYPE_WINDONLIVELOAD = 19
+LTYPE_HORIZONTALEARTHPRESSURE = 20
+LTYPE_VERTICALEARTHPRESSURE = 21
+LTYPE_EARTHSURCHARGE = 22
+LTYPE_DOWNDRAG = 23
+LTYPE_VEHICLECOLLISION = 24
+LTYPE_VESSELCOLLISION = 25
+LTYPE_TEMPERATUREGRADIENT = 26
+LTYPE_SETTLEMENT = 27
+LTYPE_SHRINKAGE = 28
+LTYPE_CREEP = 29
+LTYPE_WATERLOADPRESSURE = 30
+LTYPE_LIVELOADSURCHARGE = 31
+LTYPE_LOCKEDINFORCES = 32
+LTYPE_PEDESTRIANLL = 33
+LTYPE_PRESTRESS = 34
+LTYPE_HYPERSTATIC = 35
+LTYPE_BOUYANCY = 36
+LTYPE_STREAMFLOW = 37
+LTYPE_IMPACT = 38
+LTYPE_CONSTRUCTION = 39</MyType>
+<SelfWTMultiplier>The self weight multiplier for the new load pattern.</SelfWTMultiplier>
+<AddLoadCase>If this item is True, a linear static load case corresponding to the new load pattern is added.</AddLoadCase>
+</Parameters>
+<Remarks>This function adds a new load pattern.</Remarks>
+</SapObject.SapModel.LoadPatterns.Add>
+
+<SapObject.SapModel.PointObj.SetLoadForce>
+<Syntax>SapObject.SapModel.PointObj.SetLoadForce</Syntax>
+<VB6Procedure>Function SetLoadForce(ByVal Name As String, ByVal LoadPat As String, ByRef Value() As Double, Optional ByVal Replace As Boolean = False, Optional ByVal CSys As String = "Global", Optional ByVal ItemType As eItemType = Object) As Long</VB6Procedure>
+<Parameters>
+<Name>The name of an existing point object or group depending on the value of the ItemType item.</Name>
+<LoadPat>The name of the load pattern for the point load.</LoadPat>
+<Value>This is an array of six point load values.
+Value(0) = F1 [F]
+Value(1) = F2 [F]
+Value(2) = F3 [F]
+Value(3) = M1 [FL]
+Value(4) = M2 [FL]
+Value(5) = M3 [FL]</Value>
+<Replace>If this item is True, all previous point loads, if any, assigned to the specified point object(s) in the specified load pattern are deleted before making the new assignment.</Replace>
+<CSys>The name of the coordinate system for the considered point load. This is Local or the name of a defined coordinate system.</CSys>
+<ItemType>This is one of the following items in the eItemType enumeration:
+Object = 0
+Group = 1
+SelectedObjects = 2
+If this item is Object, the load assignment is made to the point object specified by the Name item.
+If this item is Group, the load assignment is made to all point objects in the group specified by the Name item.
+If this item is SelectedObjects, the load assignment is made to all selected point objects and the Name item is ignored.</ItemType>
+</Parameters>
+<Remarks>This function makes point load assignments to point objects.</Remarks>
+</SapObject.SapModel.PointObj.SetLoadForce>
+ 
