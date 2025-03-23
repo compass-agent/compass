@@ -1,7 +1,22 @@
-import eventlet
+import logging
 import os
 
+import dns.resolver
+
+os.environ['EVENTLET_NO_GREENDNS'] = 'yes' 
+
+import os
+import sys
+
+# Configure logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+import eventlet
+
 # Windows-specific optimizations
+logger.info("==== Applying eventlet monkey patching ====")
 eventlet.monkey_patch(
     os=False,  # Reduce OS-level monkey patching on Windows
     select=True,
@@ -10,21 +25,19 @@ eventlet.monkey_patch(
     time=True
 )
 
-# Configure DNS resolution for Windows
+
+# Windows DNS configuration
 if os.name == 'nt':  # Windows-specific configuration
-    import dns.resolver
-    dns.resolver.get_default_resolver().cache = dns.resolver.Cache()
+    try:
+        import dns.resolver
+        dns.resolver.get_default_resolver().cache = dns.resolver.Cache()
+        logger.info("✓ DNS resolver cache configured")
+    except Exception as dns_error:
+        logger.warning(f"✗ Failed to configure DNS resolver: {dns_error}")
 
-import signal
-import sys
-import logging
 import asyncio
+import signal
 
-# Configure logging before other imports
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Flask and SocketIO imports
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 
@@ -49,9 +62,9 @@ socketio = SocketIO(
 
 # Now import application modules
 from compass.agent.agent import AgentService
+from compass.constants import DEFAULT_AGENT_TYPE
 from compass.services.state_manager import StateManager
 from compass.services.workflow_manager import WorkflowManager
-from compass.constants import DEFAULT_AGENT_TYPE
 
 # Initialize services
 state_manager = StateManager(socketio)
