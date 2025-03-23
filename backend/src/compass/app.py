@@ -50,12 +50,10 @@ socketio = SocketIO(
 # Now import application modules
 from compass.agent.agent import AgentService
 from compass.services.state_manager import StateManager
-from compass.training_agent.training_agent import TrainingAgent
 from compass.services.workflow_manager import WorkflowManager
 from compass.constants import DEFAULT_AGENT_TYPE
 
 # Initialize services
-training_agent = TrainingAgent()
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
 workflow_manager = WorkflowManager()
@@ -149,36 +147,6 @@ def handle_execute_tool_and_generate_action():
         logger.error(f"Error in combined operation: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
-@socketio.on('upload_screenshot')
-def handle_screenshot_upload(data):
-    try:
-        result = training_agent.process_screenshot(
-            image_data=data['image'],
-            agent_name=data['agent_name']
-        )
-        emit('detection_result', result)
-    except Exception as e:
-        logger.error(f"Error processing screenshot: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
-@socketio.on('save_templates')
-def handle_save_templates(data):
-    try:
-        # First save the full page once
-        # training_agent.save_page(
-        #     image_data=data['image'],
-        #     agent_name=data['agent_name'],
-        #     page_name=data['page_name']
-        # )
-        
-        # Then save all templates
-        results = training_agent.save_templates(data)
-        
-        emit('templates_saved', {'success': True, 'results': results})
-    except Exception as e:
-        logger.error(f"Error saving templates: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
 @socketio.on('ping')
 def handle_ping():
     emit('pong')
@@ -199,17 +167,6 @@ def handle_new_chat(data):
         logger.error(f"Error starting new chat: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
-@socketio.on('get_screenshots')
-def handle_get_screenshots(data):
-    try:
-        screenshots = training_agent.get_screenshots(
-            agent_name=data['agent_name']
-        )
-        emit('screenshots_list', {'screenshots': screenshots})
-    except Exception as e:
-        logger.error(f"Error getting screenshots: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
 @socketio.on('get_workflows')
 def handle_get_workflows():
     logger.info('Received get_workflows request')
@@ -220,18 +177,6 @@ def handle_get_workflows():
         logger.info('Successfully sent workflows_list event')
     except Exception as e:
         logger.error(f"Error getting workflows: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
-@socketio.on('get_agents')
-def handle_get_agents():
-    logger.info('Received get_agents request')
-    try:
-        agents = training_agent.get_agent_names()
-        logger.info(f'Retrieved agents: {agents}')
-        emit('agents_list', {'agents': agents})
-        logger.info('Successfully sent agents_list event')
-    except Exception as e:
-        logger.error(f"Error getting agents: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on_error()
