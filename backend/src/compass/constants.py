@@ -7,7 +7,7 @@ DEFAULT_AGENT_TYPE = "structural-engineer"  # Default agent type to use
 
 # LLM constants:
 # Generic:
-MAX_TOKENS = 1024
+MAX_TOKENS = 4096
 
 # Anthropic Provider:
 PROMPT_CACHING = True
