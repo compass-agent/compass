@@ -81,7 +81,7 @@ def handle_connect():
     emit('status', {'data': 'Connected to server', 'sid': request.sid})  # type: ignore
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect(reason):
     logger.info(f'Client disconnected with sid: {request.sid}')  # type: ignore
 
 @socketio.on('message')
@@ -212,26 +212,26 @@ def handle_get_screenshots(data):
 
 @socketio.on('get_workflows')
 def handle_get_workflows():
-    logger.info('🔍 Received get_workflows request')
+    logger.info('Received get_workflows request')
     try:
         workflows = workflow_manager.get_workflow_names()
-        logger.info(f'📋 Retrieved workflows: {workflows}')
+        logger.info(f'Retrieved workflows: {workflows}')
         emit('workflows_list', {'workflows': workflows})
-        logger.info('✅ Successfully sent workflows_list event')
+        logger.info('Successfully sent workflows_list event')
     except Exception as e:
-        logger.error(f"❌ Error getting workflows: {e}", exc_info=True)
+        logger.error(f"Error getting workflows: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on('get_agents')
 def handle_get_agents():
-    logger.info('🔍 Received get_agents request')
+    logger.info('Received get_agents request')
     try:
         agents = training_agent.get_agent_names()
-        logger.info(f'📋 Retrieved agents: {agents}')
+        logger.info(f'Retrieved agents: {agents}')
         emit('agents_list', {'agents': agents})
-        logger.info('✅ Successfully sent agents_list event')
+        logger.info('Successfully sent agents_list event')
     except Exception as e:
-        logger.error(f"❌ Error getting agents: {e}", exc_info=True)
+        logger.error(f"Error getting agents: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
 @socketio.on_error()
