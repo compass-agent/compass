@@ -1,5 +1,5 @@
 import CoordinatePreviewButton from '../components/preview/components/CoordinatePreviewButton';
-import { FaMouse, FaKeyboard, FaFile, FaPlus, FaEdit, FaArrowRight, FaUndo, FaTerminal, FaCode, FaCube, FaBuilding } from 'react-icons/fa';
+import { FaMouse, FaKeyboard, FaFile, FaPlus, FaEdit, FaArrowRight, FaUndo, FaTerminal, FaCode, FaBuilding, FaFileAlt } from 'react-icons/fa';
 
 // Helper function to get filename from path
 const getFileName = (filepath) => {
@@ -268,26 +268,20 @@ export const TOOL_ACTION_MAPPING = {
     }
   },
 
-  paraview: {
-    label: (tool) => <><FaCube /> ParaView Script</>,
+  file_operations: {
+    label: (tool) => <><FaFileAlt /> File Operation</>,
     description: (tool) => {
-      if (!tool.input) return 'Execute ParaView visualization script';
-      return {
-        text: 'Execute ParaView visualization script',
-        component: (
-          <div style={{ fontFamily: 'monospace' }}>
-            <strong>Script:</strong>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '8px',
-              borderRadius: '4px',
-              marginTop: '4px'
-            }}>
-              {tool.input.script}
-            </pre>
-          </div>
-        )
+      if (!tool.input) return 'File operation';
+      
+      // Define descriptions for specific commands
+      const descriptions = {
+        read: { text: `Reading file: ${tool.input.path}` },
+        write: { text: `Writing to file: ${tool.input.path}` },
+        append: { text: `Appending to file: ${tool.input.path}` },
+        delete: { text: `Deleting file: ${tool.input.path}` },
+        list: { text: `Listing directory: ${tool.input.path || '.'}` }
       };
+      return descriptions[tool.input.command] || { text: 'File operation' };
     }
   },
   
