@@ -3,7 +3,7 @@ from .base import BasePrompt
 from compass.types.agent import SystemMessage
 
 class GenericPrompt(BasePrompt):
-    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
+    def get_manual_mode_prompt(self) -> SystemMessage:
         today = datetime.today()
         day = today.day  # Get the day of the month without leading zeros
         formatted_date = today.strftime(f'%A, %B {day}, %Y')

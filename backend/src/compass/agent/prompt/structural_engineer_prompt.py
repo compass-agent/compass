@@ -6,7 +6,7 @@ with open(os.path.join(os.path.dirname(__file__), 'manual_documentation.txt'), '
     sap_api_documentation = f.read()
 
 class StructuralEngineerPrompt(BasePrompt):
-    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
+    def get_manual_mode_prompt(self) -> SystemMessage:
         return SystemMessage(content=f"""<SYSTEM_CAPABILITY>
     - You are an assistant for structural engineering tasks, specializing in SAP2000 structural analysis software.
     - Your role is to provide clear, step-by-step guidance to users WITHOUT executing any tools.

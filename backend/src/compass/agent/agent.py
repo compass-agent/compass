@@ -25,12 +25,10 @@ class AgentService:
         
         # Get both manual and auto system prompts
         manual_system_message = self.system_prompt.get_system_prompt(
-            manual_mode=True,
-            highlight_mode=False
+            manual_mode=True
         )
         auto_system_message = self.system_prompt.get_system_prompt(
-            manual_mode=False,
-            highlight_mode=False
+            manual_mode=False
         )
         
         self.pending_tool_queue = []
@@ -182,8 +180,7 @@ class AgentService:
 
     async def _next_step_proposal(self) -> list[ToolCall]:
         system_message = self.system_prompt.get_system_prompt(
-            manual_mode=self.state_manager.mode == AgentMode.MANUAL, 
-            highlight_mode=False,
+            manual_mode=self.state_manager.mode == AgentMode.MANUAL,
             workflow_name=self._current_workflow
         )
         

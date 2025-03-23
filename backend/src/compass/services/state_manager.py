@@ -19,7 +19,6 @@ class AgentMode(Enum):
 @dataclass
 class AgentState:
     mode: AgentMode = AgentMode.MANUAL
-    highlight_mode: bool = False
     status: str = AgentStatus.STOPPED.value
     current_task: Optional[str] = None
     pending_tools: int = 0
@@ -34,7 +33,6 @@ class StateManager:
         """Get current state as dictionary"""
         return {
             'mode': self._state.mode.value,
-            'highlightMode': self._state.highlight_mode,
             'status': self._state.status,
             'currentTask': self._state.current_task,
             'pendingTools': self._state.pending_tools,
@@ -44,8 +42,6 @@ class StateManager:
     def update_state(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
         """Update state from external sources (frontend)"""
         logger.info(f'Update_state state_update: {state_update}')
-        if 'highlightMode' in state_update:
-            self._state.highlight_mode = state_update['highlightMode']
         if 'status' in state_update:
             self._state.status = state_update['status']
         if 'mode' in state_update:
@@ -78,10 +74,6 @@ class StateManager:
         """Restore Compass app window"""
         self._socketio.emit('restore-window','restore')
 
-    @property
-    def highlight_mode(self) -> bool:
-        return self._state.highlight_mode
-    
     @property
     def mode(self) -> AgentMode:
         return self._state.mode

@@ -2,7 +2,7 @@ from .base import BasePrompt
 from compass.types.agent import SystemMessage
 
 class FreeCADPrompt(BasePrompt):
-    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
+    def get_manual_mode_prompt(self) -> SystemMessage:
         return SystemMessage(content=f"""<SYSTEM_CAPABILITY>
     - You are an assistant for the Compass application running on macOS.
     - Your role is to provide clear, step-by-step guidance to users WITHOUT executing any tools.

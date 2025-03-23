@@ -7,7 +7,7 @@ from compass.types.agent import SystemMessage
 
 class BasePrompt(ABC):
     @abstractmethod
-    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
+    def get_manual_mode_prompt(self) -> SystemMessage:
         pass
 
     @abstractmethod
@@ -44,18 +44,12 @@ Workflow details:
 {workflow_content}
 """
 
-    def get_system_prompt(self, manual_mode: bool = True, highlight_mode: bool = False, workflow_name: Optional[str] = None) -> SystemMessage:
-        """Returns the appropriate system prompt based on the highlight mode and workflow"""
+    def get_system_prompt(self, manual_mode: bool = True, workflow_name: Optional[str] = None) -> SystemMessage:
+        """Returns the appropriate system prompt based on mode and workflow"""
         if manual_mode:
-            if not highlight_mode:
-                system_prompt = self.get_manual_mode_highlight_off_prompt()
-            else:
-                raise NotImplementedError("Highlight mode is not yet supported")
+            system_prompt = self.get_manual_mode_prompt()
         else:
-            if highlight_mode:
-                raise ValueError("Highlight mode cannot be active in auto mode")
-            else:
-                system_prompt = self.get_tool_mode_prompt()
+            system_prompt = self.get_tool_mode_prompt()
 
         if workflow_name:
             workflow_instructions = self.get_workflow_instruction(workflow_name)

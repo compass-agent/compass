@@ -9,7 +9,6 @@ import {
   faWrench,
   faPlay,
   faForward,
-  faLightbulb,
   faInfo,
   faGear,
   faStop,
@@ -24,8 +23,7 @@ import {
 const MODES = {
   MANUAL: {mode: AgentMode.MANUAL , title: "Manual Mode"},
   SEMI_AUTO: {mode: AgentMode.SEMI_AUTO, title: "Semi-Automatic Mode"},
-  AUTO: {mode: AgentMode.AUTO, title: "Automatic Mode"},
-  HIGHLIGHT: {mode: "HighLight", title: "Highlight Mode" }
+  AUTO: {mode: AgentMode.AUTO, title: "Automatic Mode"}
 };
 
 function ControlPanel({ isMinimal }) {
@@ -34,17 +32,6 @@ function ControlPanel({ isMinimal }) {
   const [isWindowMoved, setIsWindowMoved] = useState(false);
   const [mode, setMode] = useState(MODES.MANUAL.mode);
   const isAutoMode = agentState.mode === AgentMode.AUTO;
-
-  // Comment out or remove this entire useEffect
-  /*
-  useEffect(() => {
-    console.log("ControlPanel - Agent state updated:", {
-      status: agentState.status,
-      currentInput: chat.currentInput,
-    });
-    hanldeFullscrenToggle(isAutoMode);
-  }, [agentState.status, chat.currentInput]);
-  */
 
   useEffect(() => {
     console.log("ControlPanel - IsMinimal:", { isMinimal });
@@ -125,12 +112,6 @@ function ControlPanel({ isMinimal }) {
       window.electron.ipcRenderer.send("toggle-fullscreen", true);
     }
 
-  };
-
-  const handleHighlightToggle = () => {
-    WebSocketService.updateControlState({
-      highlightMode: !agentState.highlightMode,
-    });
   };
 
   const getModeIcon = () => {
@@ -221,20 +202,6 @@ function ControlPanel({ isMinimal }) {
         >
           <FontAwesomeIcon icon={getModeIcon()} />
         </button>
-
-       { mode === MODES.MANUAL.mode && ( <button
-          className={`button ${agentState.highlightMode ? "active" : ""}`}
-          onClick={handleHighlightToggle}
-          title={
-            agentState.highlightMode
-              ? "Highlight Mode (On)"
-              : "Highlight Mode (Off)"
-          }
-        >
-          <FontAwesomeIcon
-            icon={faLightbulb }
-          />
-        </button>)}
       </div>
       )}
       <div className="right-controls">

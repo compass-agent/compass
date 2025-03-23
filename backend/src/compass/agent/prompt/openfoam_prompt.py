@@ -105,7 +105,7 @@ Example commands:
 }}
 """)
 
-    def get_manual_mode_highlight_off_prompt(self) -> SystemMessage:
+    def get_manual_mode_prompt(self) -> SystemMessage:
         return self._get_openfoam_base_prompt()
 
     def get_tool_mode_prompt(self) -> SystemMessage:

@@ -13,7 +13,6 @@ const initialState = {
   },
   agent: {
     mode: AgentMode.MANUAL,
-    highlightMode: false,
     status: AgentStatus.STOPPED,
     currentTask: null,
     pendingTools: 0,
