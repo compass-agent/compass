@@ -286,25 +286,69 @@ export const TOOL_ACTION_MAPPING = {
   },
   
   sap_com: {
-    label: (tool) => <><FaBuilding /> SAP Model</>,
-    description: (tool) => {
-      if (!tool.input) return 'Execute SAP2000 modeling script';
-      return {
-        text: 'Execute SAP2000 modeling script',
-        component: (
-          <div style={{ fontFamily: 'monospace' }}>
-            <strong>Script:</strong>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '8px',
-              borderRadius: '4px',
-              marginTop: '4px'
-            }}>
-              {tool.input.sap_com_python_script}
-            </pre>
-          </div>
-        )
+    label: (tool) => {
+      const actionLabels = {
+        'run_sap_com_python': <><FaBuilding /> SAP Script</>,
+        'get_model_info': <><FaBuilding /> SAP Model Info</>,
+        'query_api_info': <><FaBuilding /> SAP API Query</>
       };
+      return actionLabels[tool.input?.action] || <><FaBuilding /> SAP Model</>;
+    },
+    description: (tool) => {
+      if (!tool.input) return 'Execute SAP2000 operation';
+      
+      switch (tool.input.action) {
+        case 'run_sap_com_python':
+          return {
+            text: 'Execute SAP2000 Python script',
+            component: (
+              <div style={{ fontFamily: 'monospace' }}>
+                <strong>Script:</strong>
+                <pre style={{ 
+                  backgroundColor: '#f5f5f5', 
+                  padding: '8px',
+                  borderRadius: '4px',
+                  marginTop: '4px'
+                }}>
+                  {tool.input.script_command}
+                </pre>
+              </div>
+            )
+          };
+        
+        case 'get_model_info':
+          return {
+            text: 'Request information about the current SAP2000 model',
+            component: (
+              <div style={{ fontFamily: 'monospace' }}>
+                <strong>Action:</strong> Retrieving model information
+              </div>
+            )
+          };
+          
+        case 'query_api_info':
+          return {
+            text: 'Query SAP2000 API documentation',
+            component: (
+              <div style={{ fontFamily: 'monospace' }}>
+                <strong>Queries:</strong>
+                <ul style={{ 
+                  margin: '4px 0 0 0',
+                  paddingLeft: '24px'
+                }}>
+                  {tool.input.query?.map((q, idx) => (
+                    <li key={idx}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          };
+          
+        default:
+          return {
+            text: `Unknown SAP2000 action: ${tool.input.action}`
+          };
+      }
     }
   }
 }; 
