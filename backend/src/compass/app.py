@@ -113,26 +113,6 @@ def handle_control_update(data):
         logger.error(f"Error in handle_control_update: {e}", exc_info=True)
         emit('error', {'message': str(e)})
 
-@socketio.on('execute_next_tool')
-def handle_execute_next_tool():
-    logger.info('Received execute_next_tool request')
-    try:
-        with app.app_context():
-            eventlet.spawn(asyncio.run, agent_service.execute_all_pending_tools())
-    except Exception as e:
-        logger.error(f"Error executing tool: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
-@socketio.on('generate_next_action')
-def handle_generate_next_action():
-    logger.info('Received generate_next_action request')
-    try:
-        with app.app_context():
-            eventlet.spawn(asyncio.run, agent_service.process_next_action())
-    except Exception as e:
-        logger.error(f"Error generating next action: {e}", exc_info=True)
-        emit('error', {'message': str(e)})
-
 @socketio.on('execute_tool_and_generate_action')
 def handle_execute_tool_and_generate_action():
     logger.info('Received execute_tool_and_generate_action request')

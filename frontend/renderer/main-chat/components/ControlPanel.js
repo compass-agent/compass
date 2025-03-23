@@ -38,8 +38,16 @@ function ControlPanel({ isMinimal }) {
     
   }, [isMinimal]);
 
-  const handleToolsClick = () => {
-    WebSocketService.executeNextTool();
+  // This function is now only used internally for the button title
+  const getToolsButtonTitle = () => {
+    console.log("ControlPanel: getToolsButtonTitle: - Agent state: ", agentState);
+    if (agentState.status !== AgentStatus.STOPPED) {
+      return "Processing...";
+    } else if (agentState.pendingTools > 0) {
+      return "Execute Tools & Generate Next Action";
+    } else {
+      return "Generate Next Action";
+    }
   };
 
   const handleToolsAndNextActionClick = () => {
@@ -124,17 +132,6 @@ function ControlPanel({ isMinimal }) {
     }
   };
 
-  const getToolsButtonTitle = () => {
-    console.log("ControlPanel: getToolsButtonTitle: - Agent state: ", agentState);
-    if (agentState.status !== AgentStatus.STOPPED) {
-      return "Processing...";
-    } else if (agentState.pendingTools > 0) {
-      return "Execute Next Tool";
-    } else {
-      return "Generate Next Action";
-    }
-  };
-
   const isAgentStatePlaying = agentState.status !== AgentStatus.STOPPED;
 
   const getButtonConfig = () => {
@@ -142,7 +139,7 @@ function ControlPanel({ isMinimal }) {
     if (isAgentStatePlaying) {
       return { icon: faStop, loading: true, title: 'Processing...', action: handleStop };
     } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
-      return { icon:  faForwardFast , title: 'Execute Pending Tools & Generate Next Action', action: handleToolsAndNextActionClick };//faScrewdriverWrench
+      return { icon:  faForwardFast , title: 'Execute Pending Tools & Generate Next Action', action: handleToolsAndNextActionClick };
     } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
       return { icon: faPlay, title: 'Process Message & Update Tools', action: handlePlayClick }; // LLM Response: new tools
     } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
@@ -205,16 +202,6 @@ function ControlPanel({ isMinimal }) {
       </div>
       )}
       <div className="right-controls">
-        {!isAutoMode && agentState.pendingTools > 0 && (
-          <button
-            className={`button ${isAgentStatePlaying ? "active" : ""}`}
-            onClick={handleToolsClick}
-            title={getToolsButtonTitle()}
-          >
-            <FontAwesomeIcon icon={faPlay} />
-            {/* //faWrench */}
-          </button>
-        )}
         <button
           className={`button ${isAgentStatePlaying ? "active" : ""}`}
           onClick={playButtonConfig.action}

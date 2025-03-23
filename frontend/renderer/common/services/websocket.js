@@ -185,20 +185,6 @@ class WebSocketService {
     }
   }
 
-  executeNextTool() {
-    if (this.socket?.connected) {
-      console.log("WebSocket sending execute_next_tool");
-      this.socket.emit("execute_next_tool");
-    }
-  }
-
-  generateNextAction() {
-    if (this.socket?.connected) {
-      console.log("WebSocket sending generate_next_action");
-      this.socket.emit("generate_next_action");
-    }
-  }
-
   executeToolAndGenerateAction() {
     if (this.socket?.connected) {
       console.log("WebSocket sending execute_tool_and_generate_action");
@@ -251,22 +237,23 @@ class WebSocketService {
 
   getAgents() {
     if (this.socket?.connected) {
-      console.log("🚀 WebSocket: Sending get_agents request");
+      console.log("WebSocket sending get_agents request");
       this.socket.emit("get_agents");
     } else {
-      console.warn("⚠️ WebSocket: Cannot get agents - socket not connected");
+      console.warn("Cannot get agents - socket not connected");
     }
   }
 
   saveTemplates(data) {
-    console.log('saveTemplates', data);
     if (this.socket?.connected) {
-      console.log("Before saveTemplates:  WebSocket connection status:", this.socket.connected);
-      this.socket.emit("save_templates", data); //data
+      console.log("WebSocket sending save_templates request with data:", data);
+      this.socket.emit("save_templates", data);
     } else {
-      console.error("Socket not connected when trying to save templates");
+      console.warn("Cannot save templates - socket not connected");
     }
   }
 }
 
-export default new WebSocketService();
+// Create a singleton instance
+const instance = new WebSocketService();
+export default instance;
