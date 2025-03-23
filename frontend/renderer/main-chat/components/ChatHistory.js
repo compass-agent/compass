@@ -18,6 +18,15 @@ import {
 import WorkspaceWindow from "./workspace/workspace";
 import { formatScriptForPlatform, getNameFromPath } from "./../../utils/utils";
 import { v4 as uuidv4 } from "uuid";
+import ReactMarkdown from 'react-markdown';
+
+// Function to normalize markdown content by removing excessive newlines
+const normalizeMarkdown = (content) => {
+  if (!content) return '';
+  
+  // Simple replacement of all double newlines with single newlines
+  return content.replace(/\n\n/g, '\n');
+};
 
 function ChatHistory({onEditorWidthChange }) {
   const { state } = useAppState();
@@ -369,8 +378,10 @@ function ChatHistory({onEditorWidthChange }) {
       case MESSAGE_TYPES.AI_RESPONSE:
         if (!msg.content) return null;
         return (
-          <div className="message">
-            <div className="message-content copyable-text">{msg.content}</div>
+          <div className="message ai-message">
+            <div className="message-content copyable-text markdown-content">
+              <ReactMarkdown>{normalizeMarkdown(msg.content)}</ReactMarkdown>
+            </div>
           </div>
         );
 
@@ -423,8 +434,10 @@ function ChatHistory({onEditorWidthChange }) {
         ))}
         {/* Add streaming text display */}
         {streamingText && (
-          <div className="message">
-            <div className="message-content copyable-text">{streamingText}</div>
+          <div className="message ai-message">
+            <div className="message-content copyable-text markdown-content">
+              <ReactMarkdown>{normalizeMarkdown(streamingText)}</ReactMarkdown>
+            </div>
           </div>
         )}
       </div>
