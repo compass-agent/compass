@@ -26,7 +26,6 @@ import SettingsMenu from "./SettingsMenu";
 function Header() {
   const { state } = useAppState();
   const { compassWindow } = state;
-  const [isFullscreen, setIsFullscreen] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   let isMac = window.electron.platform === "darwin";
@@ -53,20 +52,6 @@ function Header() {
         "Renderer: window.electron.toggleMaximizeWindow is not defined"
       );
     }
-  };
-
-  const handleToggleFullscreen = () => {
-    setIsFullscreen((prev) => {
-      const isNowFullscreen = !prev;
-      const { ipcRenderer } = window.electron;
-      if (ipcRenderer) {
-        window.electron.ipcRenderer.send("toggle-fullscreen", isNowFullscreen);
-      } else {
-        console.error("ipcRenderer is not available");
-      }
-
-      return isNowFullscreen;
-    });
   };
 
   const handleNewChat = () => {
@@ -172,24 +157,6 @@ function Header() {
       {/* Header Controls: Positioned on Right for MacOS and Left for Windows */}
       {isMac ? (
         <div className="header-controls right">
-          {isFullscreen ? (
-            <button
-              className="header-button fullscreen"
-              onClick={handleToggleFullscreen}
-              title="Exit Fullscreen"
-            >
-              <FontAwesomeIcon icon={faCompress} />
-            </button>
-          ) : (
-            <button
-              className="header-button fullscreen"
-              onClick={handleToggleFullscreen}
-              title="Expand to Fullscreen"
-            >
-              <FontAwesomeIcon icon={faExpand} />
-            </button>
-          )}
-
           <div className="settings-container">
             <button
               className="header-button settings"
@@ -227,23 +194,6 @@ function Header() {
               <SettingsMenu onClose={() => setShowSettingsMenu(false)} />
             )}
           </div>
-          {isFullscreen ? (
-            <button
-              className="header-button fullscreen"
-              onClick={handleToggleFullscreen}
-              title="Exit Fullscreen"
-            >
-              <FontAwesomeIcon icon={faCompress} />
-            </button>
-          ) : (
-            <button
-              className="header-button fullscreen"
-              onClick={handleToggleFullscreen}
-              title="Expand to Fullscreen"
-            >
-              <FontAwesomeIcon icon={faExpand} />
-            </button>
-          )}
 
           <button
             className="header-button"
