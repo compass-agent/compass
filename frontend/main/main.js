@@ -1,19 +1,19 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require("electron");
 const path = require("path");
-const {
-  default: installExtension,
-  REACT_DEVELOPER_TOOLS,
-} = require("electron-devtools-installer");
 const { handleCoordinatePreview } = require("./components/coordinatePreview");
 const { handleTerminalEvents } = require("./components/terminalEvents");
 const setupFileHandlers = require('./components/fileHandlers'); 
 const setupWindowHandlers = require('./components/windowHandler');
 require("dotenv").config();
+const { startBackend, logToFile } = require("./backendManager");
 
 if (process.platform === 'darwin') {
   app.setName('Compass');
   app.name = 'Compass';
 }
+
+// Only import devtools in development
+let isDev = process.env.NODE_ENV === 'development';
 
 const WINDOW_CONFIG = {
   WIDTH: 500,
@@ -95,14 +95,10 @@ function createWindow() {
     createMenu();
   }
 
-  if (process.env.NODE_ENV === "development") {
-    // Comment out or remove this line to stop opening dev tools
-    mainWindow.webContents.openDevTools({ mode: 'detach' }); //{ mode: 'detach' }
-    
-    // Install React DevTools (you can keep this)
-    installExtension(REACT_DEVELOPER_TOOLS)
-      .then((name) => console.log(`Added Extension: ${name}`))
-      .catch((err) => console.error("Failed to install React DevTools:", err));
+  if (isDev) {
+    // Open DevTools in detached mode to preserve window transparency
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+
   }
 
   setupFileHandlers(mainWindow);
@@ -149,6 +145,30 @@ function createTemplateTrainingWindow() {
 }
 
 app.whenReady().then(() => {
+  // Start the Python backend
+  try {
+    logToFile('Starting backend process...');
+    if (!isDev) {
+        backendProcess = startBackend();
+    }
+    
+    // Make sure to terminate the backend process when the app quits
+    app.on('quit', () => {
+      logToFile('Application quitting, terminating backend process');
+      if (backendProcess) {
+        backendProcess.kill();
+      }
+    });
+  } catch (error) {
+    logToFile(`Error starting backend: ${error.message}`);
+    console.error('Failed to start backend:', error);
+    
+    // Show error dialog to user
+    dialog.showErrorBox(
+      'Backend Error', 
+      `Failed to start the backend process: ${error.message}\n\nPlease check the logs for more details.`
+    );
+  }
   if (process.platform === 'darwin') {
     app.name = 'Compass';
   }

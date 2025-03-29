@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import dns.resolver
 
@@ -8,10 +9,25 @@ os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
 import os
 import sys
 
+env = os.environ.get('COMPASS_ENV', 'development')
+# Define user-accessible log directory in AppData
+appdata_dir = os.environ.get('APPDATA', '.')
+log_dir = os.path.join(appdata_dir, 'Compass', 'logs')
+Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+# Configure file handler for logging
+log_file = os.path.join(log_dir, 'compass_backend.log')
+file_handler = logging.FileHandler(log_file)
+
 # Configure logging first
-logging.basicConfig(level=logging.INFO)
+if env == 'production':
+    logging.basicConfig(level=logging.INFO, handlers=[file_handler])
+else:
+    logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+logger.info(f"Starting backend in {env} environment")
 
 import eventlet
 
@@ -31,7 +47,6 @@ if os.name == 'nt':  # Windows-specific configuration
     try:
         import dns.resolver
         dns.resolver.get_default_resolver().cache = dns.resolver.Cache()
-        logger.info("✓ DNS resolver cache configured")
     except Exception as dns_error:
         logger.warning(f"✗ Failed to configure DNS resolver: {dns_error}")
 

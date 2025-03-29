@@ -7,14 +7,20 @@
     "start": "electron .",
     "watch": "npx webpack --watch",
     "build": "webpack --mode production",
+    "clean": "rimraf dist/ build/",
     "package": "npm run build && electron-builder build --mac",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"npm run watch\" \"npm run start\""
+    "dev": "cross-env NODE_ENV=development concurrently \"npm run watch\" \"npm run start\"",
+    "prepackage-win": "npm run clean && node build-config.js && copy .env.production .env",
+    "set-prod": "cross-env NODE_ENV=production",
+    "package-win": "npm run set-prod && npm run build && electron-builder build --win",
+    "postpackage-win": "copy .env.development .env",
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Compass application with integrated frontend and backend",
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
@@ -24,11 +30,12 @@
     "@types/react-dom": "^18.3.1",
     "babel-loader": "^9.2.1",
     "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "electron-devtools-installer": "^3.2.1",
-    "electron-rebuild": "^3.2.9",
+    "rimraf": "^6.0.1",
     "sass": "^1.83.0",
     "sass-loader": "^16.0.4",
     "style-loader": "^4.0.0",
@@ -64,17 +71,37 @@
     "node": ">=16.0.0"
   },
   "build": {
-    "appId": "com.yourcompany.compass",
+    "appId": "com.compass.app",
     "productName": "Compass",
     "mac": {
+
       "category": "public.app-category.utilities"
+
     },
     "files": [
       "frontend/**/*",
-      "package.json"
+      "package.json",
+      "!**/node_modules/**/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
     ],
-    "directories": {
-      "buildResources": "assets"
+    "extraResources": [
+      {
+        "from": "backend/dist/compass_backend.exe",
+        "to": "backend/compass_backend.exe"
+      },
+      {
+        "from": "resources",
+        "to": "."
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "resources/compass.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
     }
   }
 }

@@ -43,7 +43,7 @@ To start the development environment:
    venv\Scripts\activate     # This works on Windows
    python src/compass/app.py
    If Python can not locate the modules, run the following commands:
-   $env:PYTHONPATH = "src"; python src/compass/app.py  # For Windows PowerShell (including VS Code terminal)
+   $env:PYTHONPATH = "src"; python src/compass/app.py  # For Windows PowerShell (including IDE(Cursor) terminal)
    PYTHONPATH=src python src/compass/app.py  # For macOS/Linux
    set PYTHONPATH=src && python src/compass/app.py  # For Windows Command Prompt
    ```
@@ -83,8 +83,20 @@ The above commands will concurrently run:
 
 - Package the application:
   ```bash
-  npm run package
+  npm run package-win
   ```
+
+- Build the backend executable:
+  ```bash
+  cd backend
+  build_app.bat
+  ```
+
+- IDE(Cursor) Tasks (access via `Terminal > Run Task` in the top menu, or press Ctrl+Shift+P and type "Tasks: Run Task"):
+  - `Start Development Environment` - Runs both backend and frontend
+  - `Build Backend Executable` - Builds the Python backend
+  - `Package Electron App` - Packages the Electron app
+  - `Full Build and Package` - Complete build process
 
 - Kill running instances (macOS/Linux):
   ```bash
@@ -129,3 +141,47 @@ $env:EVENTLET_NO_GREENDNS="yes"; $env:EVENTLET_THREADPOOL_SIZE="20"; $env:EVENTL
 ```
 
 This command includes optimizations for Windows systems to improve startup time and overall performance.
+
+## BUILDING THE EXECUTABLE AND PACKAGING
+
+There are two ways to build and package the application:
+
+### Option 1: Using IDE(Cursor) Tasks
+
+1. Open the project in IDE(Cursor)
+2. Access tasks in one of these ways:
+   - **Method A**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open the Command Palette, then type "Tasks: Run Task" and select it
+   - **Method B**: Click on `Terminal` in the top menu bar, then select `Run Task` from the dropdown menu
+   - **Method C**: Press `Alt` key to show the top menu if it's hidden, then navigate to `Terminal > Run Task`
+
+3. Choose one of the following tasks:
+   - `Build Backend Executable` - Builds only the Python backend
+   - `Package Electron App` - Packages only the Electron frontend
+
+### Option 2: Using the Command Line
+
+1. Build the backend executable:
+   ```bash
+   cd backend
+   build_app.bat
+   ```
+   This will create the `compass_backend.exe` file in the appropriate directory.
+
+2. Package the entire application for Windows:
+   ```bash
+   cd ..
+   npm run package-win
+   ```
+
+Note: node >= 16
+   
+The build process will:
+1. Build the backend executable using PyInstaller
+2. Package the Electron application with the backend executable included
+3. Create an installer in the `dist` folder
+
+The final packaged application will include all necessary dependencies and can be distributed to users.
+
+
+
+

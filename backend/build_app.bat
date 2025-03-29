@@ -43,7 +43,7 @@ echo Building executable...
 pyinstaller --clean --noconfirm --log-level DEBUG compass_backend.spec
 
 echo ===== Build complete =====
-echo Executable created at: dist\compass_backend\compass_backend.exe
+echo Executable created at: dist\compass_backend.exe
 
 REM Deactivate virtual environment
 call venv\Scripts\deactivate.bat 
