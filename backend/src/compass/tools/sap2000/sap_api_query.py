@@ -100,21 +100,54 @@ class SAPAPIQuery:
     ) -> Dict[str, Any]:
         """
         Query the API documentation for the given list of queries.
+        Return a maximum of n_results total across all queries, selecting the ones with highest similarity.
         
         Args:
             queries: List of query strings to search for
-            n_results: Number of results to return per query
+            n_results: Maximum number of total results to return across all queries
             
         Returns:
-            Dictionary containing the results for each query
+            Dictionary containing the results organized by query
         """
-        results = {}
+        # Get results for each query
+        all_results = []
+        query_results = {}
         
         for query in queries:
             query_result = self._execute_single_query(query, n_results)
-            results[query] = query_result
+            query_results[query] = query_result
+            
+            # Add results to the combined list
+            if "results" in query_result and query_result["results"]:
+                for result in query_result["results"]:
+                    # Add the original query to each result
+                    result["original_query"] = query
+                    all_results.append(result)
         
-        return results
+        # Sort all results by similarity score (highest first)
+        sorted_results = sorted(
+            all_results, 
+            key=lambda x: x.get("similarity", 0) if x.get("similarity") is not None else 0,
+            reverse=True
+        )
+        
+        # Take only the top n_results
+        top_results = sorted_results[:n_results]
+        
+        # Organize results back by query
+        final_results = {}
+        for query in queries:
+            final_results[query] = {
+                "query": query,
+                "results": []
+            }
+        
+        # Add top results back to their respective queries
+        for result in top_results:
+            original_query = result.pop("original_query")
+            final_results[original_query]["results"].append(result)
+        
+        return final_results
     
     def _execute_single_query(
         self, 

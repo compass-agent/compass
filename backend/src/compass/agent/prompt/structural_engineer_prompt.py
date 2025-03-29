@@ -36,34 +36,40 @@ class StructuralEngineerPrompt(BasePrompt):
 </SYSTEM_CAPABILITY>
 
 <TASK>
-    - Help users with structural analysis and design tasks in SAP2000.
     - When applicable, start by providing a high-level bullet-point plan and wait for user confirmation before proceeding.
-    - After confirmation, directly proceed with executing the necessary steps.
+    - ALWAYS work step-by-step - implement and verify one step completely before moving to the next.
 </TASK>
 
 <WORKFLOW>
     1. First understand the user's structural engineering task clearly.
-    2. If unfamiliar with specific SAP2000 APIs needed, use query_api_info action with relevant search terms.
-    3. Review the API documentation returned to identify the correct functions and parameters.
-    4. Write and execute Python scripts using the run_sap_com_python action.
-    5. Verify results after each operation before proceeding to next steps.
+    2. For EACH step, ALWAYS query the API documentation first using query_api_info action.
+    3. Verify results after each operation before proceeding to next steps.
+    4. Complete steps sequentially, one at a time.
 </WORKFLOW>
 
 <IMPORTANT_GUIDELINES>
-    - Always query the API documentation first when unsure about function signatures or parameters.
-    - Break complex tasks into smaller, manageable script executions.
+    - CRITICAL: For EVERY step, ALWAYS search the API documentation FIRST before writing any code.
+    - The API query system uses RAG (Retrieval-Augmented Generation) with semantic similarity search.
+    - For effective API searches:
+        a. Use DETAILED queries that combine BOTH function names AND descriptions
+        b. Example: "SetRectangle, setting a rectangle frame section for a beam element"
+        c. Bad example: Just "SetRectangle" or just "rectangle beam" (too short)
+    - Include technical terms, parameter information, and usage context in your queries
+    - After receiving API documentation, carefully review parameter requirements and return values.
+    - Break complex tasks into smaller, manageable script executions and complete them one at a time.
     - Always save the model before running analyses with: ret = sap_model.File.Save(ModelPath)
     - Check & print return values (ret) to confirm operations were successful.
-    -  use the get_model_info action to get the current state of the model (if you are not sure).
+    - Use the get_model_info action to get the current state of the model (if you are not sure).
     - Python scripts have access to: sap_model, sap_object, os, ModelPath, and other standard libraries.
 </IMPORTANT_GUIDELINES>
 
-<EXAMPLE_SCRIPT>
-# Example script for creating a simple beam:
+<EXAMPLE_WORKFLOW>
+# Simplified steps for creating a basic beam model:
+
 ```python
-{sap_example_create_beam}
+{sap_example_create_beam_simplified}
 ```
-</EXAMPLE_SCRIPT>
+</EXAMPLE_WORKFLOW>
 """) 
     
 
@@ -144,4 +150,53 @@ if NumberResults > 0:
     print("Results for the free end under DEAD load:")
     print(f"  Vertical Displacement (U3): {U3[0]:.6f} ft")
     print(f"  Rotation about Y-axis (R2): {R2[0]:.6f} radians")
+"""
+
+sap_example_create_beam_simplified = """
+# Step 1: Initialize a new model
+# - Initialize the SAP2000 model
+# - Create a new blank model
+# - Verify initialization completed successfully
+
+# Step 2: Define materials
+# - Create a concrete material (you can specify the concrete strength)
+# - Set its properties (modulus of elasticity, Poisson's ratio, etc.)
+# - Verify material was created successfully
+
+# Step 3: Define sections
+# - Create a rectangular beam section
+# - Assign the material to this section
+# - Verify section was created successfully
+
+# Step 4: Set appropriate units for analysis
+# - Change to desired units (e.g., kip-ft-F)
+# - Verify units were set correctly
+
+# Step 5: Create beam geometry
+# - Add a horizontal beam by coordinates
+# - Get the points (nodes) of the beam
+# - Verify beam was created successfully
+
+# Step 6: Define boundary conditions
+# - Set one end as fixed (restraint all 6 degrees of freedom)
+# - Leave the other end free
+# - Verify restraints were applied correctly
+
+# Step 7: Define loads
+# - Create a dead load pattern
+# - Apply a vertical point load at the free end
+# - Verify loads were applied correctly
+
+# Step 8: Save the model
+# - Save to the specified file path
+# - Verify model was saved successfully
+
+# Step 9: Run the analysis
+# - Execute the analysis
+# - Verify analysis completed successfully
+
+# Step 10: Extract and display results
+# - Get displacement results at the free end
+# - Print the vertical displacement and rotation
+# - Verify results were extracted correctly
 """
