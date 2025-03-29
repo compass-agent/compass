@@ -2,25 +2,25 @@ const { app, BrowserWindow, ipcMain, Menu, dialog } = require("electron");
 const path = require("path");
 const { handleCoordinatePreview } = require("./components/coordinatePreview");
 const { handleTerminalEvents } = require("./components/terminalEvents");
-const setupFileHandlers = require('./components/fileHandlers'); 
-const setupWindowHandlers = require('./components/windowHandler');
+const setupFileHandlers = require("./components/fileHandlers");
+const setupWindowHandlers = require("./components/windowHandler");
 require("dotenv").config();
 const { startBackend, logToFile } = require("./backendManager");
 
-if (process.platform === 'darwin') {
-  app.setName('Compass');
-  app.name = 'Compass';
+if (process.platform === "darwin") {
+  app.setName("Compass");
+  app.name = "Compass";
 }
 
 // Only import devtools in development
-let isDev = process.env.NODE_ENV === 'development';
+let isDev = process.env.NODE_ENV === "development";
 
 const WINDOW_CONFIG = {
   WIDTH: 500,
   HEIGHT: 553,
   MIN_WIDTH: 300,
   MIN_HEIGHT: 45,
-  MINIMAL_HEIGHT: 45 
+  MINIMAL_HEIGHT: 45,
 };
 
 let mainWindow;
@@ -30,32 +30,32 @@ let templateTrainingWindow = null;
 function createMenu() {
   const template = [
     {
-      label: 'Compass',
+      label: "Compass",
       submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'services' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
+        { role: "about" },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
     },
     {
-      label: 'Edit',
+      label: "Edit",
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'delete' },
-        { role: 'selectAll' }
-      ]
-    }
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "delete" },
+        { role: "selectAll" },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);
@@ -82,23 +82,22 @@ function createWindow() {
     minWidth: WINDOW_CONFIG.MIN_WIDTH,
     minHeight: WINDOW_CONFIG.MIN_HEIGHT,
     backgroundColor: "#00000000", // Ensure a transparent background
-    title: 'Compass'
+    title: "Compass",
   });
 
   mainWindow.setResizable(true);
 
-  const indexPath = path.join(__dirname, '../renderer/main-chat/index.html');
+  const indexPath = path.join(__dirname, "../renderer/main-chat/index.html");
   mainWindow.loadFile(indexPath);
   Menu.setApplicationMenu(null);
   // Instead of Menu.setApplicationMenu(null), call createMenu
-  if (process.platform === 'darwin') {
+  if (process.platform === "darwin") {
     createMenu();
   }
 
   if (isDev) {
     // Open DevTools in detached mode to preserve window transparency
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
-
+    mainWindow.webContents.openDevTools({ mode: "detach" });
   }
 
   setupFileHandlers(mainWindow);
@@ -110,26 +109,29 @@ function createTemplateTrainingWindow() {
     width: 1024,
     height: 768,
     webPreferences: {
-      nodeIntegration: false,  // Changed to false for security
+      nodeIntegration: false, // Changed to false for security
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false  // Add this for development
+      preload: path.join(__dirname, "preload.js"),
+      webSecurity: false, // Add this for development
     },
     show: false,
   });
 
-  const templateTrainingPath = path.join(__dirname, '../renderer/template-training/index.html');
-  console.log('Loading template training from:', templateTrainingPath);
+  const templateTrainingPath = path.join(
+    __dirname,
+    "../renderer/template-training/index.html"
+  );
+  console.log("Loading template training from:", templateTrainingPath);
   templateTrainingWindow.loadFile(templateTrainingPath);
 
   // Remove or comment out these lines
-  templateTrainingWindow.webContents.on('did-finish-load', () => {
-    console.log('Template training window finished loading');
+  templateTrainingWindow.webContents.on("did-finish-load", () => {
+    console.log("Template training window finished loading");
     // templateTrainingWindow.webContents.openDevTools();  // Remove this line
   });
 
-  templateTrainingWindow.once('ready-to-show', () => {
-    console.log('Template training window ready to show');
+  templateTrainingWindow.once("ready-to-show", () => {
+    console.log("Template training window ready to show");
     templateTrainingWindow.center();
     templateTrainingWindow.show();
   });
@@ -139,38 +141,39 @@ function createTemplateTrainingWindow() {
   //   templateTrainingWindow.webContents.openDevTools();
   // }
 
-  templateTrainingWindow.on('closed', () => {
+  templateTrainingWindow.on("closed", () => {
     templateTrainingWindow = null;
   });
 }
 
 app.whenReady().then(() => {
-  // Start the Python backend
-  try {
-    logToFile('Starting backend process...');
-    if (!isDev) {
-        backendProcess = startBackend();
+  if (!isDev) {
+    // Start the Python backend in production
+    try {
+      logToFile("Starting backend process...");
+      backendProcess = startBackend();
+
+      // Make sure to terminate the backend process when the app quits
+      app.on("quit", () => {
+        logToFile("Application quitting, terminating backend process");
+        if (backendProcess) {
+          backendProcess.kill();
+        }
+      });
+    } catch (error) {
+      logToFile(`Error starting backend: ${error.message}`);
+      console.error("Failed to start backend:", error);
+
+      // Show error dialog to user
+      dialog.showErrorBox(
+        "Backend Error",
+        `Failed to start the backend process: ${error.message}\n\nPlease check the logs for more details.`
+      );
     }
-    
-    // Make sure to terminate the backend process when the app quits
-    app.on('quit', () => {
-      logToFile('Application quitting, terminating backend process');
-      if (backendProcess) {
-        backendProcess.kill();
-      }
-    });
-  } catch (error) {
-    logToFile(`Error starting backend: ${error.message}`);
-    console.error('Failed to start backend:', error);
-    
-    // Show error dialog to user
-    dialog.showErrorBox(
-      'Backend Error', 
-      `Failed to start the backend process: ${error.message}\n\nPlease check the logs for more details.`
-    );
   }
-  if (process.platform === 'darwin') {
-    app.name = 'Compass';
+
+  if (process.platform === "darwin") {
+    app.name = "Compass";
   }
   createWindow();
   handleCoordinatePreview(ipcMain);
@@ -192,9 +195,8 @@ app.on("activate", () => {
   }
 });
 
-ipcMain.on('open-template-training', () => {
+ipcMain.on("open-template-training", () => {
   if (!templateTrainingWindow) {
     createTemplateTrainingWindow();
   }
 });
-
