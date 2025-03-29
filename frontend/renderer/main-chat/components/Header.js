@@ -55,7 +55,7 @@ function Header() {
   };
 
   const handleNewChat = () => {
-    const selectedAgentName = state.selectedAgentName || "FreeCAD"; // Default fallback
+    const selectedAgentName = state.selectedAgentName || "structural-engineer"; // Default fallback
     WebSocketService.handleNewChat(selectedAgentName);
   };
 

@@ -9,13 +9,13 @@ import {
 import "../styles/Header.scss";
 
 function SettingsMenu({ onClose }) {
-  const [agentName, setAgentName] = React.useState("FreeCAD"); // TODO: update it to Generic later
+  const [agentName, setAgentName] = React.useState("structural-engineer"); // TODO: update it to Generic later
   const [showAgentOptions, setShowAgentOptions] = React.useState(false);
   const [viewScreen, setViewScreen] = React.useState(false);
   const [modelName, setModelName] = React.useState("Claude Sonnet 3.5");
   const [showModelOptions, setShowModelOptions] = React.useState(false);
   let isMac = window.electron.platform === "darwin";
-  const agentOptions = ["Generic", "FreeCAD", "OpenFoam"];
+  const agentOptions = ["Generic", "FreeCAD", "OpenFoam", "structural-engineer"];
   const modelOptions = [
     "Claude Sonnet 3.5",
     "OpenAI GPT-4O",

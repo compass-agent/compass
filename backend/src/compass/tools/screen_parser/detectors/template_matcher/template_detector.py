@@ -50,7 +50,7 @@ class TemplateDetector:
             raise RuntimeError("Template matching is not enabled in config")
             
         self.threshold = config.get('threshold', 0.8)
-        self.agent_name = agent_name if agent_name is not None else "FreeCAD"
+        self.agent_name = agent_name if agent_name is not None else "structural-engineer"
         self.templates = self._load_templates()
         logger.info(f"Loaded {len(self.templates)} templates for agent '{self.agent_name}'")
         
