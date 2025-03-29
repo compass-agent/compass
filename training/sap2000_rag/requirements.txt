@@ -1,0 +1,7 @@
+openai>=1.3.0
+chromadb>=0.4.18
+PyPDF2>=3.0.0
+argparse>=1.4.0
+beautifulsoup4>=4.12.0
+html2text>=2020.1.16
+tqdm>=4.66.0 

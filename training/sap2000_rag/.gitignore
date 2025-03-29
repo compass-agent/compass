@@ -1,0 +1,55 @@
+# Output directories
+output/
+**/output/
+
+# Python environment
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+logs/
+sap2000_rag.log
+
+# Data files
+*.pdf
+*.chm
+*.json
+
+# Environment variables
+.env
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database files
+*.db
+*.sqlite3
+vector_db/
+chroma_db/
+
+# OS specific
+.DS_Store
+Thumbs.db 
