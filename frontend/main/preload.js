@@ -22,9 +22,11 @@ contextBridge.exposeInMainWorld("electron", {
         "close-editor-window",
       ];
       if (validChannels.includes(channel)) {
+        // Disable all window resize/repositioning features to prevent window from getting small in auto mode
         if (
           channel !== "toggle-fullscreen" &&
-          channel !== "move-to-bottom-right"
+          channel !== "move-to-bottom-right" &&
+          channel !== "toggle-minimal-view"  // Also block minimal view toggle which makes window small
         ) {
           ipcRenderer.send(channel, data);
         }
@@ -71,7 +73,6 @@ contextBridge.exposeInMainWorld("electron", {
   closeWindow: () => ipcRenderer.send("close-window"),
   minimizeWindow: () => ipcRenderer.send("minimize-window"),
   toggleMaximizeWindow: () => ipcRenderer.send("toggle-maximize-window"),
-  minimalWindow: (isMinimal) => ipcRenderer.send("toggle-minimal-view", isMinimal),
   templateTraining: {
     saveTemplate: (data) => ipcRenderer.send("save-template", data),
     onTemplateSaved: (callback) => ipcRenderer.on("template-saved", callback),

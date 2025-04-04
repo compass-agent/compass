@@ -20,24 +20,7 @@ function AppContent() {
   // Use custom hooks
   useUpdateContainerHeight(chatHistoryRef);
   useScrollToBottom(chatHistoryRef, chat.messages);
-  const isAutoMode = agent.mode === AgentMode.AUTO;
-  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED;
-  useEffect(() => {
-    if (window.electron.minimalWindow) {
-      window.electron.minimalWindow(isMinimalView);
-    }
-  }, [isMinimalView]);
-
-  if (isMinimalView) {
-    return (
-      <div className="app"  style={{ border: '2px solid rgb(145, 144, 144)' }}>
-        <div className="control-panel-wrapper">
-          <ControlPanel isMinimal={isMinimalView} />
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="app">
       <div className="header-wrapper">
@@ -62,13 +45,7 @@ function AppContent() {
             <ControlPanel />
           </div>
         </div>
-        <div
-          className="input-box-wrapper"
-          // style={{
-          //   display:
-          //     isAutoMode && agent.status !== AgentStatus.STOPPED ? "none" : "",
-          // }}
-        >
+        <div className="input-box-wrapper">
           <MessageInput />
         </div>
       </div>

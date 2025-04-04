@@ -1,20 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import WebSocketService from "../../common/services/websocket";
 import { useAppState } from "../../common/context/AppContext";
 import "../styles/ControlPanel.scss";
 import { AgentStatus, ActionTypes, AgentMode } from '../../common/constants';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faRotateRight,
-  faWrench,
   faPlay,
-  faForward,
-  faInfo,
-  faGear,
   faStop,
   faMagicWandSparkles,
-  faScrewdriverWrench,
-  faWandMagic,
   faForwardFast,
   faBolt,
   faUser
@@ -26,29 +19,11 @@ const MODES = {
   AUTO: {mode: AgentMode.AUTO, title: "Automatic Mode"}
 };
 
-function ControlPanel({ isMinimal }) {
+function ControlPanel() {
   const { state, dispatch } = useAppState();
   const { agent: agentState, chat } = state;
-  const [isWindowMoved, setIsWindowMoved] = useState(false);
   const [mode, setMode] = useState(MODES.MANUAL.mode);
   const isAutoMode = agentState.mode === AgentMode.AUTO;
-
-  useEffect(() => {
-    console.log("ControlPanel - IsMinimal:", { isMinimal });
-    
-  }, [isMinimal]);
-
-  // This function is now only used internally for the button title
-  const getToolsButtonTitle = () => {
-    console.log("ControlPanel: getToolsButtonTitle: - Agent state: ", agentState);
-    if (agentState.status !== AgentStatus.STOPPED) {
-      return "Processing...";
-    } else if (agentState.pendingTools > 0) {
-      return "Execute Tools & Generate Next Action";
-    } else {
-      return "Generate Next Action";
-    }
-  };
 
   const handleToolsAndNextActionClick = () => {
     WebSocketService.executeToolAndGenerateAction();
@@ -66,7 +41,6 @@ function ControlPanel({ isMinimal }) {
       });
       WebSocketService.sendMessage(chat.currentInput);
       dispatch({ type: ActionTypes.SET_CHAT_INPUT, payload: "" });
-      //TODO:Process Message & Update Tools: update backend and pending tools based on LLM response
   };
 
   const handleStop = () => {
@@ -80,53 +54,11 @@ function ControlPanel({ isMinimal }) {
     });
   };
 
-
-  const hanldeFullscrenToggle = (isAutoMode) => {
-    setIsWindowMoved(false);
-    const handleMoveToBottomRightDone = () => {
-      console.log("Window moved to bottom-right corner");
-      setIsWindowMoved(true);
-      // Remove the event listener after handling the event
-      window.electron.ipcRenderer.removeListener(
-        "move-to-bottom-right-done",
-        handleMoveToBottomRightDone
-      );
-    };
-
-    if (isAutoMode && agentState.status !== AgentStatus.STOPPED) {
-      // Exit fullscreen when switching to auto mode
-      window.electron.ipcRenderer.send("toggle-fullscreen", false);
-
-      // Move window to bottom right corner
-      window.electron.ipcRenderer.send("move-to-bottom-right");
-      // Add the event listener
-      window.electron.ipcRenderer.on(
-        "move-to-bottom-right-done",
-        handleMoveToBottomRightDone
-      );
-    } else if (agentState.status !== AgentStatus.STOPPED) {
-      // Enter fullscreen when switching to manual mode
-      window.electron.ipcRenderer.send("toggle-fullscreen", true);
-    }
-
-    if (
-      isAutoMode &&
-      isWindowMoved &&
-      agentState.status === AgentStatus.STOPPED &&
-      agentState.pendingTools === 0
-    ) {
-      // Auto mode tasks have been done
-      console.log("ControlPanel: AutoMode Done, then restore window");
-      window.electron.ipcRenderer.send("toggle-fullscreen", true);
-    }
-
-  };
-
   const getModeIcon = () => {
     if (mode === MODES.MANUAL.mode) {
-      return faUser;//faBolt;//faGear;
+      return faUser;
     } else if (mode === MODES.SEMI_AUTO.mode) {
-      return faBolt;//faWandMagic;
+      return faBolt;
     } else if (mode === MODES.AUTO.mode) {
       return faMagicWandSparkles;
     }
@@ -161,11 +93,9 @@ function ControlPanel({ isMinimal }) {
     } else if (mode === MODES.SEMI_AUTO.mode) {
       setMode(MODES.AUTO.mode);
       setAgentMode(AgentMode.AUTO);
-      // hanldeFullscrenToggle(true); # TODO: fix this. Currently this not working properly in Mac. 
     } else if (MODES.AUTO.mode) {
       setMode(MODES.MANUAL.mode)
       setAgentMode(AgentMode.MANUAL);
-      // hanldeFullscrenToggle(false);
     }
     console.log(
       "ControlPanel: handleMode: - mode: ",
@@ -186,13 +116,9 @@ function ControlPanel({ isMinimal }) {
 
   return (
     <div className="control-panel">
-      {isMinimal ? (
-        <span className="minimal-status">In Progress...</span>
-      ) : (
       <div className="left-controls">
         <button
           className="button active"
-          // className={`button ${mode === MODES.AUTO.mode || mode === MODES.SEMI_AUTO.mode ? "active" : ""}`}
           onClick={handleMode}
           title={
             mode === MODES.AUTO.mode ? MODES.AUTO.title : mode === MODES.SEMI_AUTO.mode ? MODES.SEMI_AUTO.title : MODES.MANUAL.title }
@@ -200,7 +126,6 @@ function ControlPanel({ isMinimal }) {
           <FontAwesomeIcon icon={getModeIcon()} />
         </button>
       </div>
-      )}
       <div className="right-controls">
         <button
           className={`button ${isAgentStatePlaying ? "active" : ""}`}
