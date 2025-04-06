@@ -172,6 +172,7 @@ class AgentService:
 
     async def process_next_action(self): # TBR
         if not self.processing_task or self.processing_task.done():
+            self.state_manager.set_status(AgentStatus.RUNNING)
             self.processing_task = asyncio.create_task(
                 self._process_message_single_mode(None)
             )
