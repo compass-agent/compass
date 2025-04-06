@@ -36,7 +36,7 @@ class StructuralEngineerPrompt(BasePrompt):
 
 <TASK>
     - When applicable, start by providing a high-level bullet-point plan and wait for user confirmation before proceeding.
-    - ALWAYS work step-by-step - implement and verify one step completely before moving to the next.
+    - ALWAYS work step-by-step - implement and verify one step completely before moving to the next. The steps are defined in the WORKFLOW section as a python comment.
 </TASK>
 
 <WORKFLOW>
@@ -46,12 +46,12 @@ class StructuralEngineerPrompt(BasePrompt):
 </WORKFLOW>
 
 <IMPORTANT_GUIDELINES>
-    - Break complex tasks into smaller, manageable script executions and complete them one at a time.
-    - Check & print return values (ret) to confirm operations were successful.
+    - Break complex tasks into smaller, manageable script executions and complete them one at a time (rely on steps in the WORKFLOW section).
+    - Check & print return values (ret) to confirm operations were successful (the workflow does not include this, but you should add).
     - Python scripts have access to: sap_model, sap_object, os, ModelPath, and other standard libraries.
     
     # CRITICAL API USAGE RULES:
-    1. ALWAYS use the exact API calls and patterns shown in the example code below.
+    1. ALWAYS use the exact API calls and patterns shown in the workflow code below.
     2. DO NOT create new API calls or patterns unless absolutely necessary.
     3. If you need to do something not shown in the examples:
        - query the API documentation using query_api_info action
@@ -61,15 +61,245 @@ class StructuralEngineerPrompt(BasePrompt):
     6. If unsure, copy and modify the relevant example code rather than creating new patterns
 </IMPORTANT_GUIDELINES>
 
-<EXAMPLE_WORKFLOW>
-# Simplified steps for creating a basic beam model:
-
-```python
+<WORKFLOW>
 {sap_example_create_steel_frame_structure}
-```
-</EXAMPLE_WORKFLOW>
+</WORKFLOW>
 """) 
     
+
+sap_example_create_steel_frame_structure = """
+<DESCRIPTION>
+Below is a workflow for analyzing a steel frame structure in which you follow, but examplified to some specifications where may need to be changed:
+using unit kip-ft-F (code 4)
+
+ Input the 3D geometry provided by the architect.
+ Steel moment frame building with pinned column-to-foundation connections
+ Steel material is ASTM A992Fy50.
+ Floor dead load = 75 psf
+ Floor live load = 50 psf (based on ASCE 7-22)
+ Roof live load = 20 psf (based on ASCE 7-22)
+ Steel design according to AISC 360-16 for strength and serviceability.
+</DESCRIPTION>
+
+<CODE>
+# Pre-requisitite (you can assume its done):
+# 1. A model with defined frames and joints are already loaded into sap and connected to the script and available through sap_model!
+# Step 1: Add base restraints to all ground level columns.
+# This code identifies the ground level columns and restrains them with no translation, but free to rotate.
+restraints = [True, True, True, False, False, False]
+restrained_joints, restraint_status = sap_model.add_base_restraints(restraints)
+
+# Step 2: Create floor areas and add dead and live loads to them.
+# substep: add dead and live load patterns definitions  
+sap_model.LoadPatterns.Add("DEAD", 1, 1.0)  # 1 is eLoadPatternType_Dead
+sap_model.LoadPatterns.Add("LIVE", 3, 0.0)  # 3 is eLoadPatternType_Live
+
+# substep: identify all the floor levels.
+floor_levels, floor_status = sap_model.identify_floor_levels()
+for i, floor_level in enumerate(floor_levels):
+    # Check if this is the roof level since it needs a different load value
+    is_roof = (i == len(floor_levels) - 1)
+    # substep: create floor areas at each floor level.
+    areas, area_status = sap_model.add_floor_areas(floor_level)
+    # substep: add dead and live loads to the floor areas.
+    for area_name in areas:
+        sap_model.AreaObj.SetLoadUniform(
+            area_name,    # Area name
+            "DEAD",       # Load pattern
+            75.0,         # Load value (psf)
+            6,            # Direction (6 = Global Z)
+            True,         # Replace existing load
+            "Global"      # Coordinate system
+        )
+        live_load_value = 20.0 if is_roof else 50.0
+        sap_model.AreaObj.SetLoadUniform(
+            area_name,    # Area name
+            "LIVE",       # Load pattern
+            live_load_value,  # Load value (psf)
+            6,            # Direction (6 = Global Z)
+            True,         # Replace existing load
+            "Global"      # Coordinate system
+        )
+
+# Step3: Create Beam section groups and assign sections to them.
+# substep: get beam information by length since we group beams based on the length
+beams_by_length = sap_model.get_beams_info()
+print(f"beams by length: {beams_by_length}")
+
+# **Important: separate call**: Now based on the above printed beams by length, we can create a dictionary of beam sections.
+# the below codes are based on assumptions that the beam lengths are 24ft, 22ft, 18ft, 14ft, and 10ft.
+# The below code should be a separate function call! do not include in your current script. 
+# based on the above printed beams by length, we can create a dictionary of beam sections.
+beam_sections = {
+    "24ft Beams": "W24X76",
+    "22ft Beams": "W21X44", 
+    "18ft Beams": "W18X40",
+    "14ft Beams": "W14X34",
+    "10ft Beams": "W10X33"
+}
+
+# Now we can assign the sections to the beams.
+for length, frames in beams_by_length.items():
+    group_name = f"{int(length)}ft Beams"
+    if group_name in beam_sections:
+        sap_model.create_assign_section_group(
+            group_name=group_name,
+            frames=frames
+        )
+        ret = sap_model.PropFrame.ImportProp(
+            beam_sections[group_name],
+            "A992Fy50",
+            "AISC16.xml", # This is the AISC 16th edition steel code as defined in the user input
+            beam_sections[group_name]
+        )
+        ret = sap_model.FrameObj.SetSection(group_name, beam_sections[group_name], 1)
+
+# Step4: Create Column section groups and assign sections to them.
+# substep: get column information by location since we group columns based on the location
+columns_by_location = sap_model.get_columns_info()
+print(f"columns by location: {columns_by_location}")
+
+# **Important: separate call**: Now based on the above printed columns by location, we can create a dictionary of column sections.
+# the below codes are based on assumptions that the column locations are corner, edge, and interior.
+column_sections = {
+    "corner": "W10X12",
+    "edge": "W12X190",
+    "interior": "W14X193"
+}
+# Assign column sections
+for location, section in column_sections.items():
+    group_name = f"{location.capitalize()} Columns"
+    # Create group and assign frames
+    sap_model.create_assign_section_group(
+        group_name=group_name,
+        frames=columns_by_location[location]
+    )
+    ret = sap_model.PropFrame.ImportProp(
+        section,
+        "A992Fy50",
+        "AISC16.xml",
+        section
+    )
+    ret = sap_model.FrameObj.SetSection(group_name, section, 1)
+
+# Step 5: Run the analysis.
+# Important: Allways save the model before running the analysis.
+sap_model.File.Save(ModelPath)
+sap_model.Analyze.RunAnalysis()
+</CODE>
+<IMPORTANT NOTES>
+- Above Workflow has several helper functions such as add_base_restraints, identify_floor_levels, get_beams_info, get_columns_info, create_assign_section_group.
+- Make sure to use these helper functions in your workflow instead of creating new API calls directly. 
+</IMPORTANT NOTES>
+
+</APIs Documentation>
+# SAP2000 API Documentation
+Below is the description of the 10 APIs you use in your coding. 
+YOU MUST AVOID USING ANY OTHER API, Because you have outdated knowledge on SAP API and will make wrong calls. Stick with the 
+WorkFlow Code and following APIs description. 
+
+## 1. add_base_restraints()
+Adds restraints to ground-level column bases by finding columns with no frames below them.
+* Arguments: restraints=[True, True, True, False, False, False] (list of boolean values for Ux, Uy, Uz, Rx, Ry, Rz)
+* Returns: (list of restrained point names, status code)
+```python
+restrained_joints, restraint_status = sap_model.add_base_restraints()
+
+Important: Do NOT try to implement your own code using any other low-level API such as PointObj.SetRestraint. Only rely on this. 
+```
+
+## 2. LoadPatterns.Add()
+Adds load pattern definitions to the model.
+* Arguments: name (string), load_type (integer), self_weight_multiplier (float)
+* Returns: status code (0 for success)
+```python
+sap_model.LoadPatterns.Add("DEAD", 1, 1.0)  # 1 is eLoadPatternType_Dead
+sap_model.LoadPatterns.Add("LIVE", 3, 0.0)  # 3 is eLoadPatternType_Live
+```
+
+## 3. identify_floor_levels()
+Identifies distinct floor elevations from the model's points.
+* Arguments: tolerance=0.01 (coordinate comparison tolerance)
+* Returns: (list of floor elevations sorted from lowest to highest, status code)
+```python
+floor_levels, floor_status = sap_model.identify_floor_levels()
+```
+
+## 4. add_floor_areas()
+Adds floor areas at specified elevation by detecting enclosed polygons in the floor grid.
+* Arguments: floor_z (elevation), tolerance=0.01 (coordinate comparison tolerance)
+* Returns: (list of created area names, status code)
+```python
+areas, area_status = sap_model.add_floor_areas(floor_level)
+```
+
+## 5. AreaObj.SetLoadUniform()
+Applies uniform loads to floor areas.
+* Arguments: area_name, load_pattern, load_value, direction, replace, coordinate_system
+* Returns: status code (0 for success)
+```python
+sap_model.AreaObj.SetLoadUniform(area_name, "DEAD", 75.0, 6, True, "Global")
+```
+
+## 6. get_beams_info()
+Groups all beams in the model by their approximate length.
+* Arguments: tolerance=1.0 (tolerance for length matching)
+* Returns: dictionary mapping lengths to lists of beam frame names
+```python
+beams_by_length = sap_model.get_beams_info()
+```
+
+## 7. create_assign_section_group()
+Creates a group and assigns the specified frames to it.
+* Arguments: group_name (string), frames (list of frame names)
+* Returns: (list of frame names in the group, status code)
+```python
+sap_model.create_assign_section_group(group_name=group_name, frames=frames)
+```
+
+## 8. PropFrame.ImportProp()
+Imports frame section properties from a standard library.
+* Arguments: section_name, material, library_filename, new_property_name
+* Returns: status code (0 for success)
+```python
+ret = sap_model.PropFrame.ImportProp("W24X76", "A992Fy50", "AISC16.xml", "W24X76")
+```
+
+## 9. FrameObj.SetSection()
+Assigns sections to frame objects, often based on groups.
+* Arguments: frame_name/group_name, section_name, item_type (1 for groups)
+* Returns: status code (0 for success)
+```python
+ret = sap_model.FrameObj.SetSection(group_name, section_name, 1)
+```
+
+## 10. get_columns_info()
+Groups all columns in the model by their location (corner, edge, interior).
+* Arguments: tolerance=1.0 (tolerance for coordinate comparison)
+* Returns: dictionary mapping location types to lists of column frame names
+```python
+columns_by_location = sap_model.get_columns_info()
+```
+
+## 11. File.Save()
+Saves the current model to a file.
+* Arguments: file_path (string) - Path where the model should be saved
+* Returns: status code (0 for success)
+```python
+sap_model.File.Save(model_path)
+```
+
+## 12. Analyze.RunAnalysis()
+Runs the structural analysis on the current model.
+* Arguments: None
+* Returns: status code (0 for success)
+```python
+sap_model.Analyze.RunAnalysis()
+```
+</APIs Documentation>
+
+"""
+
 
 sap_example_create_beam = """
 # initialize model
@@ -200,164 +430,10 @@ sap_example_create_beam_simplified = """
 """
 
 api_description = """
-self.sap_model.PropMaterial.SetMaterial("Steel", int(SAP2000.eMatType_Steel))
+sap_model.PropMaterial.SetMaterial("Steel", int(SAP2000.eMatType_Steel))
 Decriptin in one paragraph 
 
 
 API XX ...
 
-"""
-
-
-
-sap_example_create_steel_frame_structure = """
-Below is an example of how to create a steel frame structure in SAP2000 for following specifications:
-using unit kip-ft-F
-material properties: E = 4176000 ksi, v = 0.3, d = 0.00000650
-4 levels with heights of 0', 18', 30', and 42'
-9 grid lines in the X-direction at 0', 24', 48', 72', 84', 96', 120', 144', and 168'
-5 grid lines in the Y-direction at 0', 22', 40', 54', and 64'
-Steel columns (24"×24") at each grid intersection
-Steel beams (18"×12") connecting all columns at each level
-Floor dead load of 75 psf
-Floor live load of 50 psf
-Roof live load of 20 psf
-Fixed supports at all column bases
-
-
-#  Step 1: start a new model # MAKE SURE to use 4 for kip-ft-F units
-self.sap_model.InitializeNewModel(4)
-self.sap_model.File.NewBlank()
-
-# Step 2: Create a new material as steel. 
-# Important: make sure to use int(SAP2000.eMatType_Steel) instead of 1.
-self.sap_model.PropMaterial.SetMaterial("Steel", int(SAP2000.eMatType_Steel))
-self.sap_model.PropMaterial.SetMPIsotropic("Steel", float(4176000.0), float(0.3), float(0.00000650))
-
-# Step 3: Delete the default load patterns and add new ones.
-self.sap_model.LoadPatterns.Delete("MODAL")
-self.sap_model.LoadPatterns.Add("DEAD", int(SAP2000.eLoadPatternType_Dead), 1.0)  # 1 = Dead, 
-self.sap_model.LoadPatterns.Add("LIVE", int(SAP2000.eLoadPatternType_Live), 0.0)  # 3 = Live, self-weight multiplier = 0.0
-
-# Step 4: Define the column and beam properties.
-self.sap_model.PropFrame.SetRectangle("COLUMN", "A992Fy50", 2, 2)  # 24" x 24" column
-self.sap_model.PropFrame.SetRectangle("BEAM", "A992Fy50", 1.5, 1)  # 18" x 12" beam
-
-# Step 5:  Define columns and beams
-x_coords = [0, 24, 48, 72, 84, 96, 120, 144, 168]
-y_coords = [0, 22, 40, 54, 64]
-z_coords = [0, 18, 30, 42]
-columns_created = 0
-for x in x_coords:
-    for y in y_coords:
-        ret = self.sap_model.FrameObj.AddByCoord(
-            x, y, z_coords[0],   # Bottom point
-            x, y, z_coords[-1],  # Top point
-            ""  # Auto-name
-        )
-        col_name = ret[0]
-        self.sap_model.FrameObj.SetSection(col_name, "COLUMN")
-        columns_created += 1
-
-frame_names = self.sap_model.FrameObj.GetNameList()[1]
-restraints_applied = 0
-for frame_name in frame_names:
-    # Get points of the frame
-    point_names = self.sap_model.FrameObj.GetPoints(frame_name, "", "")[0:2]
-    # Get coordinates of each point
-    for point_name in point_names:
-        xyz = self.sap_model.PointObj.GetCoordCartesian(point_name)[0:3]
-        
-        # If point is at z=0, it's a column base - apply restraint
-        if abs(xyz[2]) < 0.001:  # Check if z-coordinate is approximately 0
-            # Set fixed restraint for the column bases
-            restraint = [True, True, True, False, False, False]
-            self.sap_model.PointObj.SetRestraint(point_name, restraint)
-            restraints_applied += 1
-            break  # Only need to restrain one end of the column
-
-beams_created = 0
-# Create X-direction beams
-for z in z_coords[1:]:  # Skip the base level
-    for y in y_coords:
-        for i in range(len(x_coords)-1):
-            ret = self.sap_model.FrameObj.AddByCoord(
-                x_coords[i], y, z,     # Start point
-                x_coords[i+1], y, z,   # End point
-                ""  # Auto-name
-            )
-            beam_name = ret[0]
-            self.sap_model.FrameObj.SetSection(beam_name, "BEAM")
-            beams_created += 1
-    # Create Y-direction beams
-    for x in x_coords:
-        for i in range(len(y_coords)-1):
-            ret = self.sap_model.FrameObj.AddByCoord(
-                x, y_coords[i], z,     # Start point
-                x, y_coords[i+1], z,   # End point
-                ""  # Auto-name
-            )
-            beam_name = ret[0]
-            self.sap_model.FrameObj.SetSection(beam_name, "BEAM")
-            beams_created += 1
-
-# Step 5: Create floor areas with appropriate loads
-x_coords = [0, 24, 48, 72, 84, 96, 120, 144, 168]
-y_coords = [0, 22, 40, 54, 64]
-z_coords = [0, 18, 30, 42]  # Floor levels
-# Create shell areas at each floor level (skip the base level at z=0)
-for z_index, z in enumerate(z_coords[1:], 1):
-    # Determine if this is the roof level (the highest level)
-    is_roof = (z_index == len(z_coords) - 1)
-    # Loop through each bay defined by grid lines
-    for i in range(len(x_coords) - 1):
-        for j in range(len(y_coords) - 1):
-            # Define the coordinates arrays for the 4 corners
-            x_array = [x_coords[i], x_coords[i+1], x_coords[i+1], x_coords[i]]
-            y_array = [y_coords[j], y_coords[j], y_coords[j+1], y_coords[j+1]]
-            z_array = [z, z, z, z]  # All points at the same elevation
-            
-            # Create the area - using the proper API syntax
-            ret = self.sap_model.AreaObj.AddByCoord(
-                4,          # Number of points
-                x_array,    # X coordinates array
-                y_array,    # Y coordinates array
-                z_array,    # Z coordinates array
-                ""          # Auto-name
-            )
-            
-            # Extract the area name from the return value (4th element, index 3)
-            area_name = ret[3]
-            
-            # Apply dead load (75 psf) - Direction 6 is Global Z
-            self.sap_model.AreaObj.SetLoadUniform(
-                area_name,    # Area name
-                "DEAD",       # Load pattern
-                75.0,         # Load value (psf)
-                6,            # Direction (6 = Global Z)
-                True,         # Replace existing load
-                "Global"      # Coordinate system
-            )
-            
-            # Apply live load
-            if is_roof:
-                # Roof live load (20 psf)
-                self.sap_model.AreaObj.SetLoadUniform(
-                    area_name,    # Area name
-                    "LIVE",       # Load pattern  
-                    20.0,         # Load value (psf)
-                    6,            # Direction (6 = Global Z)
-                    True,         # Replace existing load
-                    "Global"      # Coordinate system
-                )
-            else:
-                # Floor live load (50 psf)
-                self.sap_model.AreaObj.SetLoadUniform(
-                    area_name,    # Area name
-                    "LIVE",       # Load pattern
-                    50.0,         # Load value (psf)
-                    6,            # Direction (6 = Global Z)
-                    True,         # Replace existing load
-                    "Global"      # Coordinate system
-                )
 """

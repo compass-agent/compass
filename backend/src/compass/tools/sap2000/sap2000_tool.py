@@ -12,6 +12,7 @@ from compass.tools.base import BaseTool
 from compass.types.agent import ToolResult
 from compass.tools.sap2000.sap_model_info import SAPModelInfo
 from compass.tools.sap2000.sap_api_query import SAPAPIQuery
+from compass.tools.sap2000.custom_sap2000_model import CustomSAP2000Model
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class SAPComTool(BaseTool):
         self.model_path = None
         self._connected = False
         self.model_info = None
+        self.execution_state = {}  # Dictionary to maintain state between executions
         
         # Initialize API query system for documentation searches
         try:
@@ -47,9 +49,12 @@ class SAPComTool(BaseTool):
             import comtypes.gen.SAP2000v1
             helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
             self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
-            self.sap_model = self.sap_object.SapModel
-            APIPath = R'C:\Users\sadoughi\Projects\compass\experiment\model'
-            self.model_path = APIPath + os.sep + 'compass_model.sdb'
+            self.sap_model = CustomSAP2000Model(self.sap_object.SapModel)
+            
+            # Generate unique model path
+            base_path = R'C:\Users\sadoughi\Projects\compass\experiment\model'
+            base_filename = 'compass_model.sdb'
+            self.model_path = self._generate_unique_path(base_path, base_filename)
             
             # Initialize model info extractor
             self.model_info = SAPModelInfo(self.sap_model, self.sap_object, self.model_path)
@@ -68,6 +73,24 @@ class SAPComTool(BaseTool):
             logger.error(f"Failed to connect to SAP2000: {str(e)}")
             self._connected = False
             return False
+    
+    def _generate_unique_path(self, base_path: str, base_filename: str) -> str:
+        """Generate a unique path by adding suffix if file exists."""
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
+        
+        path = os.path.join(base_path, base_filename)
+        if not os.path.exists(path):
+            return path
+        
+        # If file exists, add suffix
+        name, ext = os.path.splitext(base_filename)
+        counter = 1
+        while True:
+            new_path = os.path.join(base_path, f"{name}_{counter}{ext}")
+            if not os.path.exists(new_path):
+                return new_path
+            counter += 1
     
     async def __call__(
         self,
@@ -130,7 +153,7 @@ class SAPComTool(BaseTool):
             sap_object = self.sap_object
             sap_model = self.sap_model
             
-            # Set up a dictionary of variables to pass to exec
+            # Set up a dictionary of variables to pass to exec, including our execution state
             exec_globals = {
                 'sap_object': sap_object,
                 'sap_model': sap_model,
@@ -138,24 +161,61 @@ class SAPComTool(BaseTool):
                 'traceback': traceback,
                 'os': os,
                 'StringIO': StringIO,
-                'ModelPath': self.model_path
+                'ModelPath': self.model_path,
+                **self.execution_state  # Include our persistent state
             }
             
             try:
                 # Execute the user script with access to the SAP objects
                 exec(script, exec_globals)
                 
+                # Update our execution state with any new variables
+                self.execution_state.update({
+                    k: v for k, v in exec_globals.items() 
+                    if k not in ['sap_object', 'sap_model', 'sys', 'traceback', 'os', 'StringIO', 'ModelPath']
+                })
+                
                 # Automatically refresh the view and save the model after script execution
                 try:
-                    self.sap_model.View.RefreshView(0, False)
-                    self.sap_model.File.Save(self.model_path)
+                    ret = self.sap_model.View.RefreshView(0, False)
+                    if ret != 0:
+                        error_text = f"\nFailed to refresh view (return code: {ret})"
+                    else:
+                        error_text = ""
+                    
+                    ret = self.sap_model.File.Save(self.model_path)
+                    if ret != 0:
+                        error_text += f"\nFailed to save model (return code: {ret})"
                 except Exception as e:
                     logger.warning(f"Error during automatic view refresh and save: {str(e)}")
                 
                 result_text = stdout_buffer.getvalue()
                 error_text = stderr_buffer.getvalue()
             except Exception as e:
-                error_text = f"Error executing script: {str(e)}\n{traceback.format_exc()}"
+                # Get the traceback
+                tb = traceback.extract_tb(e.__traceback__)
+                
+                # Filter out frames from our codebase and comtypes
+                filtered_tb = []
+                for frame in tb:
+                    # Skip frames from our codebase and comtypes
+                    if not any(x in frame.filename for x in ['compass/tools/sap2000', 'comtypes']):
+                        filtered_tb.append(frame)
+                
+                # Create a new traceback with just the filtered frames
+                if filtered_tb:
+                    # Create a new exception with the filtered traceback
+                    new_exc = type(e)(str(e))
+                    new_exc.__traceback__ = traceback.TracebackType(
+                        tb_next=None,
+                        tb_frame=filtered_tb[-1].tb_frame,
+                        tb_lasti=filtered_tb[-1].tb_lasti,
+                        tb_lineno=filtered_tb[-1].tb_lineno
+                    )
+                    error_text = f"Error in script: {str(new_exc)}\n{traceback.format_exception(type(new_exc), new_exc, new_exc.__traceback__)}"
+                else:
+                    error_text = f"Error in script: {str(e)}"
+                
                 result_text = stdout_buffer.getvalue()  # Capture any output before the error
             finally:
                 # Restore stdout and stderr
@@ -240,6 +300,44 @@ class SAPComTool(BaseTool):
         return {
             "name": self.name,
             "description": """Tool for interacting with SAP2000 structural analysis software via its COM API.
+Supports following main actions:
+1. run_sap_com_python: Execute Python scripts to interact with a running SAP2000 instance
+
+The connection to SAP2000 is established when the agent starts.
+For run_sap_com_python, the script is given direct access to the SAP2000 model via the 'sap_model' variable.
+In addition, the following variables are available:
+- sap_model: The SAP2000 model object
+- sap_object: The SAP2000 object
+- os: The os module
+- ModelPath: The path to the model file
+Also after running the script, the model will be automatically saved and view will be refreshed (you don't need to do it manually).
+
+Important notes when using run_sap_com_python:
+- Always try to return the "ret" value of commands in the script and print it to check if successful.
+""",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["run_sap_com_python"],
+                        "description": "The type of SAP2000 interaction to perform"
+                    },
+                    "script_command": {
+                        "type": "string",
+                        "description": "The Python script to execute with access to SAP2000 API (required for run_sap_com_python action)"
+                    }
+                },
+                "required": ["action"]
+            },
+            "cache_control": {"type": "ephemeral"}
+        } # type: ignore
+
+    def to_params_all(self) -> BetaToolUnionParam:
+        """Return the parameters needed to register this tool with the LLM."""
+        return {
+            "name": self.name,
+            "description": """Tool for interacting with SAP2000 structural analysis software via its COM API.
 Supports three main actions:
 1. run_sap_com_python: Execute Python scripts to interact with a running SAP2000 instance
 2. get_model_info: Extract comprehensive information about the current SAP2000 model
@@ -276,5 +374,6 @@ Important notes when using run_sap_com_python:
                     }
                 },
                 "required": ["action"]
-            }
-        } # type: ignore 
+            },
+            "cache_control": {"type": "ephemeral"}
+        } # type: ignore  

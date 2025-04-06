@@ -142,25 +142,64 @@ class HistoryLogger:
 
 class TokenTracker:
     def __init__(self):
+        # Initialize counters for different types of tokens
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+        self.total_cache_creation_input_tokens = 0
+        self.total_cache_read_input_tokens = 0
+        
+        # Cost rates (per million tokens)
         self.input_token_cost_per_million = 3.0  # $3 per 1M tokens
         self.output_token_cost_per_million = 15.0  # $15 per 1M tokens
+        self.cache_creation_cost_per_million = 3.75  # $3.75 per 1M tokens
+        self.cache_read_cost_per_million = 0.30  # $0.30 per 1M tokens
 
-    def track_usage(self, input_tokens: int, output_tokens: int) -> None:
+    def track_usage(self, 
+                   input_tokens: int, 
+                   output_tokens: int,
+                   cache_creation_input_tokens: int = 0,
+                   cache_read_input_tokens: int = 0) -> None:
         # Calculate costs for current iteration
         input_cost = (input_tokens / 1_000_000) * self.input_token_cost_per_million
         output_cost = (output_tokens / 1_000_000) * self.output_token_cost_per_million
+        cache_creation_cost = (cache_creation_input_tokens / 1_000_000) * self.cache_creation_cost_per_million
+        cache_read_cost = (cache_read_input_tokens / 1_000_000) * self.cache_read_cost_per_million
+        
+        # Calculate total cost for current iteration
+        current_total_cost = input_cost + output_cost + cache_creation_cost + cache_read_cost
         
         # Update totals
         self.total_input_tokens += input_tokens
         self.total_output_tokens += output_tokens
+        self.total_cache_creation_input_tokens += cache_creation_input_tokens
+        self.total_cache_read_input_tokens += cache_read_input_tokens
+        
+        # Calculate total costs
         total_input_cost = (self.total_input_tokens / 1_000_000) * self.input_token_cost_per_million
         total_output_cost = (self.total_output_tokens / 1_000_000) * self.output_token_cost_per_million
+        total_cache_creation_cost = (self.total_cache_creation_input_tokens / 1_000_000) * self.cache_creation_cost_per_million
+        total_cache_read_cost = (self.total_cache_read_input_tokens / 1_000_000) * self.cache_read_cost_per_million
+        
+        # Calculate cumulative total cost
+        cumulative_total_cost = total_input_cost + total_output_cost + total_cache_creation_cost + total_cache_read_cost
         
         # Log current iteration and totals
-        logger.info(f"Current: input_tokens={input_tokens} (${input_cost:.4f}), output_tokens={output_tokens} (${output_cost:.4f})")
-        logger.info(f"Total: input_tokens={self.total_input_tokens} (${total_input_cost:.4f}), output_tokens={self.total_output_tokens} (${total_output_cost:.4f})")
+        logger.info(
+            f"Current Usage:\n"
+            f"  Input Tokens: {input_tokens} (${input_cost:.4f})\n"
+            f"  Output Tokens: {output_tokens} (${output_cost:.4f})\n"
+            f"  Cache Creation Tokens: {cache_creation_input_tokens} (${cache_creation_cost:.4f})\n"
+            f"  Cache Read Tokens: {cache_read_input_tokens} (${cache_read_cost:.4f})\n"
+            f"  Total Cost: ${current_total_cost:.4f}"
+        )
+        logger.info(
+            f"Total Usage:\n"
+            f"  Input Tokens: {self.total_input_tokens} (${total_input_cost:.4f})\n"
+            f"  Output Tokens: {self.total_output_tokens} (${total_output_cost:.4f})\n"
+            f"  Cache Creation Tokens: {self.total_cache_creation_input_tokens} (${total_cache_creation_cost:.4f})\n"
+            f"  Cache Read Tokens: {self.total_cache_read_input_tokens} (${total_cache_read_cost:.4f})\n"
+            f"  Cumulative Total Cost: ${cumulative_total_cost:.4f}"
+        )
 
 class SessionManager:
     _instance = None

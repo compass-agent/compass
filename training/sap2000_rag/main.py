@@ -8,6 +8,9 @@ retrieval-augmented generation of SAP2000 code.
 Usage:
     python main.py "your query here"    # Query the RAG system
     python main.py --build             # Build the RAG system
+
+
+$env:PYTHONPATH="backend/src;$env:PYTHONPATH"; backend/venv/Scripts/python training/sap2000_rag/main.py "How do I set a dead load on a SAP2000 model?"
 """
 
 import os

@@ -54,7 +54,10 @@ class AnthropicLLM(BaseLLMInterface):
         messages = self.memory_manager.memory
         messages = self.memory_manager.optimize_messages(messages)
         formatted_messages = self.format_messages_for_llm(messages)
-        
+        if PROMPT_CACHING:
+            system_message_content = [{"type": "text", "text": system_message.content, "cache_control": {"type": "ephemeral"}}]
+        else:
+            system_message_content = [{"type": "text", "text": system_message.content}]
         # Save formatted messages
         self._save_formatted_messages(formatted_messages, system_message.content)
 
@@ -75,14 +78,16 @@ class AnthropicLLM(BaseLLMInterface):
                     max_tokens=MAX_TOKENS,
                     messages=formatted_messages, # type: ignore
                     model=ANTHROPIC_MODEL_NAME_AUTO,
-                    system=system_message.content,
+                    system=system_message_content, # type: ignore
                     tools=self.tools_params, # type: ignore
                     betas=self.betas,
                 )
                 response = raw_response.parse()
                 self.token_tracker.track_usage(
                     response.usage.input_tokens,
-                    response.usage.output_tokens
+                    response.usage.output_tokens,
+                    response.usage.cache_creation_input_tokens or 0,
+                    response.usage.cache_read_input_tokens or 0
                 )
                 for block in response.content:
                     if block.type == "text":
@@ -166,8 +171,11 @@ class AnthropicLLM(BaseLLMInterface):
                         })
             elif isinstance(message, ToolResult):
                 content = []
-                if message.text:
-                    content.append({"type": "text", "text": message.text})
+                text_content = message.text or ""
+                if message.error:
+                    text_content = f"{text_content}\nError: {message.error}"
+                if text_content:
+                    content.append({"type": "text", "text": text_content})
                 if message.image:
                     content.append({
                         "type": "image",
