@@ -42,9 +42,9 @@ class SAPComTool(BaseTool):
         """Attempt to connect to a running SAP2000 instance."""
         try:
             import comtypes.client
-            import comtypes.gen.SAP2000v1
             logger.info("Attempting to connect to SAP2000...")
             helper = comtypes.client.CreateObject('SAP2000v1.Helper')
+            import comtypes.gen.SAP2000v1
             helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
             self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
             self.sap_model = self.sap_object.SapModel
@@ -144,6 +144,14 @@ class SAPComTool(BaseTool):
             try:
                 # Execute the user script with access to the SAP objects
                 exec(script, exec_globals)
+                
+                # Automatically refresh the view and save the model after script execution
+                try:
+                    self.sap_model.View.RefreshView(0, False)
+                    self.sap_model.File.Save(self.model_path)
+                except Exception as e:
+                    logger.warning(f"Error during automatic view refresh and save: {str(e)}")
+                
                 result_text = stdout_buffer.getvalue()
                 error_text = stderr_buffer.getvalue()
             except Exception as e:
@@ -244,11 +252,9 @@ In addition, the following variables are available:
 - sap_object: The SAP2000 object
 - os: The os module
 - ModelPath: The path to the model file
+Also after running the script, the model will be automatically saved and view will be refreshed (you don't need to do it manually).
 
-Therefore, you can assume these variables are available and rely on them. 
 Important notes when using run_sap_com_python:
-- Always save the model before running any analysis. Otherwise, the analysis won't be performed. Use:
-  ret = sap_model.File.Save(ModelPath)
 - Always try to return the "ret" value of commands in the script and print it to check if successful.
 """,
             "input_schema": {

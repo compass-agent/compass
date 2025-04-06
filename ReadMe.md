@@ -24,7 +24,7 @@ This guide will help you set up and run the Compass development environment.
    cd backend
    python -m venv venv
    source venv/bin/activate  # This works on MacOS/Linux
-   venv\Scripts\activate     # This works on Windows
+   .\venv\Scripts\Activate.ps1     # This works on Windows
    pip install -r requirements.txt
    cd ..
    ```

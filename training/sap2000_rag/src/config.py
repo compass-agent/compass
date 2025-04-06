@@ -18,7 +18,7 @@ DEFAULT_PDF_DIR = os.path.join(PROJECT_ROOT, 'data', 'CSI_API_Functions')
 DEFAULT_OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'output')
 DEFAULT_CHUNKS_DIR = os.path.join(DEFAULT_OUTPUT_DIR, 'chunks')
 DEFAULT_EMBEDDINGS_DIR = os.path.join(DEFAULT_OUTPUT_DIR, 'embeddings')
-DEFAULT_DB_DIR = os.path.join(DEFAULT_OUTPUT_DIR, 'vector_db')
+DEFAULT_DB_DIR = os.path.join(PROJECT_ROOT, '..', '..', 'backend', 'src', 'compass', 'database', 'sap2000_api')
 
 # Collection name for vector database
 DEFAULT_COLLECTION_NAME = 'sap2000_api'

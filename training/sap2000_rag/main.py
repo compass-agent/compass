@@ -6,12 +6,14 @@ creates embeddings, and stores them in a vector database for
 retrieval-augmented generation of SAP2000 code.
 
 Usage:
-    python main.py    # Build the RAG system
+    python main.py "your query here"    # Query the RAG system
+    python main.py --build             # Build the RAG system
 """
 
 import os
 import logging
 import sys
+import argparse
 from src.pdf_parser import PDFParser
 from src.embedding_manager import EmbeddingManager
 from src.vector_store import VectorStore
@@ -118,16 +120,21 @@ def query_rag_system(config, query):
 
 def main():
     """Main entry point"""
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='SAP2000 API Documentation RAG System')
+    parser.add_argument('query', nargs='?', default="How do I set a dead load on a SAP2000 model?", help='Query to search in the RAG system')
+    parser.add_argument('--build', action='store_true', help='Build the RAG system')
+    args = parser.parse_args()
+
     # Get configuration
     config = get_config()
-    if False:
+
+    if args.build:
         # Build the RAG system
         build_rag_system(config)
     else:
-        sample_query = "How I set a dead load on a SAP2000 model?"
-        print(f"\nRunning sample query: '{sample_query}'")
-        query_rag_system(config, sample_query)
-        
+        # Run the query
+        query_rag_system(config, args.query)
 
 if __name__ == "__main__":
     main() 

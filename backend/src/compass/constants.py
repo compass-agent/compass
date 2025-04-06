@@ -2,7 +2,7 @@ import os
 
 # Agent constants:
 MAX_ITERATIONS = 20 # Maximum number of iterations for the agent in auto Mode
-DEFAULT_AGENT_TYPE = "FreeCAD"  # Default agent type to use
+DEFAULT_AGENT_TYPE = "structural-engineer"  # Default agent type to use
 
 
 # LLM constants:
