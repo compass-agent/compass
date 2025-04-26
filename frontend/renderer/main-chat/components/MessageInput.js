@@ -8,7 +8,7 @@ import { AgentStatus, ActionTypes } from '../../common/constants';
 
 function MessageInput() {
   const { state, dispatch } = useAppState();
-  const { agent, chat } = state;
+  const { connection, agent, chat } = state;
   const [message, setMessage] = useState(chat.currentInput);
   const [imageData, setImageData] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -18,7 +18,7 @@ function MessageInput() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showWorkflowSubmenu, setShowWorkflowSubmenu] = useState(false);
   const [closeTimeout, setCloseTimeout] = useState(null);
-  
+  const isCompassReady = connection.connected && agent.status === AgentStatus.STOPPED;
   const workflowList = state.workflows || [];
 
   useEffect(() => {
@@ -309,9 +309,11 @@ function MessageInput() {
           ref={textareaRef}
           className="message-input"
           placeholder={
-            agent.status === AgentStatus.STOPPED
-              ? "Ask Compass ..."
-              : "Processing..."
+            !isCompassReady
+              ? ""
+              : agent.status === AgentStatus.STOPPED
+                ? "Ask Compass ..."
+                : "Processing..."
           }
           value={message}
           onChange={handleChange}

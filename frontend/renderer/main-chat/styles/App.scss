@@ -37,17 +37,36 @@
   }
 
   .content {
+    flex: 1;
     display: flex;
     flex-direction: column;
     position: relative;
     width: 100%;
-    flex: 1;
     padding: 0;
     gap: 0;
     background-color: transparent;
     margin-top: $buttons-bar-height;
     // height: calc(100vh - $buttons-bar-height);
     overflow: hidden;
+
+    .loading-spinner-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      text-align: center;
+
+      .spinner-icon {
+        color: $disabled-bg-color;
+        margin-bottom: 10px;
+      }
+
+      .spinner-text {
+        color: #666;
+        margin-top: 10px;
+      }
+    }
 
     .history-container {
       display: flex;

@@ -22,12 +22,14 @@ import {
 import { faSquare } from "@fortawesome/free-regular-svg-icons";
 import WebSocketService from "../../common/services/websocket";
 import SettingsMenu from "./SettingsMenu";
+import { AgentStatus } from "../../common/constants";
 
 function Header() {
   const { state } = useAppState();
+  const { connection, agent } = state;
   const { compassWindow } = state;
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-
+  const isCompassReady = connection.connected && agent.status === AgentStatus.STOPPED;
   let isMac = window.electron.platform === "darwin";
   const isWindows = window.electron.platform === "win32";
   console.log(`Header: start:  isMac ${isMac} isWindows ${isWindows}`);
@@ -156,7 +158,10 @@ function Header() {
 
       {/* Header Controls: Positioned on Right for MacOS and Left for Windows */}
       {isMac ? (
-        <div className="header-controls right">
+        <div className="header-controls right" style={{
+          pointerEvents: isCompassReady ? 'auto' : 'none',
+          opacity: isCompassReady ? 1 : 0.5
+        }}>
           <div className="settings-container">
             <button
               className="header-button settings"
@@ -180,7 +185,10 @@ function Header() {
           </button>
         </div>
       ) : (
-        <div className="header-controls left">
+        <div className="header-controls left" style={{
+          pointerEvents: isCompassReady ? 'auto' : 'none',
+          opacity: isCompassReady ? 1 : 0.5
+        }}>
           <div className="settings-container">
             <button
               className="header-button settings"

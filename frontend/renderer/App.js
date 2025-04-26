@@ -10,6 +10,8 @@ import Header from "./main-chat/components/Header";
 import useUpdateContainerHeight from "./main-chat/hooks/useUpdateContainerHeight";
 import useScrollToBottom from "./main-chat/hooks/useScrollToBottom";
 import { AgentStatus, AgentMode } from "./common/constants";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {faSpinner} from "@fortawesome/free-solid-svg-icons";
 
 // Separate component for the main app content to use the context
 function AppContent() {
@@ -20,7 +22,26 @@ function AppContent() {
   // Use custom hooks
   useUpdateContainerHeight(chatHistoryRef);
   useScrollToBottom(chatHistoryRef, chat.messages);
-  
+  const isAutoMode = agent.mode === AgentMode.AUTO;
+  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED;
+  const isCompassReady = connection.connected && agent.status === AgentStatus.STOPPED;
+
+  useEffect(() => {
+    if (window.electron.minimalWindow) {
+      window.electron.minimalWindow(isMinimalView);
+    }
+  }, [isMinimalView]);
+
+  if (isMinimalView) {
+    return (
+      <div className="app"  style={{ border: '2px solid rgb(145, 144, 144)' }}>
+        <div className="control-panel-wrapper">
+          <ControlPanel isMinimal={isMinimalView} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <div className="header-wrapper">
@@ -30,6 +51,19 @@ function AppContent() {
         className="content"
          style={{ width: `calc(100% - ${editorWidth}px)` }}
       >
+        { !isCompassReady && (
+          <div className="loading-spinner-container">
+            <FontAwesomeIcon 
+              icon={faSpinner} 
+              spin 
+              size="3x" 
+              className="spinner-icon"
+            />
+            <div className="spinner-text">
+              Connecting to Compass...
+            </div>
+          </div>
+        )}
         {connection.error && (
           <div className="error-banner">{connection.error}</div>
         )}
@@ -38,14 +72,26 @@ function AppContent() {
             <ChatHistory
               onEditorWidthChange={(newWidth) => {
               setEditorWidth(newWidth)
-              }} // Callback to update editor width
+              }}
             />
           </div>
-          <div className="control-panel-wrapper">
+          <div 
+            className="control-panel-wrapper"
+            style={{
+              pointerEvents: isCompassReady ? 'auto' : 'none',
+              opacity: isCompassReady ? 1 : 0.5
+            }}
+          >
             <ControlPanel />
           </div>
         </div>
-        <div className="input-box-wrapper">
+        <div
+          className="input-box-wrapper"
+          style={{
+            pointerEvents: isCompassReady ? 'auto' : 'none',
+            opacity: isCompassReady ? 1 : 0.5
+          }}
+        >
           <MessageInput />
         </div>
       </div>
