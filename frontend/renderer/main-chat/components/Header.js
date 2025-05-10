@@ -1,99 +1,89 @@
-import React, { useState, useEffect } from "react";
-import { useAppState } from "../../common/context/AppContext";
-import "../styles/Header.scss";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSquare } from "@fortawesome/free-regular-svg-icons"
 import {
-  faXmark,
-  faWindowMinimize,
-  faMinimize,
-  faMaximize,
-  faEllipsisVertical,
-  faUsersCog,
-  faExpand,
-  faCompress,
-  faUpRightAndDownLeftFromCenter,
-  faMinus,
-  faImage,
-  faMessage,
   faArrowsRotate,
-  faRobot,
-  faEdit,
-} from "@fortawesome/free-solid-svg-icons";
-import { faSquare } from "@fortawesome/free-regular-svg-icons";
-import WebSocketService from "../../common/services/websocket";
-import SettingsMenu from "./SettingsMenu";
-import { AgentStatus } from "../../common/constants";
+  faMinus,
+  faUpRightAndDownLeftFromCenter,
+  faUsersCog,
+  faWindowMinimize,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import React, { useEffect, useState } from "react"
+import { useAppState } from "../../common/context/AppContext"
+import WebSocketService from "../../common/services/websocket"
+import "../styles/Header.scss"
+import SettingsMenu from "./SettingsMenu"
 
 function Header() {
-  const { state } = useAppState();
-  const { connection, agent } = state;
-  const { compassWindow } = state;
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const isCompassReady = connection.connected && agent.status === AgentStatus.STOPPED;
-  let isMac = window.electron.platform === "darwin";
-  const isWindows = window.electron.platform === "win32";
-  console.log(`Header: start:  isMac ${isMac} isWindows ${isWindows}`);
+  const { state } = useAppState()
+  const { connection, agent } = state
+  const { compassWindow } = state
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const isCompassReady = connection.connected //&& agent.status === AgentStatus.STOPPED
+  let isMac = window.electron.platform === "darwin"
+  const isWindows = window.electron.platform === "win32"
+  console.log(`Header: start:  isMac ${isMac} isWindows ${isWindows}`)
 
   const handleClose = () => {
     if (window.electron && window.electron.closeWindow) {
-      window.electron.closeWindow();
+      window.electron.closeWindow()
     } else {
-      console.error("window.electron.closeWindow is not defined");
+      console.error("window.electron.closeWindow is not defined")
     }
-  };
+  }
 
   const handleMinimize = () => {
-    window.electron.minimizeWindow();
-  };
+    window.electron.minimizeWindow()
+  }
 
   const handleToggleMaximizeWindow = () => {
     if (window.electron?.toggleMaximizeWindow) {
-      window.electron.toggleMaximizeWindow();
+      window.electron.toggleMaximizeWindow()
     } else {
       console.error(
         "Renderer: window.electron.toggleMaximizeWindow is not defined"
-      );
+      )
     }
-  };
+  }
 
   const handleNewChat = () => {
-    const selectedAgentName = state.selectedAgentName || "structural-engineer"; // Default fallback
-    WebSocketService.handleNewChat(selectedAgentName);
-  };
+    const selectedAgentName = state.selectedAgentName || "structural-engineer" // Default fallback
+    WebSocketService.handleNewChat(selectedAgentName)
+  }
 
   const handleShowSessions = () => {
     // TODO: Implement show sessions functionality
-    console.log("Show sessions clicked");
-  };
+    console.log("Show sessions clicked")
+  }
 
   const handleSettings = () => {
     // TODO: Implement settings functionality
-    console.log("Settings clicked");
-  };
+    console.log("Settings clicked")
+  }
 
   const handleTemplateTraining = () => {
-    console.log("Template training button clicked");
-    window.electron.ipcRenderer.send("open-template-training");
-  };
+    console.log("Template training button clicked")
+    window.electron.ipcRenderer.send("open-template-training")
+  }
 
   const handleSettingsClick = (e) => {
-    e.stopPropagation();
-    setShowSettingsMenu(!showSettingsMenu);
-  };
+    e.stopPropagation()
+    setShowSettingsMenu(!showSettingsMenu)
+  }
 
   useEffect(() => {
     const handleClickOutside = () => {
-      setShowSettingsMenu(false);
-    };
+      setShowSettingsMenu(false)
+    }
 
     if (showSettingsMenu) {
-      document.addEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showSettingsMenu]);
+      document.removeEventListener("click", handleClickOutside)
+    }
+  }, [showSettingsMenu])
 
   return (
     <div className={`header ${isMac ? "macos" : "windows"}`}>
@@ -158,10 +148,13 @@ function Header() {
 
       {/* Header Controls: Positioned on Right for MacOS and Left for Windows */}
       {isMac ? (
-        <div className="header-controls right" style={{
-          pointerEvents: isCompassReady ? 'auto' : 'none',
-          opacity: isCompassReady ? 1 : 0.5
-        }}>
+        <div
+          className="header-controls right"
+          style={{
+            pointerEvents: isCompassReady ? "auto" : "none",
+            opacity: isCompassReady ? 1 : 0.5,
+          }}
+        >
           <div className="settings-container">
             <button
               className="header-button settings"
@@ -185,10 +178,13 @@ function Header() {
           </button>
         </div>
       ) : (
-        <div className="header-controls left" style={{
-          pointerEvents: isCompassReady ? 'auto' : 'none',
-          opacity: isCompassReady ? 1 : 0.5
-        }}>
+        <div
+          className="header-controls left"
+          style={{
+            pointerEvents: isCompassReady ? "auto" : "none",
+            opacity: isCompassReady ? 1 : 0.5,
+          }}
+        >
           <div className="settings-container">
             <button
               className="header-button settings"
@@ -213,7 +209,7 @@ function Header() {
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default Header;
+export default Header

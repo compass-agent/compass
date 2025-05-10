@@ -1,12 +1,12 @@
-from dataclasses import dataclass
-from typing import Literal, get_args
-from collections import defaultdict
 import os
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Literal, Optional, get_args
 
-from compass.tools.base import BaseTool
-from compass.types.agent import ToolResult, ToolError
 from compass.constants import HOST_WORKING_DIR
+from compass.tools.base import BaseTool
+from compass.types.agent import ToolError, ToolResult
 
 Command = Literal[
     "view",

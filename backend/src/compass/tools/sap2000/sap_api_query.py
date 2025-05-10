@@ -8,6 +8,7 @@ using a vector database with embeddings of API documentation chunks.
 import os
 import json
 import logging
+import sys
 from typing import List, Dict, Any, Optional
 import chromadb
 from openai import OpenAI
@@ -16,7 +17,17 @@ from compass.key import OPENAI_API_KEY
 logger = logging.getLogger(__name__)
 
 # Configuration
-DEFAULT_DB_PATH = os.path.abspath(os.path.join("src", "compass", "database", "sap2000_api"))
+# Determine if we're running in a frozen executable (production) or not (development)
+if getattr(sys, 'frozen', False):
+    # Running as a frozen executable (production)
+    # Use a path in AppData for the database
+    appdata_dir = os.environ.get('APPDATA', '.')
+    DEFAULT_DB_PATH = os.path.join(appdata_dir, 'Compass', 'database', 'sap2000_api')
+else:
+    # Running in development mode
+    # Use relative path from the workspace
+    DEFAULT_DB_PATH = os.path.abspath(os.path.join("src", "compass", "database", "sap2000_api"))
+
 DEFAULT_COLLECTION_NAME = "sap2000_api"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 
@@ -46,6 +57,9 @@ class SAPAPIQuery:
         
         # Initialize OpenAI client with API key from compass/key.py
         self.client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        # Ensure the database directory exists
+        os.makedirs(self.db_path, exist_ok=True)
         
         # Initialize vector database client
         self._init_vector_db()

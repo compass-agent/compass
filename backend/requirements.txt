@@ -23,3 +23,4 @@ openai>=1.7.0
 chromadb>=0.4.15
 opencv-python
 tokenizers
+comtypes

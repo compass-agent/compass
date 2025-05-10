@@ -1,18 +1,21 @@
-import logging
 import asyncio
-import tempfile
+import logging
 import os
 import sys
+import tempfile
 import traceback
 from io import StringIO
-from typing import Literal, Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
+import comtypes.client
+
+helper = comtypes.client.CreateObject('SAP2000v1.Helper')
 from anthropic.types.beta import BetaToolUnionParam
 from compass.tools.base import BaseTool
-from compass.types.agent import ToolResult
-from compass.tools.sap2000.sap_model_info import SAPModelInfo
-from compass.tools.sap2000.sap_api_query import SAPAPIQuery
 from compass.tools.sap2000.custom_sap2000_model import CustomSAP2000Model
+from compass.tools.sap2000.sap_api_query import SAPAPIQuery
+from compass.tools.sap2000.sap_model_info import SAPModelInfo
+from compass.types.agent import ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +48,25 @@ class SAPComTool(BaseTool):
         try:
             import comtypes.client
             logger.info("Attempting to connect to SAP2000...")
-            helper = comtypes.client.CreateObject('SAP2000v1.Helper')
             import comtypes.gen.SAP2000v1
+            helper = comtypes.client.CreateObject('SAP2000v1.Helper')
             helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
             self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
             self.sap_model = CustomSAP2000Model(self.sap_object.SapModel)
             
             # Generate unique model path
-            base_path = R'C:\Users\sadoughi\Projects\compass\experiment\model'
+            # Use AppData folder for production or current workspace for development
+            if getattr(sys, 'frozen', False):
+                # Running as frozen executable (production)
+                appdata_dir = os.environ.get('APPDATA', '.')
+                base_path = os.path.join(appdata_dir, 'Compass', 'models')
+            else:
+                # Running in development
+                base_path = os.path.abspath(os.path.join(os.getcwd(), 'models'))
+                
+            # Ensure the directory exists
+            os.makedirs(base_path, exist_ok=True)
+            
             base_filename = 'compass_model.sdb'
             self.model_path = self._generate_unique_path(base_path, base_filename)
             

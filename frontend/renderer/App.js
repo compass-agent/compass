@@ -1,45 +1,45 @@
-import React, { useEffect, useRef, useState } from "react";
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
-import "./main-chat/styles/common.scss";
-import "./main-chat/styles/App.scss";
-import ChatHistory from "./main-chat/components/ChatHistory";
-import MessageInput from "./main-chat/components/MessageInput";
-import ControlPanel from "./main-chat/components/ControlPanel";
-import { AppProvider, useAppState } from "./common/context/AppContext";
-import Header from "./main-chat/components/Header";
-import useUpdateContainerHeight from "./main-chat/hooks/useUpdateContainerHeight";
-import useScrollToBottom from "./main-chat/hooks/useScrollToBottom";
-import { AgentStatus, AgentMode } from "./common/constants";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {faSpinner} from "@fortawesome/free-solid-svg-icons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import React, { useEffect, useRef, useState } from "react"
+import { Route, HashRouter as Router, Routes } from "react-router-dom"
+import { AgentMode, AgentStatus } from "./common/constants"
+import { AppProvider, useAppState } from "./common/context/AppContext"
+import ChatHistory from "./main-chat/components/ChatHistory"
+import ControlPanel from "./main-chat/components/ControlPanel"
+import Header from "./main-chat/components/Header"
+import MessageInput from "./main-chat/components/MessageInput"
+import useScrollToBottom from "./main-chat/hooks/useScrollToBottom"
+import useUpdateContainerHeight from "./main-chat/hooks/useUpdateContainerHeight"
+import "./main-chat/styles/App.scss"
+import "./main-chat/styles/common.scss"
 
 // Separate component for the main app content to use the context
 function AppContent() {
-  const { state } = useAppState();
-  const { connection, chat, agent } = state;
-  const chatHistoryRef = useRef(null); // Add a reference to the chat history wrapper
-  const [editorWidth, setEditorWidth] = useState(0);
+  const { state } = useAppState()
+  const { connection, chat, agent } = state
+  const chatHistoryRef = useRef(null) // Add a reference to the chat history wrapper
+  const [editorWidth, setEditorWidth] = useState(0)
   // Use custom hooks
-  useUpdateContainerHeight(chatHistoryRef);
-  useScrollToBottom(chatHistoryRef, chat.messages);
-  const isAutoMode = agent.mode === AgentMode.AUTO;
-  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED;
-  const isCompassReady = connection.connected && agent.status === AgentStatus.STOPPED;
+  useUpdateContainerHeight(chatHistoryRef)
+  useScrollToBottom(chatHistoryRef, chat.messages)
+  const isAutoMode = agent.mode === AgentMode.AUTO
+  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED
+  const isCompassReady = connection.connected //&& agent.status === AgentStatus.STOPPED
 
   useEffect(() => {
     if (window.electron.minimalWindow) {
-      window.electron.minimalWindow(isMinimalView);
+      window.electron.minimalWindow(isMinimalView)
     }
-  }, [isMinimalView]);
+  }, [isMinimalView])
 
   if (isMinimalView) {
     return (
-      <div className="app"  style={{ border: '2px solid rgb(145, 144, 144)' }}>
+      <div className="app" style={{ border: "2px solid rgb(145, 144, 144)" }}>
         <div className="control-panel-wrapper">
           <ControlPanel isMinimal={isMinimalView} />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -49,19 +49,17 @@ function AppContent() {
       </div>
       <div
         className="content"
-         style={{ width: `calc(100% - ${editorWidth}px)` }}
+        style={{ width: `calc(100% - ${editorWidth}px)` }}
       >
-        { !isCompassReady && (
+        {!isCompassReady && (
           <div className="loading-spinner-container">
-            <FontAwesomeIcon 
-              icon={faSpinner} 
-              spin 
-              size="3x" 
+            <FontAwesomeIcon
+              icon={faSpinner}
+              spin
+              size="3x"
               className="spinner-icon"
             />
-            <div className="spinner-text">
-              Connecting to Compass...
-            </div>
+            <div className="spinner-text">Connecting to Compass...</div>
           </div>
         )}
         {connection.error && (
@@ -71,15 +69,15 @@ function AppContent() {
           <div className="chat-history-wrapper" ref={chatHistoryRef}>
             <ChatHistory
               onEditorWidthChange={(newWidth) => {
-              setEditorWidth(newWidth)
+                setEditorWidth(newWidth)
               }}
             />
           </div>
-          <div 
+          <div
             className="control-panel-wrapper"
             style={{
-              pointerEvents: isCompassReady ? 'auto' : 'none',
-              opacity: isCompassReady ? 1 : 0.5
+              pointerEvents: isCompassReady ? "auto" : "none",
+              opacity: isCompassReady ? 1 : 0.5,
             }}
           >
             <ControlPanel />
@@ -88,15 +86,15 @@ function AppContent() {
         <div
           className="input-box-wrapper"
           style={{
-            pointerEvents: isCompassReady ? 'auto' : 'none',
-            opacity: isCompassReady ? 1 : 0.5
+            pointerEvents: isCompassReady ? "auto" : "none",
+            opacity: isCompassReady ? 1 : 0.5,
           }}
         >
           <MessageInput />
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Main App component wrapped with the provider
@@ -110,7 +108,7 @@ function App() {
         </Routes>
       </Router>
     </AppProvider>
-  );
+  )
 }
 
-export default App;
+export default App
