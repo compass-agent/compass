@@ -19,6 +19,14 @@ const AgentMode = Object.freeze({
   AUTO: "AUTO",
 });
 
+// SAP Connection status constants
+const SAPConnectionStatus = Object.freeze({
+  DISCONNECTED: "DISCONNECTED",
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  UNKNOWN: "UNKNOWN"
+});
+
 const ButtonsBarHeight = 38;
 
 // Action types
@@ -34,6 +42,9 @@ const ActionTypes = {
   SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
   SET_SCALING_FACTORS: "SET_SCALING_FACTORS",
   SET_WORKFLOWS: "SET_WORKFLOWS",
+  SET_SAP_CONNECTION_STATUS: "SET_SAP_CONNECTION_STATUS",
+  REQUEST_SAP_CONNECT: "REQUEST_SAP_CONNECT",
+  LOAD_SAP_CONFIG: "LOAD_SAP_CONFIG",
 };
 
 const WorkspaceWindowsConf = {
@@ -42,4 +53,4 @@ const WorkspaceWindowsConf = {
   MIN_TERMINAL_WIN_HEIGHT: 200,
 }
 
-module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, WorkspaceWindowsConf };
+module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, WorkspaceWindowsConf, SAPConnectionStatus };

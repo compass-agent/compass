@@ -1,6 +1,6 @@
 """Collection classes for managing multiple tools."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from compass.types.agent import ToolResult, ToolCall, ToolError
 from .base import BaseTool
@@ -43,3 +43,37 @@ class ToolCollection:
                 tool_call_id=tool_call.tool_call_id,
                 error=error_message
             )
+    
+    async def connect_tool(self, tool_name: str) -> ToolResult:
+        """Connect to a specific tool if it supports connection."""
+        tool = self.tool_map.get(tool_name)
+        if not tool:
+            return ToolResult(error=f"Tool {tool_name} is invalid")
+        
+        # Use type checking to avoid linter errors
+        try:
+            # Check if the tool has connect_to_sap method dynamically
+            connect_method = getattr(tool, 'connect_to_sap', None)
+            if connect_method and callable(connect_method):
+                return await connect_method()
+            else:
+                return ToolResult(error=f"Tool {tool_name} does not support connection")
+        except AttributeError:
+            return ToolResult(error=f"Tool {tool_name} does not support connection")
+    
+    def get_tool_connection_status(self, tool_name: str) -> Optional[str]:
+        """Get the connection status of a specific tool if it supports it."""
+        tool = self.tool_map.get(tool_name)
+        if not tool:
+            return None
+        
+        # Use type checking to avoid linter errors
+        try:
+            # Check if the tool has get_connection_status method dynamically
+            status_method = getattr(tool, 'get_connection_status', None)
+            if status_method and callable(status_method):
+                return status_method()
+            else:
+                return None
+        except AttributeError:
+            return None

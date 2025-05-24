@@ -23,17 +23,19 @@
 
   .header-wrapper {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: $buttons-bar-height;
-    background-color: transparent;
-    border: none;
+    flex-direction: column;
+    align-items: stretch;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    -webkit-app-region: drag; /* Make the entire header draggable */
     z-index: 1000;
+    
+    /* Important: This makes any button or clickable element in the header not draggable */
+    button, a, input, .interactive, [role="button"] {
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+    }
   }
 
   .content {
@@ -45,8 +47,7 @@
     padding: 0;
     gap: 0;
     background-color: transparent;
-    margin-top: $buttons-bar-height;
-    // height: calc(100vh - $buttons-bar-height);
+    margin-top: calc(32px + 40px); /* Top header + main header heights */
     overflow: hidden;
 
     .history-container {
@@ -54,14 +55,11 @@
       flex-direction: column;
       width: 100%;
       flex-grow: 1;
-      // height: calc(100vh - $buttons-bar-height - 102px);
-      // min-height: 114px;
-      /* Use the dynamically set height */
       background-color: transparent; /* No background color for chat-container */
       box-sizing: border-box;
       padding: 0;
       max-height: calc(
-        var(--chat-history-wrapper-height) + $buttons-bar-height
+        var(--chat-history-wrapper-height) + calc(32px + 40px)
       );
 
       .chat-history-wrapper {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import WebSocketService from "../services/websocket";
-import { AgentStatus, ActionTypes, AgentMode } from "../constants";
+import { AgentStatus, ActionTypes, AgentMode, SAPConnectionStatus } from "../constants";
 
 const AppContext = createContext();
 
@@ -33,6 +33,12 @@ const initialState = {
   },
 
   workflows: [],
+  
+  sap: {
+    connectionStatus: SAPConnectionStatus.DISCONNECTED,
+    message: null,
+    configStatus: { success: false, message: null }
+  }
 };
 
 // Reducer
@@ -150,6 +156,17 @@ function appReducer(state, action) {
         workflows: action.payload,
       };
 
+    case ActionTypes.SET_SAP_CONNECTION_STATUS:
+      return {
+        ...state,
+        sap: {
+          ...state.sap,
+          connectionStatus: action.payload.status || state.sap.connectionStatus,
+          message: action.payload.message || state.sap.message,
+          configStatus: action.payload.configStatus || state.sap.configStatus
+        },
+      };
+
     default:
       return state;
   }
@@ -229,9 +246,22 @@ export function AppProvider({ children }) {
           payload: data.workflows,
         });
       },
+
+      onSAPConnectionStatus: (data) => {
+        console.log("Received SAP connection status:", data);
+        dispatch({
+          type: ActionTypes.SET_SAP_CONNECTION_STATUS,
+          payload: data
+        });
+      },
     });
 
     WebSocketService.connect();
+
+    // Request SAP connection status on initial load
+    setTimeout(() => {
+      WebSocketService.getSAPConnectionStatus();
+    }, 1000);
 
     return () => WebSocketService.disconnect();
   }, []);
