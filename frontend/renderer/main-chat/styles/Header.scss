@@ -377,6 +377,81 @@
   }
 }
 
+/* Confirmation Dialog */
+.confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  -webkit-app-region: no-drag;
+}
+
+.confirmation-dialog {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  width: 360px;
+  max-width: 90%;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  
+  .confirmation-content {
+    padding: 20px;
+    
+    h3 {
+      color: #e0e0e0;
+      font-size: 16px;
+      margin: 0 0 12px 0;
+      font-weight: 500;
+    }
+    
+    p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    
+    .confirmation-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      
+      button {
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        
+        &.cancel-button {
+          background-color: transparent;
+          color: #e0e0e0;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+        
+        &.confirm-button {
+          background-color: #333;
+          color: #e0e0e0;
+          
+          &:hover {
+            background-color: #444;
+          }
+        }
+      }
+    }
+  }
+}
+
 .title {
   position: absolute;
   top: 50%;

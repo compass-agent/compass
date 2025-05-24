@@ -21,10 +21,11 @@ function Header() {
   const { state, dispatch } = useAppState();
   const { compassWindow, sap } = state;
   
-  // State for dropdowns
+  // State for dropdowns and confirmation dialog
   const [agentDropdown, setAgentDropdown] = useState(false);
   const [toolsDropdown, setToolsDropdown] = useState(false);
   const [modelDropdown, setModelDropdown] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   // Available options with descriptions
   const agentOptions = [
@@ -105,7 +106,19 @@ function Header() {
     WebSocketService.connectToSAP();
   }
   
-  const handleNewChat = () => {
+  // Open confirmation dialog before creating new chat
+  const handleNewChatButtonClick = () => {
+    setShowConfirmation(true);
+  };
+  
+  // Cancel new chat action
+  const handleCancelNewChat = () => {
+    setShowConfirmation(false);
+  };
+  
+  // Proceed with new chat after confirmation
+  const handleConfirmNewChat = () => {
+    setShowConfirmation(false);
     WebSocketService.handleNewChat(selectedAgent);
   };
 
@@ -317,13 +330,29 @@ function Header() {
         <div className="right-controls">
           <button 
             className="header-action-button new-chat" 
-            onClick={handleNewChat}
+            onClick={handleNewChatButtonClick}
             title="New Chat"
           >
             <span className="new-chat-icon">+</span>
           </button>
         </div>
       </div>
+      
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-dialog">
+            <div className="confirmation-content">
+              <h3>Start a new chat?</h3>
+              <p>This will archive and deactivate your current session. You can still access it later from your history.</p>
+              <div className="confirmation-buttons">
+                <button className="cancel-button" onClick={handleCancelNewChat}>Cancel</button>
+                <button className="confirm-button" onClick={handleConfirmNewChat}>Start new chat</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
