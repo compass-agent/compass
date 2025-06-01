@@ -12,14 +12,10 @@ function MessageInput() {
   const { connection, agent, chat } = state
   const [message, setMessage] = useState(chat.currentInput)
   const [images, setImages] = useState([])
-  const [selectedWorkflow, setSelectedWorkflow] = useState(null)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [showWorkflowSubmenu, setShowWorkflowSubmenu] = useState(false)
-  const [closeTimeout, setCloseTimeout] = useState(null)
   const isCompassReady = connection.connected //&& agent.status === AgentStatus.STOPPED
-  const workflowList = state.workflows || []
   const [tooltipPosition, setTooltipPosition] = useState({
     show: false,
     x: 0,
@@ -161,15 +157,6 @@ function MessageInput() {
     }
   }
 
-  const handleWorkflowSelect = (workflowName) => {
-    setSelectedWorkflow(workflowName)
-    setIsMenuOpen(false)
-  }
-
-  const removeWorkflow = () => {
-    setSelectedWorkflow(null)
-  }
-
   const handleSubmit = async (e) => {
     e?.preventDefault()
 
@@ -197,7 +184,6 @@ function MessageInput() {
       WebSocketService.sendMessage({
         text: message,
         images: images.map((img) => img.data),
-        workflow_name: selectedWorkflow,
       })
 
       setImages([])
@@ -245,44 +231,16 @@ function MessageInput() {
 
   const handleOptionClick = (option) => {
     setIsMenuOpen(false)
-    if (workflowList.includes(option)) {
-      handleWorkflowSelect(option)
-    } else {
-      switch (option) {
-        case "Upload Photo":
-          fileInputRef.current.click()
-          break
-        case "Upload File":
-        case "Take Photo":
-          console.log(`${option} feature coming soon`)
-          break
-      }
+    switch (option) {
+      case "Upload Photo":
+        fileInputRef.current.click()
+        break
+      case "Upload File":
+      case "Take Photo":
+        console.log(`${option} feature coming soon`)
+        break
     }
   }
-
-  const handleWorkflowMenuEnter = () => {
-    if (closeTimeout) {
-      clearTimeout(closeTimeout)
-      setCloseTimeout(null)
-    }
-    setShowWorkflowSubmenu(true)
-  }
-
-  const handleWorkflowMenuLeave = () => {
-    const timeout = setTimeout(() => {
-      setShowWorkflowSubmenu(false)
-    }, 300) // 300ms delay before closing
-    setCloseTimeout(timeout)
-  }
-
-  // Clean up timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (closeTimeout) {
-        clearTimeout(closeTimeout)
-      }
-    }
-  }, [closeTimeout])
 
   const handleMouseEnter = (e, preview) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -379,21 +337,6 @@ function MessageInput() {
           />
         )}
       </div>
-
-      {selectedWorkflow && (
-        <div className="workflow-pill-container">
-          <div className="workflow-pill">
-            <span>@{selectedWorkflow}</span>
-            <button
-              className="remove-workflow"
-              onClick={removeWorkflow}
-              title="Remove workflow"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="input-row">
         <textarea
