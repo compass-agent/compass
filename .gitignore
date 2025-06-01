@@ -108,3 +108,6 @@ backend/src/compass/key.py
 !config/
 experiments/
 experiment/
+
+# SAP models and configuration files
+models/
