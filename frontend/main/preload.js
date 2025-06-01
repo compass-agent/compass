@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld("electron", {
     invoke: (channel, data) => {
       const validChannels = [
         "open-file-dialog",
+        "open-config-file-dialog",
         "save-file",
         "read-file",
         "save-file-dialog",

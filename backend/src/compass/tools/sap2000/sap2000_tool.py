@@ -75,24 +75,29 @@ class SAPComTool(BaseTool):
             # Wrap the SAP model in our custom class
             import comtypes.gen.SAP2000v1 as SAP2000
             
-            # Check if config is loaded
-            if not self.config:
-                logger.warning("Configuration not loaded. Loading default configuration.")
-                if not self._load_config():
-                    self._connection_status = "DISCONNECTED"
-                    return False
+            # Store raw SAP model first to allow basic connection without config
+            raw_sap_model = self.sap_object.SapModel
             
-            # Ensure config is not None before creating CustomSAP2000Model
-            if self.config is None:
-                self._connection_status = "DISCONNECTED"
-                return False
+            # If config is loaded, use it to create a CustomSAP2000Model
+            if self.config is not None:
+                self.sap_model = CustomSAP2000Model(raw_sap_model, self.config)
+            else:
+                # Store the raw SAP model for now - user can load config later
+                logger.info("No configuration loaded. Using basic SAP2000 model. Load configuration later for full functionality.")
+                self.sap_model = raw_sap_model
                 
-            self.sap_model = CustomSAP2000Model(self.sap_object.SapModel, self.config)
             if self.sap_model is None:
                 self._connection_status = "DISCONNECTED"
                 raise Exception("Failed to connect to SAP2000.")
+                
             self.model_path = r"C:\Users\mksad\Projects\sap-projects\steel-frame-001\models\model.sdb"
-            info = self.sap_model.GetProgramInfo()
+            
+            # For raw SAP model, we need to access GetProgramInfo differently
+            if self.config is not None:
+                info = self.sap_model.GetProgramInfo()
+            else:
+                info = raw_sap_model.GetProgramInfo()
+                
             logger.info(f"Successfully connected to SAP2000 (Version: {info[0]}, Build: {info[1]})")
             self._connected = True
             self._connection_status = "CONNECTED"

@@ -3,7 +3,7 @@ import WebSocketService from "../../common/services/websocket";
 import { useAppState } from "../../common/context/AppContext";
 import "../styles/MessageInput.scss";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {faPlus} from "@fortawesome/free-solid-svg-icons";
+import {faPlus, faFileCode} from "@fortawesome/free-solid-svg-icons";
 import { AgentStatus, ActionTypes } from '../../common/constants'; 
 
 function MessageInput() {
@@ -226,6 +226,21 @@ function MessageInput() {
     };
   }, [closeTimeout]);
 
+  const handleConfigFileSelect = async () => {
+    try {
+      const response = await window.electron.ipcRenderer.invoke("open-config-file-dialog");
+      if (response.success) {
+        const { filePath } = response;
+        console.log('Selected config file:', filePath);
+        WebSocketService.loadSAPConfig(filePath);
+      } else {
+        console.error("Failed to open config file dialog:", response.error);
+      }
+    } catch (error) {
+      console.error("Error opening config file dialog:", error);
+    }
+  };
+
   return (
     <div className="message-input-container">
       {imagePreview && (
@@ -259,6 +274,14 @@ function MessageInput() {
             accept="image/*"
             style={{ display: 'none' }}
           />
+          <button
+            className="button config-button"
+            onClick={handleConfigFileSelect}
+            title="Load SAP Configuration"
+            disabled={!isInputEnabled}
+          >
+            <FontAwesomeIcon icon={faFileCode} />
+          </button>
           <div className="dropdown-container">
             <button
               className="button plus-button"

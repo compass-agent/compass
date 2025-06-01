@@ -40,7 +40,7 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
         
         # Handle XML namespace
         # Extract namespace from root tag
-        ns = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else ''
+        ns = {'ns': root.tag.split('}')[0].strip('{')} if '}' in root.tag else None
         
         # Dictionary to store section names by type
         section_names = {
@@ -63,32 +63,36 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
         
         for xml_type, designations in section_mappings.items():
             # Find all sections of this type, handling potential namespace
-            xpath = f".//{xml_type}" if not ns else f".//ns:{xml_type}"
+            xpath = f".//{xml_type}" if ns is None else f".//ns:{xml_type}"
             for section in root.findall(xpath, namespaces=ns):
                 # Find elements, handling potential namespace
-                label_elem = section.find('LABEL' if not ns else 'ns:LABEL', namespaces=ns)
-                designation_elem = section.find('DESIGNATION' if not ns else 'ns:DESIGNATION', namespaces=ns)
+                label_elem = section.find('LABEL' if ns is None else 'ns:LABEL', namespaces=ns)
+                designation_elem = section.find('DESIGNATION' if ns is None else 'ns:DESIGNATION', namespaces=ns)
                 
                 if label_elem is not None and designation_elem is not None:
-                    label = label_elem.text
-                    designation = designation_elem.text
+                    label_text = label_elem.text
+                    designation_text = designation_elem.text
+                    
+                    # Skip if either text is None
+                    if label_text is None or designation_text is None:
+                        continue
                     
                     # Extract additional properties
-                    depth_elem = section.find('D' if not ns else 'ns:D', namespaces=ns)
-                    area_elem = section.find('A' if not ns else 'ns:A', namespaces=ns)
+                    depth_elem = section.find('D' if ns is None else 'ns:D', namespaces=ns)
+                    area_elem = section.find('A' if ns is None else 'ns:A', namespaces=ns)
                     
                     # Create section dictionary with properties
                     section_dict = {
-                        'name': label,
+                        'name': label_text,
                         'nominal_depth': None,
-                        'depth': float(depth_elem.text) if depth_elem is not None else None,
+                        'depth': float(depth_elem.text) if depth_elem is not None and depth_elem.text is not None else None,
                         'weight': None,
-                        'area': float(area_elem.text) if area_elem is not None else None
+                        'area': float(area_elem.text) if area_elem is not None and area_elem.text is not None else None
                     }
                     
                     # Extract nominal depth and weight from section name (e.g., W24X162 -> depth=24, weight=162)
-                    if 'X' in label:
-                        parts = label.split('X')
+                    if 'X' in label_text:
+                        parts = label_text.split('X')
                         if len(parts) == 2:
                             # Extract the numeric part after the designation letter (e.g., W24 -> 24)
                             prefix = parts[0]
@@ -104,8 +108,8 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
                                 pass
                     
                     # Store in appropriate category if designation matches
-                    if designation in designations:
-                        section_names[designation].append(section_dict)
+                    if designation_text in designations:
+                        section_names[designation_text].append(section_dict)
         
         # Initial log before filtering
         for section_type, sections in section_names.items():
