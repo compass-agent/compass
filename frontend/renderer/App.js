@@ -2,7 +2,7 @@ import { faSpinner } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useEffect, useRef, useState } from "react"
 import { Route, HashRouter as Router, Routes } from "react-router-dom"
-import { AgentMode, AgentStatus } from "./common/constants"
+import { AgentMode } from "./common/constants"
 import { AppProvider, useAppState } from "./common/context/AppContext"
 import ChatHistory from "./main-chat/components/ChatHistory"
 import ControlPanel from "./main-chat/components/ControlPanel"
@@ -23,7 +23,7 @@ function AppContent() {
   useUpdateContainerHeight(chatHistoryRef)
   useScrollToBottom(chatHistoryRef, chat.messages)
   const isAutoMode = agent.mode === AgentMode.AUTO
-  const isMinimalView = isAutoMode && agent.status !== AgentStatus.STOPPED
+  const isMinimalView = false // isAutoMode && agent.status !== AgentStatus.STOPPED
   const isCompassReady = connection.connected //&& agent.status === AgentStatus.STOPPED
 
   useEffect(() => {
@@ -73,15 +73,6 @@ function AppContent() {
               }}
             />
           </div>
-          <div
-            className="control-panel-wrapper"
-            style={{
-              pointerEvents: isCompassReady ? "auto" : "none",
-              opacity: isCompassReady ? 1 : 0.5,
-            }}
-          >
-            <ControlPanel />
-          </div>
         </div>
         <div
           className="input-box-wrapper"
@@ -91,6 +82,9 @@ function AppContent() {
           }}
         >
           <MessageInput />
+          <div className="control-panel-wrapper">
+            <ControlPanel />
+          </div>
         </div>
       </div>
     </div>

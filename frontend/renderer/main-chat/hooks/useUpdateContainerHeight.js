@@ -1,42 +1,43 @@
-import { useEffect } from "react";
-import { ButtonsBarHeight } from "../../common/constants";
-import { AgentStatus } from '../../common/constants';
+import { useEffect } from "react"
+import { ButtonsBarHeight } from "../../common/constants"
 
 const useUpdateContainerHeight = (ref) => {
   useEffect(() => {
     const updateHistoryContainerHeight = () => {
-      const headerHeight = ButtonsBarHeight;
-      const controlPanelHeight = ButtonsBarHeight;
-      const inputBox = document.querySelector(".input-box-wrapper");
-      const inputBoxHeight = inputBox ? inputBox.offsetHeight : 0;
+      const headerHeight = ButtonsBarHeight
+      const controlPanelHeight = ButtonsBarHeight
+      const inputBox = document.querySelector(".input-box-wrapper")
+      const inputBoxHeight = inputBox ? inputBox.offsetHeight : 0
       const availableHeight =
-      window.innerHeight - headerHeight - controlPanelHeight - inputBoxHeight;
-      //console.log(`HistoryContainerHeight: windowInnerHeight ${window.innerHeight} chatHistoryWrapperHeight ${availableHeight}`);
+        window.innerHeight - 2 * headerHeight - inputBoxHeight
+      // console.log(
+      //   `HistoryContainerHeight: windowInnerHeight ${window.innerHeight} chatHistoryWrapperHeight ${availableHeight}`
+      // )
       document.documentElement.style.setProperty(
         "--chat-history-wrapper-height",
         `${availableHeight}px`
-      );
-    };
+      )
+    }
 
     // Initial height calculation
-    updateHistoryContainerHeight();
+    updateHistoryContainerHeight()
     // Create a ResizeObserver to watch for changes in the size of the input box
-    const inputBox = document.querySelector(".message-input");
+    const inputBox = document.querySelector(".message-input")
     if (inputBox) {
-      const resizeObserver = new ResizeObserver(updateHistoryContainerHeight);
-      resizeObserver.observe(inputBox);
+      const resizeObserver = new ResizeObserver(updateHistoryContainerHeight)
+      resizeObserver.observe(inputBox)
     }
     // Add event listener for window resize
-    window.addEventListener("resize", updateHistoryContainerHeight);
+    window.addEventListener("resize", updateHistoryContainerHeight)
 
     // Cleanup on component unmount
     return () => {
       if (inputBox) {
-        resizeObserver.disconnect();
+        resizeObserver.disconnect()
       }
-      window.removeEventListener("resize", updateHistoryContainerHeight);
-    };
-  }, [ref]);
-};
+      window.removeEventListener("resize", updateHistoryContainerHeight)
+    }
+  }, [ref])
+}
 
-export default useUpdateContainerHeight;
+export default useUpdateContainerHeight

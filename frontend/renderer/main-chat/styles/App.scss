@@ -11,14 +11,20 @@
   margin: 0;
   padding: 0;
 
-  -webkit-backdrop-filter: blur(5px); /* Blur for Safari */
-  -webkit-backdrop-filter: blur(5px); /* For Safari/older Chromium */
-  backdrop-filter: blur(5px); /* Glassy effect */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
+  border-radius: 8px;
+  background-color: #1C1C1E; /* Dark background */
+  border: 1px solid #3D3D3D; /* Inside stroke */
+  /* Opacity is full */
+  opacity: 1;
+
+  // -webkit-backdrop-filter: blur(5px); /* Blur for Safari */
+  // -webkit-backdrop-filter: blur(5px); /* For Safari/older Chromium */
+  // backdrop-filter: blur(5px); /* Glassy effect */
+  // box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
   box-sizing: border-box;
   overflow: hidden;
   z-index: 1000;
-  background-color: #202020a0;
+  //background-color: #202020a0;
   //background: #1b1b1b2d;
 
   .header-wrapper {
@@ -73,10 +79,7 @@
       flex-direction: column;
       width: 100%;
       flex-grow: 1;
-      // height: calc(100vh - $buttons-bar-height - 102px);
-      // min-height: 114px;
-      /* Use the dynamically set height */
-      background-color: transparent; /* No background color for chat-container */
+      background-color: transparent;
       box-sizing: border-box;
       padding: 0;
       max-height: calc(
@@ -92,40 +95,45 @@
         max-height: var(--chat-history-wrapper-height, 100%);
         @include custom-scrollbar;
       }
+    }
+
+    .input-box-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      flex-shrink: 0;
+      margin: 8px 16px;
+      padding: 4px;
+      resize: vertical;
+      box-sizing: border-box;
+      width: calc(100% - 32px);
+      transition: height 0.3s ease;
+      gap: 8px;
+      border-radius: 8px;
+      background-color: #1C1C1E;
+      border: 1px solid #3D3D3D;
 
       .control-panel-wrapper {
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
-        flex-shrink: 0; /* Prevent shrinking */
+        flex-shrink: 0;
         height: $buttons-bar-height;
         width: 100%;
         background-color: transparent;
         border: none;
-        padding: $vertical-padding;
+        padding: 4px 0;
         box-sizing: border-box;
 
         .control-panel-item {
           margin-right: 10px;
         }
       }
-    }
-    .input-box-wrapper {
-      position: relative;
-      display: flex;
-      flex-direction: column-reverse;
-      height: auto;
-      flex-shrink: 0;
-      margin: 0 auto;
-      padding: 0px 16px $vertical-padding 16px;
-      resize: vertical;
-      box-sizing: border-box;
-      width: 100%;
-      transition: height 0.3s ease;
 
       @media (max-height: $min-window-height) {
-        display: none; // Hide when window height is less than or equal to 178px
+        display: none;
       }
     }
   }

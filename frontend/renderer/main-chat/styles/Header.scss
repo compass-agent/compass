@@ -92,6 +92,13 @@
       &.close, &.max, &.min { 
         margin-right: 8px;
         background-color: transparent;
+        color: #606063 !important;
+        
+        svg {
+          color: #606063 !important;
+          stroke: #606063 !important;
+          stroke-width: 1.5 !important;
+        }
 
         &:hover {
           background-color: rgba(218, 218, 218, 0.397);

@@ -4,22 +4,22 @@ const MESSAGE_TYPES = {
   AI_RESPONSE_STREAM: "ai_response_stream",
   TOOL_RESULT: "tool_result",
   TOOL_USE_GROUP: "tool_use_group",
-};
+}
 
 // States
 const AgentStatus = {
   STOPPED: "STOPPED",
   RUNNING: "RUNNING",
   STOPPING: "STOPPING",
-};
+}
 
 const AgentMode = Object.freeze({
   MANUAL: "MANUAL",
   SEMI_AUTO: "SEMI_AUTO",
   AUTO: "AUTO",
-});
+})
 
-const ButtonsBarHeight = 38;
+const ButtonsBarHeight = 38
 
 // Action types
 const ActionTypes = {
@@ -34,7 +34,7 @@ const ActionTypes = {
   SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
   SET_SCALING_FACTORS: "SET_SCALING_FACTORS",
   SET_WORKFLOWS: "SET_WORKFLOWS",
-};
+}
 
 const WorkspaceWindowsConf = {
   MIN_EDITOR_WIN_WIDTH: 300,
@@ -42,4 +42,11 @@ const WorkspaceWindowsConf = {
   MIN_TERMINAL_WIN_HEIGHT: 200,
 }
 
-module.exports = { MESSAGE_TYPES, AgentStatus, ButtonsBarHeight, ActionTypes, AgentMode, WorkspaceWindowsConf };
+module.exports = {
+  MESSAGE_TYPES,
+  AgentStatus,
+  ButtonsBarHeight,
+  ActionTypes,
+  AgentMode,
+  WorkspaceWindowsConf,
+}
