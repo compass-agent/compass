@@ -220,6 +220,15 @@
   }
 }
 
+.config-button {
+  color: #666;
+  
+  &:hover {
+    background-color: #cccccc;
+    color: #333;
+  }
+}
+
 // Add new workflow pill styles
 .workflow-pill-container {
   display: flex;

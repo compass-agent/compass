@@ -62,378 +62,122 @@ class StructuralEngineerPrompt(BasePrompt):
 </IMPORTANT_GUIDELINES>
 
 <WORKFLOW>
-{sap_example_create_steel_frame_structure}
+{sap_example_optimize_steel_frame_structure}
 </WORKFLOW>
 """) 
     
 
-sap_example_create_steel_frame_structure = """
+sap_example_optimize_steel_frame_structure = """
 <DESCRIPTION>
-Below is a workflow for analyzing a steel frame structure in which you follow, but examplified to some specifications where may need to be changed:
-using unit kip-ft-F (code 4)
+Below is a workflow for optimizing a steel frame structure. This workflow follows these key steps:
+1. Get all frames and their properties
+2. Add base restraints to all ground level columns
+3. Create floor areas and add dead and live loads
+4. Add section candidates to frames
+5. Calculate usage ratios for each section candidate
+6. Create section groups based on usage ratio
 
- Input the 3D geometry provided by the architect.
- Steel moment frame building with pinned column-to-foundation connections
- Steel material is ASTM A992Fy50.
- Floor dead load = 75 psf
- Floor live load = 50 psf (based on ASCE 7-22)
- Roof live load = 20 psf (based on ASCE 7-22)
- Steel design according to AISC 360-16 for strength and serviceability.
+This optimization workflow helps automate the structural design process by:
+- Analyzing the model to identify all structural elements
+- Applying appropriate boundary conditions and loads
+- Testing multiple section options for each frame
+- Calculating usage ratios for each section option
+- Grouping similar elements to optimize the design
 </DESCRIPTION>
 
 <CODE>
-# Pre-requisitite (you can assume its done):
-# 1. A model with defined frames and joints are already loaded into sap and connected to the script and available through sap_model!
-# Step 1: Add base restraints to all ground level columns.
-# This code identifies the ground level columns and restrains them with no translation, but free to rotate.
-restraints = [True, True, True, False, False, False]
-restrained_joints, restraint_status = sap_model.add_base_restraints(restraints)
+# Pre-requisite (you can assume it's done):
+# 1. A model with defined frames and joints is already loaded into SAP2000 and connected to the script
 
-# Step 2: Create floor areas and add dead and live loads to them.
-# substep: add dead and live load patterns definitions  
-sap_model.LoadPatterns.Add("DEAD", 1, 1.0)  # 1 is eLoadPatternType_Dead
-sap_model.LoadPatterns.Add("LIVE", 3, 0.0)  # 3 is eLoadPatternType_Live
+# STEP 1: Get all frames and their properties
+# This identifies all frames in the model and classifies them as beams or columns
+frames = sap_model.get_all_frames()  # Returns a dict with frame name as key and value dict defining type (column, beam)
+print(f"Identified {len(frames)} frames in the model")
 
-# substep: identify all the floor levels.
-floor_levels, floor_status = sap_model.identify_floor_levels()
-for i, floor_level in enumerate(floor_levels):
-    # Check if this is the roof level since it needs a different load value
-    is_roof = (i == len(floor_levels) - 1)
-    # substep: create floor areas at each floor level.
-    areas, area_status = sap_model.add_floor_areas(floor_level)
-    # substep: add dead and live loads to the floor areas.
-    for area_name in areas:
-        sap_model.AreaObj.SetLoadUniform(
-            area_name,    # Area name
-            "DEAD",       # Load pattern
-            75.0,         # Load value (psf)
-            6,            # Direction (6 = Global Z)
-            True,         # Replace existing load
-            "Global"      # Coordinate system
-        )
-        live_load_value = 20.0 if is_roof else 50.0
-        sap_model.AreaObj.SetLoadUniform(
-            area_name,    # Area name
-            "LIVE",       # Load pattern
-            live_load_value,  # Load value (psf)
-            6,            # Direction (6 = Global Z)
-            True,         # Replace existing load
-            "Global"      # Coordinate system
-        )
+# STEP 2: Add base restraints to all ground level columns
+# This identifies ground level columns and applies restraints to their base points
+restrained_joints, restraint_status = sap_model.add_base_restraints(frames)
+print(f"Added restraints to {len(restrained_joints)} ground level column bases")
 
-# Step3: Create Beam section groups and assign sections to them.
-# substep: get beam information by length since we group beams based on the length
-beams_by_length = sap_model.get_beams_info()
-print(f"beams by length: {beams_by_length}")
+# STEP 3: Create floor areas and add dead and live loads to them
+# This identifies floor levels, creates area objects, and applies dead and live loads
+areas, area_status = sap_model.add_area_loads(frames)
+print(f"Created {len(areas)} floor areas with loads")
 
-# **Important: separate call**: Now based on the above printed beams by length, we can create a dictionary of beam sections.
-# the below codes are based on assumptions that the beam lengths are 24ft, 22ft, 18ft, 14ft, and 10ft.
-# The below code should be a separate function call! do not include in your current script. 
-# based on the above printed beams by length, we can create a dictionary of beam sections.
-beam_sections = {
-    "24ft Beams": "W24X76",
-    "22ft Beams": "W21X44", 
-    "18ft Beams": "W18X40",
-    "14ft Beams": "W14X34",
-    "10ft Beams": "W10X33"
-}
+# STEP 4: Add section candidates to frames
+# This assigns potential section options to each frame based on configuration settings
+frames = sap_model.add_section_candidates_to_frames(frames)
+print(f"Added section candidates to {len(frames)} frames")
 
-# Now we can assign the sections to the beams.
-for length, frames in beams_by_length.items():
-    group_name = f"{int(length)}ft Beams"
-    if group_name in beam_sections:
-        sap_model.create_assign_section_group(
-            group_name=group_name,
-            frames=frames
-        )
-        ret = sap_model.PropFrame.ImportProp(
-            beam_sections[group_name],
-            "A992Fy50",
-            "AISC16.xml", # This is the AISC 16th edition steel code as defined in the user input
-            beam_sections[group_name]
-        )
-        ret = sap_model.FrameObj.SetSection(group_name, beam_sections[group_name], 1)
+# STEP 5: Calculate usage ratios for each section candidate
+# This runs analysis for each section option and calculates usage ratios
+frames = sap_model.calculate_section_usage_ratios(frames, model_path)
+# Inspect usage ratios
+max_usage = max([max([s.get('usage_ratio', 0) for s in f.get('sections', [])]) for f in frames.values()])
+print(f"Maximum usage ratio across all frames and sections: {max_usage}")
 
-# Step4: Create Column section groups and assign sections to them.
-# substep: get column information by location since we group columns based on the location
-columns_by_location = sap_model.get_columns_info()
-print(f"columns by location: {columns_by_location}")
-
-# **Important: separate call**: Now based on the above printed columns by location, we can create a dictionary of column sections.
-# the below codes are based on assumptions that the column locations are corner, edge, and interior.
-column_sections = {
-    "corner": "W10X12",
-    "edge": "W12X190",
-    "interior": "W14X193"
-}
-# Assign column sections
-for location, section in column_sections.items():
-    group_name = f"{location.capitalize()} Columns"
-    # Create group and assign frames
-    sap_model.create_assign_section_group(
-        group_name=group_name,
-        frames=columns_by_location[location]
-    )
-    ret = sap_model.PropFrame.ImportProp(
-        section,
-        "A992Fy50",
-        "AISC16.xml",
-        section
-    )
-    ret = sap_model.FrameObj.SetSection(group_name, section, 1)
-
-# Step 5: Run the analysis.
-# Important: Allways save the model before running the analysis.
-sap_model.File.Save(ModelPath)
-sap_model.Analyze.RunAnalysis()
+# STEP 6: Create section groups based on usage ratio
+# This uses optimization to group frames and assign the optimal section to each
+frames = sap_model.create_section_groups(frames)
+# Verify optimized design
+group_count = len(set([f.get('optimum_design', {}).get('group_id') for f in frames.values()]))
+print(f"Optimization complete: Used {group_count} unique section groups")
 </CODE>
-<IMPORTANT NOTES>
-- Above Workflow has several helper functions such as add_base_restraints, identify_floor_levels, get_beams_info, get_columns_info, create_assign_section_group.
-- Make sure to use these helper functions in your workflow instead of creating new API calls directly. 
-</IMPORTANT NOTES>
 
 </APIs Documentation>
 # SAP2000 API Documentation
-Below is the description of the 10 APIs you use in your coding. 
-YOU MUST AVOID USING ANY OTHER API, Because you have outdated knowledge on SAP API and will make wrong calls. Stick with the 
-WorkFlow Code and following APIs description. 
+Below is the description of the APIs used in the optimization workflow.
+YOU MUST AVOID USING ANY OTHER API, because you have outdated knowledge on SAP API and will make wrong calls. Stick with the 
+Workflow Code and following APIs description.
 
-## 1. add_base_restraints()
+## 1. get_all_frames()
+Gets all frames in the model and classifies them as beams or columns.
+* Arguments: None
+* Returns: Dictionary mapping frame names to frame info dictionaries
+```python
+frames = sap_model.get_all_frames()
+# Returns dictionary like: {'B1': {'type': 'beam', 'length': 24.0}, 'C1': {'type': 'column', 'length': 12.0}}
+```
+
+## 2. add_base_restraints()
 Adds restraints to ground-level column bases by finding columns with no frames below them.
-* Arguments: restraints=[True, True, True, False, False, False] (list of boolean values for Ux, Uy, Uz, Rx, Ry, Rz)
+* Arguments: frames (dictionary of frames from get_all_frames)
 * Returns: (list of restrained point names, status code)
 ```python
-restrained_joints, restraint_status = sap_model.add_base_restraints()
-
-Important: Do NOT try to implement your own code using any other low-level API such as PointObj.SetRestraint. Only rely on this. 
+restrained_joints, restraint_status = sap_model.add_base_restraints(frames)
 ```
 
-## 2. LoadPatterns.Add()
-Adds load pattern definitions to the model.
-* Arguments: name (string), load_type (integer), self_weight_multiplier (float)
-* Returns: status code (0 for success)
-```python
-sap_model.LoadPatterns.Add("DEAD", 1, 1.0)  # 1 is eLoadPatternType_Dead
-sap_model.LoadPatterns.Add("LIVE", 3, 0.0)  # 3 is eLoadPatternType_Live
-```
-
-## 3. identify_floor_levels()
-Identifies distinct floor elevations from the model's points.
-* Arguments: tolerance=0.01 (coordinate comparison tolerance)
-* Returns: (list of floor elevations sorted from lowest to highest, status code)
-```python
-floor_levels, floor_status = sap_model.identify_floor_levels()
-```
-
-## 4. add_floor_areas()
-Adds floor areas at specified elevation by detecting enclosed polygons in the floor grid.
-* Arguments: floor_z (elevation), tolerance=0.01 (coordinate comparison tolerance)
+## 3. add_area_loads()
+Identifies floor levels, creates floor areas, and applies dead and live loads based on configuration.
+* Arguments: frames (dictionary of frames from get_all_frames)
 * Returns: (list of created area names, status code)
 ```python
-areas, area_status = sap_model.add_floor_areas(floor_level)
+areas, area_status = sap_model.add_area_loads(frames)
 ```
 
-## 5. AreaObj.SetLoadUniform()
-Applies uniform loads to floor areas.
-* Arguments: area_name, load_pattern, load_value, direction, replace, coordinate_system
-* Returns: status code (0 for success)
+## 4. add_section_candidates_to_frames()
+Adds potential section options to each frame based on configuration settings.
+* Arguments: frames (dictionary of frames from earlier steps)
+* Returns: Updated frames dictionary with section candidates added
 ```python
-sap_model.AreaObj.SetLoadUniform(area_name, "DEAD", 75.0, 6, True, "Global")
+frames = sap_model.add_section_candidates_to_frames(frames)
 ```
 
-## 6. get_beams_info()
-Groups all beams in the model by their approximate length.
-* Arguments: tolerance=1.0 (tolerance for length matching)
-* Returns: dictionary mapping lengths to lists of beam frame names
+## 5. calculate_section_usage_ratios()
+Runs analysis for each section option and calculates usage ratios to determine capacity utilization.
+* Arguments: frames (dictionary of frames with section candidates), model_path (path to save the model)
+* Returns: Updated frames dictionary with usage ratios for each section candidate
 ```python
-beams_by_length = sap_model.get_beams_info()
+frames = sap_model.calculate_section_usage_ratios(frames, model_path)
 ```
 
-## 7. create_assign_section_group()
-Creates a group and assigns the specified frames to it.
-* Arguments: group_name (string), frames (list of frame names)
-* Returns: (list of frame names in the group, status code)
+## 6. create_section_groups()
+Uses optimization to group frames and assign the optimal section to each frame while minimizing weight.
+* Arguments: frames (dictionary of frames with usage ratios)
+* Returns: Updated frames dictionary with optimum_design information for each frame
 ```python
-sap_model.create_assign_section_group(group_name=group_name, frames=frames)
-```
-
-## 8. PropFrame.ImportProp()
-Imports frame section properties from a standard library.
-* Arguments: section_name, material, library_filename, new_property_name
-* Returns: status code (0 for success)
-```python
-ret = sap_model.PropFrame.ImportProp("W24X76", "A992Fy50", "AISC16.xml", "W24X76")
-```
-
-## 9. FrameObj.SetSection()
-Assigns sections to frame objects, often based on groups.
-* Arguments: frame_name/group_name, section_name, item_type (1 for groups)
-* Returns: status code (0 for success)
-```python
-ret = sap_model.FrameObj.SetSection(group_name, section_name, 1)
-```
-
-## 10. get_columns_info()
-Groups all columns in the model by their location (corner, edge, interior).
-* Arguments: tolerance=1.0 (tolerance for coordinate comparison)
-* Returns: dictionary mapping location types to lists of column frame names
-```python
-columns_by_location = sap_model.get_columns_info()
-```
-
-## 11. File.Save()
-Saves the current model to a file.
-* Arguments: file_path (string) - Path where the model should be saved
-* Returns: status code (0 for success)
-```python
-sap_model.File.Save(model_path)
-```
-
-## 12. Analyze.RunAnalysis()
-Runs the structural analysis on the current model.
-* Arguments: None
-* Returns: status code (0 for success)
-```python
-sap_model.Analyze.RunAnalysis()
+frames = sap_model.create_section_groups(frames)
 ```
 </APIs Documentation>
-
-"""
-
-
-sap_example_create_beam = """
-# initialize model
-sap_model.InitializeNewModel()
-# create new blank model
-ret = sap_model.File.NewBlank()
- 
-# define material property
-MATERIAL_CONCRETE = 2
-ret = sap_model.PropMaterial.SetMaterial('CONC', MATERIAL_CONCRETE)
-
-# assign isotropic mechanical properties to material
-ret = sap_model.PropMaterial.SetMPIsotropic('CONC', 3600, 0.2, 0.0000055)
- 
-# define rectangular frame section property
-ret = sap_model.PropFrame.SetRectangle('R1', 'CONC', 12, 12)
- 
-# switch to k-ft units
-kip_ft_F = 4
-ret = sap_model.SetPresentUnits(kip_ft_F)
- 
-# add a single horizontal frame object by coordinates (20 ft long)
-FrameName = ' '
-[FrameName, ret] = sap_model.FrameObj.AddByCoord(0, 0, 0, 20, 0, 0, FrameName, 'R1', '1', 'Global')
- 
-# get the points of the frame
-PointName1 = ' '
-PointName2 = ' '
-[PointName1, PointName2, ret] = sap_model.FrameObj.GetPoints(FrameName, PointName1, PointName2)
-
-# assign fixed restraint at the first point (fixed end)
-# [U1, U2, U3, R1, R2, R3] = [True, True, True, True, True, True]
-# This means all translations and rotations are restrained
-Restraint = [True, True, True, True, True, True]
-ret = sap_model.PointObj.SetRestraint(PointName1, Restraint)
- 
-# refresh view, update (initialize) zoom
-ret = sap_model.View.RefreshView(0, False)
- 
-# add a single dead load pattern
-LTYPE_DEAD = 1
-ret = sap_model.LoadPatterns.Add('DEAD', LTYPE_DEAD, 0, True)
- 
-# apply a vertical point load at the free end
-PointLoadValue = [0, 0, -10, 0, 0, 0]  # -10 kips in Z direction (vertical)
-ret = sap_model.PointObj.SetLoadForce(PointName2, 'DEAD', PointLoadValue)
- 
-# save model
-ret = sap_model.File.Save(ModelPath)
- 
-# run model (this will create the analysis model)
-ret = sap_model.Analyze.RunAnalysis()
- 
-# initialize for SAP2000 results
-NumberResults = 0
-Obj = []
-Elm = []
-ACase = []
-StepType = []
-StepNum = []
-U1 = []
-U2 = []
-U3 = []
-R1 = []
-R2 = []
-R3 = []
-ObjectElm = 0
-
-# get displacement results for the free end
-ret = sap_model.Results.Setup.DeselectAllCasesAndCombosForOutput()
-ret = sap_model.Results.Setup.SetCaseSelectedForOutput('DEAD')
-[NumberResults, Obj, Elm, ACase, StepType, StepNum, U1, U2, U3, R1, R2, R3, ret] = sap_model.Results.JointDispl(PointName2, ObjectElm, NumberResults, Obj, Elm, ACase, StepType, StepNum, U1, U2, U3, R1, R2, R3)
-
-# display results
-if NumberResults > 0:
-    print("Results for the free end under DEAD load:")
-    print(f"  Vertical Displacement (U3): {U3[0]:.6f} ft")
-    print(f"  Rotation about Y-axis (R2): {R2[0]:.6f} radians")
-"""
-
-sap_example_create_beam_simplified = """
-# Step 1: Initialize a new model
-# - Initialize the SAP2000 model
-# - Create a new blank model
-# - Verify initialization completed successfully
-
-# Step 2: Define materials
-# - Create a concrete material (you can specify the concrete strength)
-# - Set its properties (modulus of elasticity, Poisson's ratio, etc.)
-# - Verify material was created successfully
-
-# Step 3: Define sections
-# - Create a rectangular beam section
-# - Assign the material to this section
-# - Verify section was created successfully
-
-# Step 4: Set appropriate units for analysis
-# - Change to desired units (e.g., kip-ft-F)
-# - Verify units were set correctly
-
-# Step 5: Create beam geometry
-# - Add a horizontal beam by coordinates
-# - Get the points (nodes) of the beam
-# - Verify beam was created successfully
-
-# Step 6: Define boundary conditions
-# - Set one end as fixed (restraint all 6 degrees of freedom)
-# - Leave the other end free
-# - Verify restraints were applied correctly
-
-# Step 7: Define loads
-# - Create a dead load pattern
-# - Apply a vertical point load at the free end
-# - Verify loads were applied correctly
-
-# Step 8: Save the model
-# - Save to the specified file path
-# - Verify model was saved successfully
-
-# Step 9: Run the analysis
-# - Execute the analysis
-# - Verify analysis completed successfully
-
-# Step 10: Extract and display results
-# - Get displacement results at the free end
-# - Print the vertical displacement and rotation
-# - Verify results were extracted correctly
-"""
-
-api_description = """
-sap_model.PropMaterial.SetMaterial("Steel", int(SAP2000.eMatType_Steel))
-Decriptin in one paragraph 
-
-
-API XX ...
 
 """

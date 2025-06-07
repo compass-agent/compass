@@ -9,7 +9,7 @@ const useUpdateContainerHeight = (ref) => {
       const inputBox = document.querySelector(".input-box-wrapper")
       const inputBoxHeight = inputBox ? inputBox.offsetHeight : 0
       const availableHeight =
-        window.innerHeight - 2 * headerHeight - inputBoxHeight
+        window.innerHeight - 3 * headerHeight - inputBoxHeight
       // console.log(
       //   `HistoryContainerHeight: windowInnerHeight ${window.innerHeight} chatHistoryWrapperHeight ${availableHeight}`
       // )

@@ -1,0 +1,166 @@
+# SAP2000 Automation Configuration
+# This file controls the behavior of the structural analysis and optimization
+
+# =============================================================================
+# GENERAL SETTINGS
+# =============================================================================
+general:
+  # Unit system to use in SAP2000 (kip-in, kip-ft, N-mm, N-m, etc.)
+  units: "kip-in"
+  
+  # Where to save the model files
+  model_path: "./models"
+
+
+# =============================================================================
+# MATERIALS
+# =============================================================================
+materials:
+  # Default steel material for sections
+  steel:
+    name: "A992Fy50"
+    type: "STEEL"
+    # Material properties can be expanded as needed
+
+# =============================================================================
+# RESTRAINTS
+# =============================================================================
+restraints:
+  # Base restraints for columns [UX, UY, UZ, RX, RY, RZ]
+  # true = restrained, false = free
+  base_restraints: [true, true, true, false, false, false]
+  
+  # Automatic detection of ground level columns
+  auto_detect_columns: true # this currently must be true!
+
+# =============================================================================
+# LOAD DEFINITIONS
+# =============================================================================
+loads:
+  # Load patterns to create and use
+  patterns:
+    - name: "DEAD"
+      type: "DEAD"
+    
+    - name: "LIVE"
+      type: "LIVE"
+  
+  # Area load definitions for floors and roofs (in kip/in²)
+  area_loads:
+    # Regular floor loads
+    floor:
+      dead: 0.000347  # 50 PSF converted to kip/in²
+      live: 0.000347  # 50 PSF converted to kip/in²
+    
+    # Roof loads
+    roof:
+      dead: 0.000139  # 20 PSF converted to kip/in²
+      live: 0.000139  # 20 PSF converted to kip/in²
+  
+  # Load direction type
+  # Options: 
+  # - GLOBAL_Z: Loads in global Z direction
+  # - DECK_ORIENTED: Loads aligned with the deck direction (determined by shortest edge)
+  load_direction_type: "DECK_ORIENTED"
+  
+  # Areas to exclude from load application
+  # This allows defining specific regions that should not receive area loads,
+  # such as openings for elevators, stairs, mechanical shafts, etc.
+  exclusion_areas:
+    # Format: List of points that define locations within excluded areas
+    # When creating area loads, any area containing these points will be skipped
+    #
+    # Each point is defined as a dictionary with x, y, z coordinates:
+    # - x, y, z: Excludes the specific area containing this exact point
+    # - x, y, null: Excludes any area at position (x,y) regardless of elevation
+    # - x, null, z: Excludes any area at x-coordinate and z-elevation specified
+    #
+    # Examples:
+    - x: 12.5
+      y: 20.0
+      z: null  # Excludes elevator shaft at position (12.5, 20.0) at any level
+    
+    - x: 30.0
+      y: 15.0
+      z: 14.0  # Excludes a specific opening at position (30.0, 15.0) at z=14.0 only
+
+# =============================================================================
+# SECTION CANDIDATES
+# =============================================================================
+# Section candidates control which structural shapes are considered during the design optimization.
+# For each frame in the model, multiple section candidates will be analyzed to find the most efficient
+# section that meets structural requirements while minimizing weight and meeting other objectives.
+section_candidates:
+  # Types of sections to consider for design
+  # These define the structural shape types that will be imported from the section database
+  # Valid options include:
+  # - W: Wide flange sections (W-shapes, most common for beams and columns)
+  # - HSS: Hollow Structural Sections (square and rectangular tubes)
+  # - PIPE: Circular hollow sections
+  # - L: Angle sections
+  # - WT: Structural tees cut from wide flange sections
+  # - C: Channel sections
+  # - MC: Miscellaneous channel sections
+  section_types: ["W"]
+  
+  # Section filtering criteria
+  # These parameters narrow down the wide range of available sections to a reasonable subset
+  # that makes sense for your particular building type and loading conditions
+  filter:
+    # Depth range (inches) - controls the minimum and maximum depth of sections to consider
+    # For example: [6, 26] will only consider sections between 6" and 26" deep
+    # This helps exclude sections that are too small to be practical or too deep for the available space
+    depth_range: [6, 26]
+    
+    # Weight range (lbs/ft) - controls the weight per unit length of sections to consider
+    # For example: [10, 360] will only consider sections between 10 and 360 pounds per foot
+    # This helps exclude extremely light sections that might not be commercially available,
+    # or extremely heavy sections that would be impractical
+    weight_range: [10, 360]
+
+# =============================================================================
+# DESIGN OPTIMIZATION
+# =============================================================================
+# This section controls how the program selects the most efficient sections for your building.
+# It balances structural requirements with practical considerations like weight, constructability,
+# and consistency between similar members.
+design:
+  # Design code to use for checking member capacity
+  # This is the structural steel design specification that will be used
+  code: "AISC 360-16"
+  
+  # Maximum allowed usage ratio (0.0 to 1.0)
+  # This is the maximum percentage of a member's capacity that you'll allow
+  # Example: 0.9 means members can be loaded up to 90% of their capacity
+  # Setting this lower (like 0.8) will give you more safety margin but use larger sections
+  maximum_allowed_usage_ratio: 0.9
+  
+  # These values control what the program prioritizes when selecting sections
+  # Higher numbers mean that goal is more important (range typically 0.0 to 1.0)
+  objective_weights:
+    # How important is minimizing the overall weight of the structure?
+    # Higher value = program will work harder to find the lightest possible structure
+    weight_minimization: 1.0
+    
+    # How important is making sure connected members have similar depths?
+    # Higher value = program will try to match depths at connections for easier detailing
+    connection_compatibility: 0.5
+    
+    # How important is using the same section types throughout a floor?
+    # Higher value = program will try to use fewer different sections on each floor
+    floor_consistency: 0.3
+  
+  # Maximum number of different section sizes to use in the building
+  # Lower number = fewer different sections to detail and fabricate
+  # Higher number = more optimized but more different sections to manage
+  max_groups: 8
+  
+  # Should beams and columns always use different section types?
+  # true = beams and columns will never share the same section
+  # false = program might use the same section for both if it makes sense
+  beam_column_segregation: true
+  
+  # Should sections be consistent within each floor level?
+  # true = program will try to use the same sections for similar members on each floor
+  # false = program can vary sections more freely throughout the building
+  group_by_floor: true

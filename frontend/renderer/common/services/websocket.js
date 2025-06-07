@@ -17,6 +17,7 @@ class WebSocketService {
       onScreenshotsList: new Set(),
       onDetectionResult: null,
       onTemplatesSaved: null,
+      onSAPConnectionStatus: new Set(),
     }
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 10
@@ -169,6 +170,24 @@ class WebSocketService {
       console.log("WebSocket templates saved response:", data)
       this.stateHandlers?.onTemplatesSaved?.(data)
     })
+
+    // Add SAP connection status event handler
+    this.socket.on("sap_connection_status", (data) => {
+      console.log("WebSocket received SAP connection status:", data)
+      this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
+        handler(data)
+      )
+    })
+
+    this.socket.on("sap_config_status", (data) => {
+      console.log("WebSocket received SAP config status:", data)
+      // We can use the same handler for config status updates
+      this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
+        handler({
+          configStatus: data,
+        })
+      )
+    })
   }
 
   disconnect() {
@@ -265,6 +284,34 @@ class WebSocketService {
       this.socket.emit("save_templates", data)
     } else {
       console.warn("Cannot save templates - socket not connected")
+    }
+  }
+
+  // New methods for SAP connection
+  connectToSAP() {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending connect_to_sap request")
+      this.socket.emit("connect_to_sap")
+    } else {
+      console.warn("Cannot connect to SAP - socket not connected")
+    }
+  }
+
+  loadSAPConfig(configPath) {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending load_sap_config request")
+      this.socket.emit("load_sap_config", { config_path: configPath })
+    } else {
+      console.warn("Cannot load SAP config - socket not connected")
+    }
+  }
+
+  getSAPConnectionStatus() {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending get_sap_connection_status request")
+      this.socket.emit("get_sap_connection_status")
+    } else {
+      console.warn("Cannot get SAP connection status - socket not connected")
     }
   }
 }

@@ -197,6 +197,78 @@ def default_error_handler(e):
     logger.error(f"SocketIO default error: {str(e)}")
     emit('error', {'message': str(e)})
 
+@socketio.on('connect_to_sap')
+def handle_connect_to_sap():
+    logger.info('Received connect_to_sap request')
+    try:
+        async def connect_sap():
+            try:
+                result = await agent_service.tool_collection.connect_tool('sap_com')
+                status = agent_service.tool_collection.get_tool_connection_status('sap_com') or "UNKNOWN"
+                
+                # Create a response dictionary 
+                response = {
+                    'status': status,
+                    'message': result.text if not result.error else result.error
+                }
+                
+                # Queue the response to be sent in the main thread
+                socketio.start_background_task(lambda: socketio.emit('sap_connection_status', response))
+            except Exception as e:
+                logger.error(f"Error in connect_sap async task: {e}", exc_info=True)
+                socketio.start_background_task(lambda: socketio.emit('sap_connection_status', 
+                                             {'status': 'DISCONNECTED', 'message': str(e)}))
+            
+        with app.app_context():
+            eventlet.spawn(asyncio.run, connect_sap())
+    except Exception as e:
+        logger.error(f"Error connecting to SAP2000: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+        emit('sap_connection_status', {'status': 'DISCONNECTED', 'message': str(e)})
+
+@socketio.on('load_sap_config')
+def handle_load_sap_config(data):
+    logger.info('Received load_sap_config request')
+    try:
+        config_path = data.get('config_path')
+        
+        async def load_config():
+            # Get the SAP tool from the tool collection
+            tool = agent_service.tool_collection.tool_map.get('sap_com')
+            if not tool:
+                emit('error', {'message': 'SAP2000 tool not available'})
+                return
+                
+            # Check if the tool has load_sap_config method dynamically
+            load_config_method = getattr(tool, 'load_sap_config', None)
+            if not load_config_method or not callable(load_config_method):
+                emit('error', {'message': 'SAP2000 configuration loading not supported'})
+                return
+                
+            result = await load_config_method(config_path)
+            emit('sap_config_status', {
+                'success': not result.error,
+                'message': result.text if not result.error else result.error
+            })
+            
+        with app.app_context():
+            eventlet.spawn(asyncio.run, load_config())
+    except Exception as e:
+        logger.error(f"Error loading SAP2000 config: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+        emit('sap_config_status', {'success': False, 'message': str(e)})
+
+@socketio.on('get_sap_connection_status')
+def handle_get_sap_connection_status():
+    logger.info('Received get_sap_connection_status request')
+    try:
+        status = agent_service.tool_collection.get_tool_connection_status('sap_com') or "DISCONNECTED"
+        emit('sap_connection_status', {'status': status})
+    except Exception as e:
+        logger.error(f"Error getting SAP2000 connection status: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+        emit('sap_connection_status', {'status': 'UNKNOWN'})
+
 if __name__ == '__main__':
     try:
         socketio.run(app, 

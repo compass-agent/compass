@@ -5,17 +5,17 @@ import sys
 import tempfile
 import traceback
 from io import StringIO
-from typing import Any, Dict, List, Literal, Optional, Union
-
+from typing import Literal, Dict, Any, Optional, List, Union
 import comtypes.client
 
 helper = comtypes.client.CreateObject('SAP2000v1.Helper')
 from anthropic.types.beta import BetaToolUnionParam
 from compass.tools.base import BaseTool
-from compass.tools.sap2000.custom_sap2000_model import CustomSAP2000Model
-from compass.tools.sap2000.sap_api_query import SAPAPIQuery
-from compass.tools.sap2000.sap_model_info import SAPModelInfo
 from compass.types.agent import ToolResult
+from compass.tools.sap2000.sap_model_info import SAPModelInfo
+from compass.tools.sap2000.sap_api_query import SAPAPIQuery
+from compass.tools.sap2000.core import CustomSAP2000Model
+from compass.tools.sap2000.core.config_manager import ModelConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,15 @@ class SAPComTool(BaseTool):
     name: Literal["sap_com"] = "sap_com"
     
     def __init__(self):
-        """Initialize the SAP2000 COM tool and try to connect to a running instance."""
+        """Initialize the SAP2000 COM tool without connecting immediately."""
         self.sap_object = None
         self.sap_model = None
         self.model_path = None
         self._connected = False
         self.model_info = None
         self.execution_state = {}  # Dictionary to maintain state between executions
+        self._connection_status = "DISCONNECTED"  # New field to track connection status
+        self.config = None
         
         # Initialize API query system for documentation searches
         try:
@@ -40,53 +42,98 @@ class SAPComTool(BaseTool):
             logger.error(f"Error initializing API query system: {str(e)}")
             self.api_query = None
         
-        # Try to connect immediately upon initialization
-        self._try_connect()
-    
-    def _try_connect(self):
-        """Attempt to connect to a running SAP2000 instance."""
+        # No longer attempting connection on init
+        logger.info("SAP2000 tool initialized in lightweight mode (not connected)")
+
+    def _load_config(self, config_path=None):
+        """Load the configuration file from the specified path or default location"""
         try:
-            import comtypes.client
-            logger.info("Attempting to connect to SAP2000...")
-            import comtypes.gen.SAP2000v1
-            helper = comtypes.client.CreateObject('SAP2000v1.Helper')
-            helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
-            self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
-            self.sap_model = CustomSAP2000Model(self.sap_object.SapModel)
-            
-            # Generate unique model path
-            # Use AppData folder for production or current workspace for development
-            if getattr(sys, 'frozen', False):
-                # Running as frozen executable (production)
-                appdata_dir = os.environ.get('APPDATA', '.')
-                base_path = os.path.join(appdata_dir, 'Compass', 'models')
-            else:
-                # Running in development
-                base_path = os.path.abspath(os.path.join(os.getcwd(), 'models'))
+            # If config_path is provided, use it, otherwise determine from environment
+            if not config_path:
+                # Get project root from workspace folder environment variable
+                project_root = os.getenv('WORKSPACE_FOLDER')
+                if not project_root:
+                    # Fallback to current working directory if env var not set
+                    project_root = os.getcwd()
                 
-            # Ensure the directory exists
-            os.makedirs(base_path, exist_ok=True)
+                config_path = os.path.join(project_root, 'backend', 'src', 'compass', 'config', 'sap_project', 'config.yaml')
             
-            base_filename = 'compass_model.sdb'
-            self.model_path = self._generate_unique_path(base_path, base_filename)
+            self.config = ModelConfig.from_yaml(config_path)
+            logger.info(f"Successfully loaded configuration from {config_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {str(e)}")
+            logger.error(f"Stack trace: {traceback.format_exc()}")
+            return False
+    
+    def _try_connect(self) -> bool:
+        try:
+            logger.info("Attempting to connect to SAP2000...")
+            self._connection_status = "CONNECTING"
+            helper = comtypes.client.CreateObject('SAP2000v1.Helper')
+            helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper) #type: ignore
+            self.sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
+            # Wrap the SAP model in our custom class
+            import comtypes.gen.SAP2000v1 as SAP2000
             
-            # Initialize model info extractor
-            self.model_info = SAPModelInfo(self.sap_model, self.sap_object, self.model_path)
+            # Store raw SAP model first to allow basic connection without config
+            raw_sap_model = self.sap_object.SapModel
             
-            # Test if the connection is valid by getting program info
-            info = self.sap_model.GetProgramInfo()
+            # If config is loaded, use it to create a CustomSAP2000Model
+            if self.config is not None:
+                self.sap_model = CustomSAP2000Model(raw_sap_model, self.config)
+            else:
+                # Store the raw SAP model for now - user can load config later
+                logger.info("No configuration loaded. Using basic SAP2000 model. Load configuration later for full functionality.")
+                self.sap_model = raw_sap_model
+                
+            if self.sap_model is None:
+                self._connection_status = "DISCONNECTED"
+                raise Exception("Failed to connect to SAP2000.")
+                
+            self.model_path = r"C:\Users\mksad\Projects\sap-projects\steel-frame-001\models\model.sdb"
             
+            # For raw SAP model, we need to access GetProgramInfo differently
+            if self.config is not None:
+                info = self.sap_model.GetProgramInfo()
+            else:
+                info = raw_sap_model.GetProgramInfo()
+                
             logger.info(f"Successfully connected to SAP2000 (Version: {info[0]}, Build: {info[1]})")
             self._connected = True
+            self._connection_status = "CONNECTED"
             return True
-        except ImportError:
-            logger.error("Failed to import comtypes. Make sure it's installed: pip install comtypes")
-            self._connected = False
-            return False
         except Exception as e:
             logger.error(f"Failed to connect to SAP2000: {str(e)}")
+            logger.error(f"Stack trace: {traceback.format_exc()}")
             self._connected = False
+            self._connection_status = "DISCONNECTED"
             return False
+    
+    # New method to explicitly connect to SAP
+    async def connect_to_sap(self) -> ToolResult:
+        """Explicitly connect to SAP2000."""
+        if self._connected:
+            return ToolResult(text="Already connected to SAP2000")
+        
+        success = self._try_connect()
+        if success:
+            return ToolResult(text="Successfully connected to SAP2000")
+        else:
+            return ToolResult(error="Failed to connect to SAP2000. Make sure SAP2000 is running.")
+    
+    # New method to explicitly load configuration
+    async def load_sap_config(self, config_path=None) -> ToolResult:
+        """Explicitly load SAP2000 configuration."""
+        if self._load_config(config_path):
+            return ToolResult(text="Successfully loaded SAP2000 configuration")
+        else:
+            return ToolResult(error="Failed to load SAP2000 configuration")
+    
+    # New method to get connection status
+    def get_connection_status(self) -> str:
+        """Get the current connection status."""
+        return self._connection_status
     
     def _generate_unique_path(self, base_path: str, base_filename: str) -> str:
         """Generate a unique path by adding suffix if file exists."""
@@ -126,10 +173,9 @@ class SAPComTool(BaseTool):
         """
         # If not connected, try to connect (for actions that require SAP2000)
         if action in ["run_sap_com_python", "get_model_info"] and not self._connected:
-            if not self._try_connect():
-                return ToolResult(
-                    error="Not connected to SAP2000. Make sure SAP2000 is running with a model open."
-                )
+            return ToolResult(
+                error="Not connected to SAP2000. Make sure SAP2000 is running with a model open and connect using the SAP connection button."
+            )
         
         # Handle the requested action
         if action == "run_sap_com_python":
@@ -191,13 +237,13 @@ class SAPComTool(BaseTool):
                 
                 # Automatically refresh the view and save the model after script execution
                 try:
-                    ret = self.sap_model.View.RefreshView(0, False)
+                    ret = self.sap_model.View.RefreshView(0, False) #type: ignore
                     if ret != 0:
                         error_text = f"\nFailed to refresh view (return code: {ret})"
                     else:
                         error_text = ""
                     
-                    ret = self.sap_model.File.Save(self.model_path)
+                    ret = self.sap_model.File.Save(self.model_path) #type: ignore
                     if ret != 0:
                         error_text += f"\nFailed to save model (return code: {ret})"
                 except Exception as e:
@@ -220,13 +266,8 @@ class SAPComTool(BaseTool):
                 if filtered_tb:
                     # Create a new exception with the filtered traceback
                     new_exc = type(e)(str(e))
-                    new_exc.__traceback__ = traceback.TracebackType(
-                        tb_next=None,
-                        tb_frame=filtered_tb[-1].tb_frame,
-                        tb_lasti=filtered_tb[-1].tb_lasti,
-                        tb_lineno=filtered_tb[-1].tb_lineno
-                    )
-                    error_text = f"Error in script: {str(new_exc)}\n{traceback.format_exception(type(new_exc), new_exc, new_exc.__traceback__)}"
+                    # Use a simpler approach to report traceback instead of trying to create one
+                    error_text = f"Error in script: {str(new_exc)}\n{''.join(traceback.format_list(filtered_tb))}"
                 else:
                     error_text = f"Error in script: {str(e)}"
                 

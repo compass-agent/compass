@@ -19,12 +19,20 @@ const AgentMode = Object.freeze({
   AUTO: "AUTO",
 })
 
+// SAP Connection status constants
+const SAPConnectionStatus = Object.freeze({
+  DISCONNECTED: "DISCONNECTED",
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  UNKNOWN: "UNKNOWN",
+})
+
 const ButtonsBarHeight = 38
 
 // Action types
 const ActionTypes = {
   SET_CONNECTION_STATUS: "SET_CONNECTION_STATUS",
-  SET_AGENT_STATE: "",
+  SET_AGENT_STATE: "SET_AGENT_STATE",
   SET_CHAT_INPUT: "SET_CHAT_INPUT",
   ADD_CHAT_MESSAGE: "ADD_CHAT_MESSAGE",
   SET_ERROR: "SET_ERROR",
@@ -34,6 +42,8 @@ const ActionTypes = {
   SET_COMPASS_WINDOW_STATE: "SET_COMPASS_WINDOW_STATE",
   SET_SCALING_FACTORS: "SET_SCALING_FACTORS",
   SET_WORKFLOWS: "SET_WORKFLOWS",
+  SET_SAP_CONNECTION_STATUS: "SET_SAP_CONNECTION_STATUS",
+  RESET_CHAT: "RESET_CHAT",
 }
 
 const WorkspaceWindowsConf = {
@@ -49,4 +59,5 @@ module.exports = {
   ActionTypes,
   AgentMode,
   WorkspaceWindowsConf,
+  SAPConnectionStatus,
 }
