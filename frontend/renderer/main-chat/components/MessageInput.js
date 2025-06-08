@@ -23,22 +23,50 @@ function MessageInput() {
   })
   const [activePreview, setActivePreview] = useState(null)
   const [showSapConfig, setShowSapConfig] = useState(false)
-  const [sapConfigSubmitted, setSapConfigSubmitted] = useState(false)
+  const [sapConfigExists, setSapConfigExists] = useState(false)
 
   // Function to check if SAP config file exists
   const checkSapConfigExists = async () => {
+    console.log("checkSapConfigExists: Starting file existence check...")
     if (window.electron && window.electron.ipcRenderer) {
       try {
+        // Extract the project root from the current location
+        // For Electron, the href typically looks like: file:///C:/Users/sp_za/Desktop/kazem/compass/frontend/renderer/main-chat/index.html
+        const currentPath = window.location.href
+        // Extract base path by removing the file:// protocol and going up to project root
+        let basePath = currentPath.replace("file:///", "").replace(/\\/g, "/")
+
+        // Navigate up to project root (remove /frontend/renderer/main-chat/index.html)
+        const pathParts = basePath.split("/")
+        // Find the compass directory index
+        const compassIndex = pathParts.findIndex((part) => part === "compass")
+        if (compassIndex !== -1) {
+          basePath = pathParts.slice(0, compassIndex + 1).join("/")
+        } else {
+          // Fallback: assume we're in frontend and go up directories
+          basePath = pathParts.slice(0, -3).join("/") // Remove /frontend/renderer/main-chat
+        }
+
+        const relativePath = "models/.sapConfig.yml"
+        const absolutePath = basePath + "/" + relativePath
+        console.log("checkSapConfigExists: Built absolute path:", absolutePath)
+
+        // Use read-file API to check if file exists
         const result = await window.electron.ipcRenderer.invoke(
           "read-file",
-          "./models/.sapConfig.yml"
+          absolutePath
         )
-        return result.success
+
+        // If read-file succeeds, the file exists
+        const fileExists = result.success || false
+        console.log("checkSapConfigExists: Returning fileExists =", fileExists)
+        return fileExists
       } catch (error) {
-        console.log("SAP config file doesn't exist:", error)
+        console.log("Error checking if SAP config file exists:", error)
         return false
       }
     }
+    console.log("checkSapConfigExists: Electron API not available")
     return false
   }
 
@@ -50,16 +78,15 @@ function MessageInput() {
 
     // Check if SAP config file actually exists
     const checkFileAndSetState = async () => {
+      console.log("checkFileAndSetState: Starting...")
       const fileExists = await checkSapConfigExists()
-      if (fileExists) {
-        // File exists, mark as submitted
-        setSapConfigSubmitted(true)
-        localStorage.setItem("sapConfigSubmitted", "true")
-      } else {
-        // File doesn't exist, reset state
-        setSapConfigSubmitted(false)
-        localStorage.removeItem("sapConfigSubmitted")
-      }
+      console.log("MessageInput - File exists check result:", fileExists)
+      console.log(
+        "MessageInput - About to call setSapConfigExists with:",
+        fileExists
+      )
+      setSapConfigExists(fileExists)
+      console.log("MessageInput - setSapConfigExists called")
     }
 
     checkFileAndSetState()
@@ -258,8 +285,17 @@ function MessageInput() {
   }
 
   // Add click handler for plus button
-  const handlePlusClick = (e) => {
+  const handlePlusClick = async (e) => {
     e.stopPropagation() // Prevent event bubbling
+
+    // Check file existence before opening menu to ensure correct button label
+    console.log(
+      "handlePlusClick: Checking file existence before opening menu..."
+    )
+    const fileExists = await checkSapConfigExists()
+    console.log("handlePlusClick: File exists check result:", fileExists)
+    setSapConfigExists(fileExists)
+
     setIsMenuOpen(!isMenuOpen)
   }
 
@@ -269,12 +305,24 @@ function MessageInput() {
     setShowSapConfig(true)
   }
 
-  const handleSapConfigSubmit = () => {
-    // Mark as submitted in localStorage and state
-    localStorage.setItem("sapConfigSubmitted", "true")
-    setSapConfigSubmitted(true)
+  const handleSapConfigSubmit = async () => {
+    // Check if file exists after submission
+    console.log(
+      "MessageInput: handleSapConfigSubmit called - checking file existence"
+    )
+    const fileExists = await checkSapConfigExists()
+    setSapConfigExists(fileExists)
+    console.log("MessageInput: File exists:", fileExists)
     setShowSapConfig(false)
   }
+
+  // Add effect to log state changes
+  useEffect(() => {
+    console.log(
+      "MessageInput - sapConfigExists state changed to:",
+      sapConfigExists
+    )
+  }, [sapConfigExists])
 
   return (
     <div className="message-input-container">
@@ -307,7 +355,7 @@ function MessageInput() {
                   Upload Image
                 </button>
                 <button className="dropdown-item" onClick={openSapConfig}>
-                  {sapConfigSubmitted ? "Edit SAP Setup" : "Init SAP Setup"}
+                  {sapConfigExists ? "Edit SAP Setup" : "Init SAP Setup"}
                 </button>
               </div>
             )}

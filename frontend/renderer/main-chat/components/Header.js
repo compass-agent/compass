@@ -476,7 +476,19 @@ function Header() {
                       <div className="tool-status">
                         <div
                           className="status-indicator"
-                          style={{ backgroundColor: tool.status }}
+                          style={{
+                            backgroundColor: tool.status,
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            display: "inline-block",
+                            position: "relative",
+                            zIndex: 10,
+                            marginRight: "8px",
+                            flexShrink: 0,
+                            minWidth: "8px",
+                            minHeight: "8px",
+                          }}
                         ></div>
                         <div className="model-info">
                           <div className="model-name">{tool.name}</div>

@@ -19,14 +19,14 @@
   border-radius: 12px;
   width: 520px;
   max-width: 90vw;
+  height: 80vh;
   max-height: 80vh;
-  overflow-y: auto;
-  overflow-x: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   color: #E0E0E0;
+  overflow: hidden;
   
   &::-webkit-scrollbar {
     width: 8px;
@@ -37,6 +37,11 @@
     border-radius: 4px;
   }
   
+  &::-webkit-scrollbar-track {
+    background-color: #2D2D2D;
+    border-radius: 4px;
+  }
+  
   .modal-header {
     display: flex;
     align-items: center;
@@ -44,6 +49,7 @@
     padding: 14px 20px;
     background-color: #1C1C1E;
     border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
     
     h2 {
       color: #E0E0E0;
@@ -83,10 +89,10 @@
   
   .step-indicator-container {
     padding: 14px 20px;
-    //border-bottom: 1px solid #3D3D3D;
     background-color: #1C1C1E;
     position: relative;
     z-index: 100;
+    flex-shrink: 0;
   }
   
   .step-indicator {
@@ -226,6 +232,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     
     .step-content {
       flex: 1;
@@ -237,6 +244,7 @@
       max-width: 100%;
       box-sizing: border-box;
       overflow-x: hidden;
+      overflow-y: auto;
       
       .section {
         width: 100%;
@@ -488,6 +496,7 @@
     border-top: 1px solid #3D3D3D;
     background-color: #1C1C1E;
     border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
     
     .navigation-buttons {
       display: flex;

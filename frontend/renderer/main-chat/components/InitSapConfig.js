@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import jsyaml from "js-yaml"
 import React, { useEffect, useState } from "react"
+import WebSocketService from "../../common/services/websocket"
 import "../styles/InitSapConfig.scss"
 
 const Tooltip = ({ text, children }) => {
@@ -336,6 +337,9 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
   }
 
   const generateYAML = async () => {
+    // Convert PSF to kip/in² (1 PSF = 1/144000 kip/in²)
+    const psfToKipPerSqIn = (psf) => psf / 144000
+
     const yamlData = {
       general: {
         units: formState.units,
@@ -368,32 +372,35 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
         }),
         area_loads: {
           floor: {
-            dead: formState.floorDeadLoad,
-            live: formState.floorLiveLoad,
+            dead: psfToKipPerSqIn(formState.floorDeadLoad),
+            live: psfToKipPerSqIn(formState.floorLiveLoad),
           },
           roof: {
-            dead: formState.roofDeadLoad,
-            live: formState.roofLiveLoad,
+            dead: psfToKipPerSqIn(formState.roofDeadLoad),
+            live: psfToKipPerSqIn(formState.roofLiveLoad),
           },
         },
         load_direction_type: formState.loadDirectionType,
-        exclusion_areas: formState.exclusionAreas.map((area) => [
-          area.x === null
-            ? null
-            : typeof area.x === "number"
-            ? area.x
-            : parseFloat(area.x),
-          area.y === null
-            ? null
-            : typeof area.y === "number"
-            ? area.y
-            : parseFloat(area.y),
-          area.z === null
-            ? null
-            : typeof area.z === "number"
-            ? area.z
-            : parseFloat(area.z),
-        ]),
+        exclusion_areas: formState.exclusionAreas.map((area) => ({
+          x:
+            area.x === null
+              ? null
+              : typeof area.x === "number"
+              ? area.x
+              : parseFloat(area.x),
+          y:
+            area.y === null
+              ? null
+              : typeof area.y === "number"
+              ? area.y
+              : parseFloat(area.y),
+          z:
+            area.z === null
+              ? null
+              : typeof area.z === "number"
+              ? area.z
+              : parseFloat(area.z),
+        })),
       },
       section_candidates: {
         section_types: formState.sectionTypes,
@@ -409,10 +416,10 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
           weight_minimization: formState.weightMinimization,
           connection_compatibility: formState.connectionCompatibility,
           floor_consistency: formState.floorConsistency,
-          max_groups: formState.maxGroups,
-          beam_column_segregation: formState.beamColumnSegregation,
-          group_by_floor: formState.groupByFloor,
         },
+        max_groups: formState.maxGroups,
+        beam_column_segregation: formState.beamColumnSegregation,
+        group_by_floor: formState.groupByFloor,
       },
     }
 
@@ -452,6 +459,15 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
     if (isFormComplete) {
       const saveSuccess = await generateYAML()
       if (saveSuccess) {
+        // Send the saved config file to the backend
+        try {
+          const configFilePath = "./models/.sapConfig.yml"
+          console.log("Sending config file to backend:", configFilePath)
+          WebSocketService.loadSAPConfig(configFilePath)
+        } catch (error) {
+          console.error("Error sending config to backend:", error)
+        }
+
         onSubmit()
       }
     }

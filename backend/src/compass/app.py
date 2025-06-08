@@ -230,23 +230,42 @@ def handle_connect_to_sap():
 def handle_load_sap_config(data):
     logger.info('Received load_sap_config request')
     try:
-        config_path = data.get('config_path')
+        # Get the config path from frontend
+        relative_config_path = data.get('config_path')
         
+        # Get project root and construct the absolute config path
+        project_root = os.getenv('WORKSPACE_FOLDER')
+        if not project_root:
+            # If no env var, get current working directory and go up to project root
+            current_dir = os.getcwd()
+            # If we're in the backend directory, go up one level to project root
+            if current_dir.endswith('backend'):
+                project_root = os.path.dirname(current_dir)
+            else:
+                project_root = current_dir
+        
+        # Remove './' prefix if present and join with project root
+        if relative_config_path and relative_config_path.startswith('./'):
+            relative_config_path = relative_config_path[2:]
+        
+        config_path = os.path.join(project_root, relative_config_path) if relative_config_path else None
+        logger.info(f'project_root: {project_root}')
+        logger.info(f'config_path: {config_path}')
         async def load_config():
             # Get the SAP tool from the tool collection
             tool = agent_service.tool_collection.tool_map.get('sap_com')
             if not tool:
-                emit('error', {'message': 'SAP2000 tool not available'})
+                socketio.emit('error', {'message': 'SAP2000 tool not available'})
                 return
                 
             # Check if the tool has load_sap_config method dynamically
             load_config_method = getattr(tool, 'load_sap_config', None)
             if not load_config_method or not callable(load_config_method):
-                emit('error', {'message': 'SAP2000 configuration loading not supported'})
+                socketio.emit('error', {'message': 'SAP2000 configuration loading not supported'})
                 return
                 
             result = await load_config_method(config_path)
-            emit('sap_config_status', {
+            socketio.emit('sap_config_status', {
                 'success': not result.error,
                 'message': result.text if not result.error else result.error
             })
