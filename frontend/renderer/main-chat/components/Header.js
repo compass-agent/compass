@@ -578,7 +578,7 @@ function Header() {
             WebkitAppRegion: "no-drag",
             display: "inline-flex",
             alignItems: "center",
-            marginRight: "6px",
+            marginRight: "12px",
           }}
         >
           <button
