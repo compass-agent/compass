@@ -28,19 +28,33 @@
   color: #E0E0E0;
   overflow: hidden;
   
+  /* Modern scrollbar styling */
   &::-webkit-scrollbar {
     width: 8px;
   }
   
-  &::-webkit-scrollbar-thumb {
-    background-color: #555;
-    border-radius: 4px;
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
   
-  &::-webkit-scrollbar-track {
-    background-color: #2D2D2D;
+  &::-webkit-scrollbar-thumb {
+    background-color: #666;
     border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #888;
+  }
+
+  &::-webkit-scrollbar-thumb:active {
+    background-color: #999;
+  }
+
+  /* For Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #666 transparent;
   
   .modal-header {
     display: flex;
@@ -245,6 +259,34 @@
       box-sizing: border-box;
       overflow-x: hidden;
       overflow-y: auto;
+      
+      /* Modern scrollbar styling for step content */
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background-color: #666;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+      
+      &::-webkit-scrollbar-thumb:hover {
+        background-color: #888;
+      }
+
+      &::-webkit-scrollbar-thumb:active {
+        background-color: #999;
+      }
+
+      /* For Firefox */
+      scrollbar-width: thin;
+      scrollbar-color: #666 transparent;
       
       .section {
         width: 100%;
