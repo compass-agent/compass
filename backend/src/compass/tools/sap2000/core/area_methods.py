@@ -1,10 +1,12 @@
 import logging
+from typing import Dict, List, Tuple
 import math
-from typing import List, Tuple, Dict
 
 logger = logging.getLogger(__name__)
 
 class AreaMethods:
+    """Mixin class for area-related methods in SAP2000 model."""
+
     def identify_floor_levels(self, frames: Dict[str, Dict]) -> List[float]:
         """
         Identify distinct floor levels from the frame data.
@@ -417,6 +419,13 @@ class AreaMethods:
         Returns:
             tuple: (list of area names with loads, status code)
         """
+        # Check if config is available
+        if self.config is None:
+            raise RuntimeError(
+                "Configuration is required to use add_area_loads. "
+                "Please load the project configuration first using the configuration setup option."
+            )
+        
         # Add load patterns from config
         for pattern in self.config.loads.patterns:
             pattern_type = 1 if pattern.type == "DEAD" else 3  # 1=Dead, 3=Live
