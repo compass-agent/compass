@@ -50,27 +50,27 @@
     justify-content: center;
     border-radius: 50%;
     border: none;
-    background-color: #DED5F5; /* Base lavender color */
-    transition: background-color 0.3s, color 0.3s, transform 0.1s, box-shadow 0.2s;
+    background-color: #36353A;
+    transition: background-color 0.3s, color 0.3s, border 0.3s;
     cursor: pointer;
-    //color: #4A3F8C; /* Suitable contrast for icons/text */
+    color: #9C9B9F;
   }
   
   .button:hover:not(:disabled) {
-    background-color: #CFC2F0; /* Hover: Slightly darker */
+    color: #E0E0E0;
   }
   
   .button:active:not(:disabled),
   .button.active {
-    background-color: #BFB0EB; /* Active: More pronounced */
+    background-color: #36353A;
     transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(74, 63, 140, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   
   .button:disabled,
   .button[aria-disabled="true"] {
-    background-color: rgba(222, 213, 245, 0.4); /* Disabled: faded version */
-    color: rgba(74, 63, 140, 0.4); /* Match faded icon color */
+    background-color: rgba(54, 53, 58, 0.4);
+    color: rgba(156, 155, 159, 0.4);
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
