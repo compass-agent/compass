@@ -2,7 +2,6 @@ import { faSquare } from "@fortawesome/free-regular-svg-icons"
 import {
   faCheck,
   faChevronDown,
-  faComment,
   faMinus,
   faWindowMinimize,
   faXmark,
@@ -229,7 +228,7 @@ function Header() {
           width: "100%",
         }}
       >
-        {/* Left side: Compass label and Agent dropdown */}
+        {/* Left side: Compass logo and Agent dropdown */}
         <div
           className="left-header-controls"
           style={{
@@ -242,13 +241,19 @@ function Header() {
           <div
             className="app-name"
             style={{
-              color: "#9C9B9F",
-              fontSize: "15px",
-              fontWeight: "400",
-              fontSize: "bold",
+              display: "flex",
+              alignItems: "center",
+              height: "25px",
             }}
           >
-            Compass
+            <img
+              src="../../../resources/compass.png"
+              alt="Compass"
+              style={{
+                height: "25px",
+                width: "auto",
+              }}
+            />
           </div>
 
           {/* Agent Display - Read-only during chat, dropdown when not in chat */}
@@ -439,31 +444,17 @@ function Header() {
           {/* Tools Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-dropdown-button"
+              className="header-tools-button"
               onClick={(e) => toggleDropdown("tools", setToolsDropdown, e)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#9C9B9F",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                padding: "4px 0",
-                fontSize: "14px",
-                transition: "color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#E0E0E0"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9C9B9F"
-              }}
             >
-              <span>Tools</span>
+              Tools
               <FontAwesomeIcon
                 icon={faChevronDown}
-                className="dropdown-arrow"
-                style={{ fontSize: "12px", color: "#6A6A6A" }}
+                style={{
+                  fontSize: "10px",
+                  marginLeft: "6px",
+                  color: "#6A6A6A",
+                }}
               />
             </button>
 
@@ -517,31 +508,17 @@ function Header() {
           {/* AI Model Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-dropdown-button"
+              className="header-model-button"
               onClick={(e) => toggleDropdown("model", setModelDropdown, e)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#9C9B9F",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                padding: "4px 0",
-                fontSize: "14px",
-                transition: "color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#E0E0E0"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9C9B9F"
-              }}
             >
-              <span>Model</span>
+              Model
               <FontAwesomeIcon
                 icon={faChevronDown}
-                className="dropdown-arrow"
-                style={{ fontSize: "12px", color: "#6A6A6A" }}
+                style={{
+                  fontSize: "10px",
+                  marginLeft: "6px",
+                  color: "#6A6A6A",
+                }}
               />
             </button>
 
@@ -605,29 +582,11 @@ function Header() {
           }}
         >
           <button
-            className="header-action-button new-chat"
+            className="header-new-chat-button"
             onClick={handleNewChatButtonClick}
             title="New Chat"
-            style={{
-              background: "none",
-              border: "none",
-              color: "#9C9B9F",
-              cursor: "pointer",
-              fontSize: "18px",
-              padding: "4px",
-              transition: "color 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#E0E0E0"
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#9C9B9F"
-            }}
           >
-            <FontAwesomeIcon icon={faComment} />
+            New Chat
           </button>
         </div>
       </div>

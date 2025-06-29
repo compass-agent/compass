@@ -22,7 +22,8 @@
   justify-content: space-between;
   height: 32px;
   width: 100%;
-  background-color: #2a2a2a;
+  // background-color: #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
   position: relative;
   -webkit-app-region: drag;
   
@@ -668,4 +669,58 @@
 button, a, input, .interactive, [role="button"] {
   -webkit-app-region: no-drag;
   pointer-events: auto;
+}
+
+/* New chat button with same styling as mode-toggle-btn from ControlPanel */
+.header-new-chat-button {
+  border: none;
+  background: #232326;
+  color: #9C9B9F;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 10px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: 'Abel', sans-serif;
+  
+  &:hover {
+    background: #4e4c53;
+    color: #9C9B9F;
+  }
+  
+  &.active {
+    background: #36353A;
+    color: #9C9B9F;
+  }
+}
+
+/* Tools and Model buttons with same rectangular styling */
+.header-tools-button,
+.header-model-button {
+  border: none;
+  background: #232326;
+  color: #9C9B9F;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 10px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: 'Abel', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #4e4c53;
+    color: #9C9B9F;
+  }
+  
+  &.active {
+    background: #36353A;
+    color: #9C9B9F;
+  }
 }
