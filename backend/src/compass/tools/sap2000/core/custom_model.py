@@ -16,9 +16,19 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
     """
     Custom SAP2000 model class that extends the base SAP2000 model with additional functionality.
     """
-    def __init__(self, sap_model, config: ModelConfig):
+    def __init__(self, sap_model, config: Optional[ModelConfig] = None):
         self._model = sap_model
         self.config = config
+
+    def update_config(self, config: ModelConfig):
+        """
+        Update the configuration after the model has been created.
+        
+        Args:
+            config: The ModelConfig instance to use
+        """
+        self.config = config
+        logger.info("Configuration updated successfully")
 
     def load_section_names(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:
         """
@@ -28,7 +38,7 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
         Returns:
             Dict mapping section types (W, L, C, etc.) to lists of filtered dictionaries, where each 
             dictionary contains section properties (name, nominal_depth, depth, weight, area)
-        """
+        """   
         xml_path = os.path.join(os.path.dirname(__file__), 'data', 'AISC16.xml')
         tree = ET.parse(xml_path)
         root = tree.getroot()
