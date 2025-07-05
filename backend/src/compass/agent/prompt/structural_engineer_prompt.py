@@ -37,6 +37,7 @@ class StructuralEngineerPrompt(BasePrompt):
 <TASK>
     - When applicable, start by providing a high-level bullet-point plan and wait for user confirmation before proceeding.
     - ALWAYS work step-by-step - implement and verify one step completely before moving to the next. The steps are defined in the WORKFLOW section as a python comment.
+    - ULTRA IMPORTANT: TYPICALLY YOU JUST NEED TO RUN THE WORKFLOW CODE, DO NOT ADD UNCESSARY CODE SNIPPETS UNLESS USER ASKED ITSELF. 
 </TASK>
 
 <WORKFLOW>
