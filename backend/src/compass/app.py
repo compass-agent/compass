@@ -67,7 +67,7 @@ socketio = SocketIO(
     async_mode='eventlet',
     logger=True,
     engineio_logger=True,
-    ping_timeout=60,
+    ping_timeout=6000,
     ping_interval=25,
     debug=True,
     async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True,  # Disable async handlers in debug mode
