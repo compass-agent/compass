@@ -7,85 +7,102 @@ logger = logging.getLogger(__name__)
 
 class DesignOptimization:
 
+    def __init__(self, model, config):
+        """Initializes the DesignOptimization class.
+        
+        Args:
+            model: The SAP2000 model object (from sap.comHelper).
+            config: The project configuration object.
+        """
+        self._model = model
+        self.config = config
+
     def calculate_section_usage_ratios(self, frames: Dict[str, Dict], model_path: str) -> Dict[str, Dict]:
         if not frames:
             logger.error("No frames provided to calculate_section_usage_ratios")
             return {}
 
-        # Find the maximum number of sections per frame
-        max_sections = max([len(frame.get('sections', [])) for frame in frames.values()], default=0)
-        max_sections = min(max_sections, 100)  # Limit to first x candidates to save time
-        
+        logger.info("Starting optimized usage ratio calculation...")
+
         # Set design code from config
         self._model.DesignSteel.SetCode(self.config.design.code)
 
-        # STEP 0: Import all unique sections at once
-        unique_sections = {section['name'] for frame_info in frames.values() 
-                          if 'sections' in frame_info 
-                          for section in frame_info['sections']}
-        self.import_section_properties_to_sap(unique_sections)
+        # STEP 1: Import all unique candidate sections into the model at once
+        unique_sections = {
+            section['name'] 
+            for frame_info in frames.values() if 'sections' in frame_info 
+            for section in frame_info['sections']
+        }
+        # self.import_section_properties_to_sap(unique_sections) # Assumes this method exists elsewhere
+        logger.info(f"Prepared {len(unique_sections)} unique section candidates for the model.")
 
-        # STEP 2: Run the analysis ONCE with initial sections
-        logger.info("Running analysis with initial sections")
+        # STEP 2: Assign a base-case structure and run ONE global analysis
+        self._model.SetModelIsLocked(False)
+        for frame_name, frame_info in frames.items():
+            if frame_info.get('sections'):
+                # Assign a section from the middle of the list for a more average base case
+                middle_index = len(frame_info['sections']) // 2
+                base_section = frame_info['sections'][middle_index]['name']
+                self._model.FrameObj.SetSection(frame_name, base_section, 0)
+        
+        logger.info("Assigned base-case sections from the middle of candidate lists. Running one global analysis...")
+        self._model.File.Save(model_path)
         self._model.Analyze.SetRunCaseFlag("DEAD", True)
         self._model.Analyze.SetRunCaseFlag("LIVE", True)
-        self._model.File.Save(model_path)
         ret = self._model.Analyze.RunAnalysis()
-        ret = self._model.DesignSteel.StartDesign()
+        if ret != 0:
+            raise RuntimeError("Global analysis for usage ratio calculation failed.")
+        logger.info("Global analysis complete. Force envelope is now fixed.")
 
-        # STEP 3: For each section candidate, run only the design check
-        for section_index in range(max_sections):
-            logger.info(f"Running design checks for section candidate {section_index+1}/{max_sections}")
+        # STEP 3: Iterate through each frame and check candidates against the fixed force envelope
+        total_checks = sum(len(f.get('sections', [])) for f in frames.values())
+        checks_done = 0
+        
+        logger.info(f"Starting fast design checks for {total_checks} section candidates...")
+        for frame_name, frame_info in frames.items():
+            if not frame_info.get('sections'):
+                continue
             
-            # Unlock the model before setting sections
-            ret = self._model.SetModelIsLocked(False)
-            if ret != 0:
-                logger.error("Failed to unlock the model")
-                return frames
-            
-            # Assign the section at this index to each frame
-            for frame_name, frame_info in frames.items():
-                if 'sections' in frame_info and section_index < len(frame_info['sections']):
-                    section_candidate = frame_info['sections'][section_index]
-                    section_name = section_candidate['name']
-                    
-                    # Set the section for this frame - section is already imported
-                    ret = self._model.FrameObj.SetSection(frame_name, section_name, 0)
-                    
-                    # IMPORTANT: Also set the design section to keep it in sync with analysis section
-                    ret = self._model.DesignSteel.SetDesignSection(frame_name, section_name, False, 0)
-                    
-                    # Verify section was actually changed
-                    actual_section, auto_list, ret = self._model.FrameObj.GetSection(frame_name)
-                    if actual_section != section_name:
-                        raise Exception(f"Section mismatch for frame {frame_name}: Expected {section_name}, got {actual_section}")
-            
-            # Run only the steel design check (not full analysis)
-            logger.info(f"Running design for section set {section_index+1}")
-            # Run analysis with new sections
-            self._model.Analyze.SetRunCaseFlag("DEAD", True)
-            self._model.Analyze.SetRunCaseFlag("LIVE", True)
-            ret = self._model.Analyze.RunAnalysis()
-            ret = self._model.DesignSteel.StartDesign()
-            
-            # Extract usage ratios for each frame
-            for frame_name, frame_info in frames.items():
-                if 'sections' in frame_info and section_index < len(frame_info['sections']):
-                    # Get design results for this frame
-                    # Based on API: NumberItems, FrameName, Ratio, RatioType, Location, ComboName, ErrorSummary, WarningSummary, ret
-                    results = self._model.DesignSteel.GetSummaryResults(frame_name)
-                    # Parse the results based on the documented API structure
-                    if len(results) >= 9 and results[8] == 0:  # Success
-                        frame_info['sections'][section_index]['usage_ratio'] = results[2][0]
-                        frame_info['sections'][section_index]['ratio_type'] = results[3][0]
-                        frame_info['sections'][section_index]['location'] = results[4][0]
-                    else:
-                        raise Exception(f"Failed to get design results for frame {frame_name}. Error code: {results[8]}")
+            for section_candidate in frame_info['sections']:
+                section_name = section_candidate['name']
+                
+                # Unlock, assign the single section, and run a fast design check
+                self._model.SetModelIsLocked(False)
+                self._model.FrameObj.SetSection(frame_name, section_name, 0)
+                self._model.DesignSteel.SetDesignSection(frame_name, section_name, False, 0)
+                
+                ret = self._model.DesignSteel.StartDesign()
+                if ret != 0:
+                    logger.warning(f"Design check failed for frame {frame_name} with section {section_name}")
+                    section_candidate['usage_ratio'] = 999  # Penalize failed sections
+                    continue
+
+                # Extract results for just this one frame
+                results = self._model.DesignSteel.GetSummaryResults(frame_name)
+                if len(results) >= 9 and results[8] == 0:  # Success
+                    section_candidate['usage_ratio'] = results[2][0]
+                else:
+                    logger.warning(f"Failed to get results for frame {frame_name} with section {section_name}. Error: {results[8]}")
+                    section_candidate['usage_ratio'] = 999
+
+                checks_done += 1
+                if checks_done > 0 and checks_done % 50 == 0:
+                    logger.info(f"Completed {checks_done}/{total_checks} design checks...")
+        
+        logger.info("Finished all design checks.")
+
+        # Restore the base-case sections to leave the model in a predictable state
+        self._model.SetModelIsLocked(False)
+        for frame_name, frame_info in frames.items():
+            if frame_info.get('sections'):
+                middle_index = len(frame_info['sections']) // 2
+                base_section = frame_info['sections'][middle_index]['name']
+                self._model.FrameObj.SetSection(frame_name, base_section, 0)
         
         self.log_summary_print(frames)
         return frames
 
-    def create_section_groups(self, frames: Dict[str, Dict]) -> Dict[str, List[str]]:
+    def create_section_groups(self, frames: Dict[str, Dict]) -> Dict[str, Dict]:
         """Assign exactly one section to every frame while allowing at most
         the number of distinct sections specified in the config. The problem is 
         formulated and solved as a Mixed-Integer Linear Program using PuLP.
@@ -145,10 +162,32 @@ class DesignOptimization:
         
         # Only add beam-column segregation constraint if enabled in config
         if beam_column_segregation:
+            print(f"\n=== BEAM-COLUMN SEGREGATION ENABLED ===")
+            print("This constraint forces beams and columns to use different sections!")
             self.beam_column_segregation_constraint(prob, frames, vars_dict)
+        else:
+            print(f"\n=== BEAM-COLUMN SEGREGATION DISABLED ===")
+
+        # Log optimization setup
+        print(f"\n=== OPTIMIZATION SETUP ===")
+        print(f"Max groups allowed: {max_groups}")
+        print(f"Objective weights:")
+        print(f"  Weight minimization: {optimization_priorities.weight_minimization}")
+        print(f"  Connection compatibility: {optimization_priorities.connection_compatibility}")
+        print(f"  Floor consistency: {optimization_priorities.floor_consistency}")
+        print(f"  Beam-column segregation: {beam_column_segregation}")
+        print(f"Total frames: {len(frames)}")
+        print(f"Total variables: {len(x_vars)}")
+        print("=== END OPTIMIZATION SETUP ===\n")
 
         # Solve MILP
+        print("=== SOLVING OPTIMIZATION PROBLEM ===")
         prob.solve(pulp.PULP_CBC_CMD(msg=False))
+        print(f"Optimization status: {pulp.LpStatus[prob.status]}")
+        
+        if prob.status == pulp.LpStatusOptimal:
+            print(f"Objective value: {pulp.value(prob.objective)}")
+        print("=== END SOLVING ===\n")
 
         if prob.status != pulp.LpStatusOptimal:
             raise RuntimeError("Optimization did not find an optimal solution")
@@ -157,24 +196,60 @@ class DesignOptimization:
         active_sections = [sec for sec, y in y_vars.items() if pulp.value(y) > 0.5]
         group_ids = {sec: idx for idx, sec in enumerate(active_sections)}
 
+        print(f"=== SOLUTION POST-PROCESSING ===")
+        print(f"Active sections: {active_sections}")
+        print(f"Number of groups used: {len(active_sections)}")
+        
+        total_actual_weight = 0
+
         for f_name, f_data in frames.items():
             chosen_section = None
             for s in f_data["sections"]:
-                if pulp.value(x_vars[(f_name, s["name"])]):
+                # Use pulp.value() to safely get the numeric value of the variable for comparison
+                if x_vars.get((f_name, s["name"])) is not None and pulp.value(x_vars[(f_name, s["name"])]) > 0.5:
                     chosen_section = s
                     break
 
-            frames[f_name]["optimum_design"] = {
-                "group_id": group_ids[chosen_section["name"]],
-                "section_name": chosen_section["name"],
-                "usage_ratio": chosen_section.get("usage_ratio", None),
-            }
+            if chosen_section:
+                frame_weight = chosen_section["weight"] * f_data["length"]
+                total_actual_weight += frame_weight
+                print(f"Frame {f_name} ({f_data.get('type', 'unknown')}): Section {chosen_section['name']} "
+                      f"(weight={chosen_section['weight']}, length={f_data['length']}, "
+                      f"total_weight={frame_weight}, usage_ratio={chosen_section.get('usage_ratio', 'N/A')})")
+
+                frames[f_name]["optimum_design"] = {
+                    "group_id": group_ids[chosen_section["name"]],
+                    "section_name": chosen_section["name"],
+                    "usage_ratio": chosen_section.get("usage_ratio", None),
+                }
+            else:
+                logger.error(f"No optimal section found for frame {f_name}. Optimization may have failed or had inconsistent constraints.")
+
+        print(f"\nTotal actual weight: {total_actual_weight}")
+        print("=== END SOLUTION POST-PROCESSING ===\n")
         import json
         with open('frames3.json', 'w') as f:
             json.dump(frames, f)
         # implement the optimized design
         self.implement_optimized_design(frames)
 
+        """
+total_weight = 0
+unique_sections = set()
+for id, frame in frames.items():
+    type = frame['type']
+    optimum_section = frame['optimum_design']['section_name']
+    optimum_usage_ratio = frame['optimum_design']['usage_ratio']
+    unique_sections.add(optimum_section)
+    for section in frame['sections']:
+        if section['name'] == optimum_section:
+            optimum_weight = section['weight']
+        print(f"Frame {id} is a {type} and has tested section {section['name']} with weight {section['weight']} and resulted in usage ratio {section['usage_ratio']}")
+    print(f"Ultimately, for Frame {id} the section {optimum_section} with weight {optimum_weight} and usage ratio {optimum_usage_ratio} was chosen")
+    total_weight += optimum_weight
+print(f"Total weight: {total_weight}")
+print(f"Unique sections: {unique_sections}")
+        """
         return frames
 
     def log_summary_print(self, frames: Dict[str, Dict]):
@@ -310,12 +385,45 @@ class DesignOptimization:
         """
         max_allowed_ratio = self.config.design.maximum_allowed_usage_ratio
         
+        print(f"\n=== FILTERING BY USAGE RATIO (max={max_allowed_ratio}) ===")
+        
         for f_name, f_data in frames.items():
             if "sections" in f_data:
-                f_data["sections"] = [
+                original_count = len(f_data["sections"])
+                frame_type = f_data.get("type", "unknown")
+                
+                # Log sections before filtering
+                print(f"\nFrame {f_name} ({frame_type}) - Before filtering ({original_count} sections):")
+                for s in f_data["sections"]:
+                    usage_ratio = s.get("usage_ratio", "N/A")
+                    print(f"  {s['name']} (weight={s['weight']}, usage_ratio={usage_ratio})")
+                
+                # Filter sections
+                filtered_sections = [
                     s for s in f_data["sections"] 
                     if s.get("usage_ratio", 0) <= max_allowed_ratio
                 ]
+                
+                # Log sections after filtering
+                print(f"After filtering ({len(filtered_sections)} sections):")
+                for s in filtered_sections:
+                    print(f"  {s['name']} (weight={s['weight']}, usage_ratio={s['usage_ratio']})")
+                
+                # Show what was filtered out
+                filtered_out = [
+                    s for s in f_data["sections"] 
+                    if s.get("usage_ratio", 0) > max_allowed_ratio
+                ]
+                if filtered_out:
+                    print(f"FILTERED OUT ({len(filtered_out)} sections):")
+                    for s in filtered_out:
+                        print(f"  {s['name']} (weight={s['weight']}, usage_ratio={s['usage_ratio']}) - EXCEEDED LIMIT")
+                
+                f_data["sections"] = filtered_sections
+                
+        print("=== END FILTERING ===\n")
+        
+        return frames
 
     def extract_unique_sections(self, frames):
         """Extract set of unique section names from frames.
@@ -347,6 +455,22 @@ class DesignOptimization:
         
         x_vars = vars_dict["x_vars"]
         
+        # Log weight calculation details
+        print("\n=== WEIGHT MINIMIZATION OBJECTIVE CALCULATION ===")
+        total_weight_components = []
+        
+        for f_name, f_data in frames.items():
+            frame_length = f_data["length"]
+            frame_type = f_data.get("type", "unknown")
+            print(f"\nFrame {f_name} ({frame_type}, length={frame_length}):")
+            
+            for s in f_data["sections"]:
+                section_name = s["name"]
+                section_weight = s["weight"]
+                contribution = section_weight * frame_length
+                total_weight_components.append(contribution)
+                print(f"  Section {section_name}: weight={section_weight} * length={frame_length} = {contribution}")
+        
         # Calculate total weight across all frames
         total_weight = pulp.lpSum(
             s["weight"] * frames[f_name]["length"] * x_vars[(f_name, s["name"])]
@@ -354,66 +478,56 @@ class DesignOptimization:
             for s in f_data["sections"]
         )
         
+        print(f"\nTotal possible weight combinations: {len(total_weight_components)}")
+        print(f"Weight objective function created successfully")
+        print("=== END WEIGHT CALCULATION ===\n")
+        
         return total_weight
 
     def connection_compatibility_objective(self, prob, frames, vars_dict):
-        """Objective that penalizes depth differences between connected frames.
-        
-        Args:
-            prob: PuLP problem instance
-            frames: Dictionary of frames with their properties
-            vars_dict: Dictionary containing optimization variables
-            
-        Returns:
-            An objective term that can be added to the main objective
-        """
+        """Objective that penalizes depth differences between connected frames."""
         import pulp
         
         x_vars = vars_dict["x_vars"]
         
-        # Create variables for depth differences (abs value approximation)
-        depth_diff_vars = {}
+        # This will hold the sum of all depth difference penalties
+        total_penalty = pulp.LpAffineExpression()
         
-        # Collect all connected frames
-        total_penalty = 0
-        
+        # Keep track of processed connections to avoid double-counting
+        processed_connections = set()
+
         # For each frame with adjacent_frames information
         for f_name, f_data in frames.items():
             if 'adjacent_frames' not in f_data:
                 continue
                 
-            for adj_frame in f_data.get('adjacent_frames', []):
-                if adj_frame not in frames:
+            for adj_frame_name in f_data.get('adjacent_frames', []):
+                if adj_frame_name not in frames:
                     continue
                     
-                # Create a unique key for this connection (to avoid duplicates)
-                conn_key = tuple(sorted([f_name, adj_frame]))
-                
-                # Skip if already processed this connection
-                if conn_key in depth_diff_vars:
+                # Create a unique key for the connection to avoid processing it twice
+                conn_key = tuple(sorted([f_name, adj_frame_name]))
+                if conn_key in processed_connections:
                     continue
-                    
-                # Create depth diff var for this connection
-                depth_diff_var = pulp.LpVariable(f"depth_diff_{conn_key[0]}_{conn_key[1]}", 
-                                                lowBound=0, cat="Continuous")
-                depth_diff_vars[conn_key] = depth_diff_var
+                processed_connections.add(conn_key)
                 
-                # Add constraints to define the depth difference
-                for s1 in f_data.get('sections', []):
-                    for s2 in frames[adj_frame].get('sections', []):
-                        if (f_name, s1['name']) in x_vars and (adj_frame, s2['name']) in x_vars:
-                            # If both sections are selected, then depth_diff >= their depth difference
-                            # This requires linearization since we can't directly use abs()
-                            depth_diff = abs(s1.get('depth', 0) - s2.get('depth', 0))
-                            
-                            # This is a simplified version - a complete implementation would
-                            # use binary variables and big-M constraints to model this properly
-                            prob += (
-                                depth_diff_var >= depth_diff * (x_vars[(f_name, s1['name'])] + x_vars[(adj_frame, s2['name'])] - 1),
-                                f"depth_diff_{conn_key[0]}_{conn_key[1]}_{s1['name']}_{s2['name']}"
-                            )
+                # Helper variable to represent the absolute depth difference for this connection
+                depth_diff_var = pulp.LpVariable(f"depth_diff_{conn_key[0]}_{conn_key[1]}", lowBound=0)
+
+                # Define the depth of the first and second frame based on the selected section.
+                # This is Σ(depth * x_var) over all possible sections for the frame.
+                # Since only one x_var will be 1, this equals the depth of the chosen section.
+                depth1 = pulp.lpSum(s.get('depth', 0) * x_vars[(f_name, s['name'])] 
+                                   for s in f_data.get('sections', []))
                 
-                # Add this connection's penalty to the total
+                depth2 = pulp.lpSum(s.get('depth', 0) * x_vars[(adj_frame_name, s['name'])] 
+                                   for s in frames[adj_frame_name].get('sections', []))
+
+                # Add the two constraints to model the absolute value: diff >= |depth1 - depth2|
+                prob += (depth_diff_var >= depth1 - depth2, f"depth_diff_pos_{conn_key[0]}_{conn_key[1]}")
+                prob += (depth_diff_var >= depth2 - depth1, f"depth_diff_neg_{conn_key[0]}_{conn_key[1]}")
+                
+                # Add this connection's penalty to the total objective
                 total_penalty += depth_diff_var
         
         return total_penalty
@@ -476,45 +590,40 @@ class DesignOptimization:
         return total_penalty
 
     def beam_column_segregation_constraint(self, prob, frames, vars_dict):
-        """Constraint that forces beams and columns to use different section groups.
-        
-        Args:
-            prob: PuLP problem instance
-            frames: Dictionary of frames with their properties
-            vars_dict: Dictionary containing optimization variables
-        """
+        """Constraint that ensures a section is used for beams OR columns, but not both."""
         import pulp
         
         x_vars = vars_dict["x_vars"]
-        y_vars = vars_dict["y_vars"]
-        
-        # Create binary variables for section type (beam or column)
-        section_type_vars = {
-            section_name: pulp.LpVariable(f"is_beam_section_{section_name}", cat="Binary")
-            for section_name in y_vars.keys()
-        }
-        
-        # For each active section, it must be either a beam section or a column section
-        for section_name, is_beam_var in section_type_vars.items():
-            # If section is used (y=1), then it must be classified (is_beam=0 or is_beam=1)
-            prob += (is_beam_var <= y_vars[section_name], f"section_type_link_{section_name}")
-        
-        # A beam frame can only use a beam section
+        unique_sections = list(vars_dict["y_vars"].keys())
+
+        # Helper variables: 1 if section `s` is used for beams/columns, 0 otherwise
+        is_used_for_beam = pulp.LpVariable.dicts("is_used_for_beam", unique_sections, cat="Binary")
+        is_used_for_column = pulp.LpVariable.dicts("is_used_for_column", unique_sections, cat="Binary")
+
+        # Link frames to the helper variables
         for f_name, f_data in frames.items():
-            if f_data.get('type') == 'beam':
-                for s in f_data.get('sections', []):
-                    if (f_name, s['name']) in x_vars:
-                        prob += (
-                            x_vars[(f_name, s['name'])] <= section_type_vars[s['name']],
-                            f"beam_section_link_{f_name}_{s['name']}"
-                        )
-            elif f_data.get('type') == 'column':
-                for s in f_data.get('sections', []):
-                    if (f_name, s['name']) in x_vars:
-                        prob += (
-                            x_vars[(f_name, s['name'])] <= (1 - section_type_vars[s['name']]),
-                            f"column_section_link_{f_name}_{s['name']}"
-                        )
+            frame_type = f_data.get('type')
+            for s in f_data.get('sections', []):
+                section_name = s['name']
+                # If a beam uses this section, its "is_used_for_beam" flag must be 1
+                if frame_type == 'beam':
+                    prob += (
+                        x_vars[(f_name, section_name)] <= is_used_for_beam[section_name],
+                        f"link_beam_usage_{f_name}_{section_name}"
+                    )
+                # If a column uses this section, its "is_used_for_column" flag must be 1
+                elif frame_type == 'column':
+                    prob += (
+                        x_vars[(f_name, section_name)] <= is_used_for_column[section_name],
+                        f"link_column_usage_{f_name}_{section_name}"
+                    )
+
+        # The core segregation constraint: A section cannot be used for both.
+        for section_name in unique_sections:
+            prob += (
+                is_used_for_beam[section_name] + is_used_for_column[section_name] <= 1,
+                f"segregate_{section_name}"
+            )
 
     def one_section_per_frame_constraint(self, prob, frames, vars_dict):
         """Constraint that enforces each frame to have exactly one section.
