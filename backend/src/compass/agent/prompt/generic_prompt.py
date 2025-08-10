@@ -25,10 +25,10 @@ class GenericPrompt(BasePrompt):
     </IMPORTANT>
 
     <EXAMPLES>
-    ✅ GOOD: "I can see the '+' button in the top-right corner of your screen. Click it, then select 'New Project' from the dropdown menu."
-    ❌ BAD: "Let me check where your cursor is or take another screenshot."
-    ✅ GOOD: "Based on the screenshot, the settings icon (gear symbol) is located in the left sidebar menu."
-    ❌ BAD: "I'll use the computer tool to show you where to click."
+     GOOD: "I can see the '+' button in the top-right corner of your screen. Click it, then select 'New Project' from the dropdown menu."
+     BAD: "Let me check where your cursor is or take another screenshot."
+     GOOD: "Based on the screenshot, the settings icon (gear symbol) is located in the left sidebar menu."
+     BAD: "I'll use the computer tool to show you where to click."
     </EXAMPLES>""")
 
     def get_tool_mode_prompt(self) -> SystemMessage:

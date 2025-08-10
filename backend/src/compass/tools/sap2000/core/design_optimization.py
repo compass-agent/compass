@@ -31,7 +31,12 @@ class DesignOptimization:
         self._model.Analyze.SetRunCaseFlag("LIVE", True)
         self._model.File.Save(model_path)
         ret = self._model.Analyze.RunAnalysis()
+        if ret != 0:
+            raise Exception(f"Analysis failed with error code: {ret}")
+            
         ret = self._model.DesignSteel.StartDesign()
+        if ret != 0:
+            raise Exception(f"Steel design failed with error code: {ret}")
 
         # STEP 3: For each section candidate, run only the design check
         for section_index in range(max_sections):
@@ -66,7 +71,12 @@ class DesignOptimization:
             self._model.Analyze.SetRunCaseFlag("DEAD", True)
             self._model.Analyze.SetRunCaseFlag("LIVE", True)
             ret = self._model.Analyze.RunAnalysis()
+            if ret != 0:
+                raise Exception(f"Analysis failed for section set {section_index+1} with error code: {ret}")
+                
             ret = self._model.DesignSteel.StartDesign()
+            if ret != 0:
+                raise Exception(f"Steel design failed for section set {section_index+1} with error code: {ret}")
             
             # Extract usage ratios for each frame
             for frame_name, frame_info in frames.items():
@@ -104,6 +114,10 @@ class DesignOptimization:
         """
         # Import here to keep the dependency local and optional for callers
         import pulp
+        import warnings
+        
+        # Suppress PuLP's objective overwriting warning
+        warnings.filterwarnings('ignore', message='Overwriting previously set objective.', category=UserWarning, module='pulp')
 
         if not frames:
             logger.error("No frames provided to create_section_groups")

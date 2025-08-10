@@ -285,10 +285,10 @@
         padding-left: 18px;
         position: relative; 
 
-        overflow-y: auto; /* ✅ Allows vertical scrolling */
-        overflow-x: hidden !important; /* ✅ Prevents horizontal scrolling */
-        white-space: pre-wrap !important; /* ✅ Preserves spaces while allowing wrapping */
-        word-break: break-word !important; /* ✅ Breaks long words properly */
+        overflow-y: auto; /*  Allows vertical scrolling */
+        overflow-x: hidden !important; /*  Prevents horizontal scrolling */
+        white-space: pre-wrap !important; /*  Preserves spaces while allowing wrapping */
+        word-break: break-word !important; /*  Breaks long words properly */
         max-width: 100% !important;
         @include custom-scrollbar;
         
@@ -312,8 +312,8 @@
             // flex-direction: column !important;
             // flex-wrap: wrap !important;
             // width: 100% !important;
-            display: block !important; /* ✅ Ensures block-level rendering */
-            white-space: pre-wrap !important; /* ✅ Forces text to wrap */
+            display: block !important; /*  Ensures block-level rendering */
+            white-space: pre-wrap !important; /*  Forces text to wrap */
             word-break: break-word !important; 
             line-height: 1.2 !important;
           }

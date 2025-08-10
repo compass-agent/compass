@@ -45,7 +45,7 @@ class WebSocketService {
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000,
+      timeout: 60000000,
       transports: ["websocket"],
       forceNew: true,
     })
