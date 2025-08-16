@@ -246,6 +246,11 @@ class AgentService:
     async def _take_screenshot(self) -> None:
         """Takes a screenshot and adds cursor position to the message history"""
         try:
+            # Check if desktop tool is connected before attempting screenshot
+            desktop_status = self.tool_collection.get_tool_connection_status('computer')
+            if desktop_status != "CONNECTED":
+                return
+            
             tool_call = ToolCall(name="computer", args={"action": "screenshot"}, tool_call_id=f"tool_screenshot_{len(self.messages)}")
             tool_result = await self.tool_collection.run(tool_call)
             self.memory_manager.add_message(AIMessage(tool_calls=[tool_call]))

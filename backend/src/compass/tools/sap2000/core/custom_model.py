@@ -44,9 +44,9 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
         root = tree.getroot()
         
         # Get section types and filter criteria from config
-        section_types = self.config.section_candidates.section_types
-        depth_range = tuple(self.config.section_candidates.filter.depth_range)
-        weight_range = tuple(self.config.section_candidates.filter.weight_range)
+        section_types = self.config.section_candidates.section_types # type: ignore
+        depth_range = tuple(self.config.section_candidates.filter.depth_range) # type: ignore
+        weight_range = tuple(self.config.section_candidates.filter.weight_range) # type: ignore
         
         # Handle XML namespace
         # Extract namespace from root tag
@@ -133,7 +133,7 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
                 continue
 
             filtered_list = []
-            keep_rate = 30
+            keep_rate = 45
             keeping_idx = 0
             for section in sections:
                 keeping_idx += 1

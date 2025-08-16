@@ -18,6 +18,7 @@ class WebSocketService {
       onDetectionResult: null,
       onTemplatesSaved: null,
       onSAPConnectionStatus: new Set(),
+      onDesktopConnectionStatus: new Set(),
     }
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 10
@@ -188,6 +189,14 @@ class WebSocketService {
         })
       )
     })
+
+    // Add Desktop connection status event handler
+    this.socket.on("desktop_connection_status", (data) => {
+      console.log("WebSocket received Desktop connection status:", data)
+      this.stateHandlers.onDesktopConnectionStatus.forEach((handler) =>
+        handler(data)
+      )
+    })
   }
 
   disconnect() {
@@ -312,6 +321,25 @@ class WebSocketService {
       this.socket.emit("get_sap_connection_status")
     } else {
       console.warn("Cannot get SAP connection status - socket not connected")
+    }
+  }
+
+  // New methods for Desktop connection
+  connectToDesktop() {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending connect_to_desktop request")
+      this.socket.emit("connect_to_desktop")
+    } else {
+      console.warn("Cannot connect to Desktop - socket not connected")
+    }
+  }
+
+  getDesktopConnectionStatus() {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending get_desktop_connection_status request")
+      this.socket.emit("get_desktop_connection_status")
+    } else {
+      console.warn("Cannot get Desktop connection status - socket not connected")
     }
   }
 }

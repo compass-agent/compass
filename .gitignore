@@ -41,7 +41,7 @@ out/
 *.exe
 *.out
 *.app
-
+davinci/*
 # Coverage directory used by tools like istanbul
 coverage/
 venv/

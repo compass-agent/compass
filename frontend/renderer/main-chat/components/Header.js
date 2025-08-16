@@ -8,14 +8,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useEffect, useState } from "react"
-import { SAPConnectionStatus } from "../../common/constants"
+import { SAPConnectionStatus, DesktopConnectionStatus } from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
 import WebSocketService from "../../common/services/websocket"
 import "../styles/Header.scss"
 
 function Header() {
   const { state, dispatch } = useAppState()
-  const { compassWindow, sap } = state
+  const { compassWindow, sap, desktop } = state
 
   // State for dropdowns and confirmation dialog
   const [agentDropdown, setAgentDropdown] = useState(false)
@@ -59,6 +59,20 @@ function Header() {
     }
   }
 
+  // Helper function for getting desktop connection status color
+  const getDesktopConnectionStatusColor = () => {
+    switch (desktop.connectionStatus) {
+      case DesktopConnectionStatus.CONNECTED:
+        return "green"
+      case DesktopConnectionStatus.CONNECTING:
+        return "orange"
+      case DesktopConnectionStatus.DISCONNECTED:
+        return "red"
+      default:
+        return "gray"
+    }
+  }
+
   // Tool definitions with descriptions
   const toolOptions = [
     {
@@ -72,8 +86,10 @@ function Header() {
     {
       name: "Desktop",
       description: "Control your screen, mouse and keyboard",
-      status: "gray",
-      isEnabled: false,
+      status: getDesktopConnectionStatusColor(),
+      isEnabled: true,
+      isConnected: desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
+      connectAction: handleConnectToDesktop,
     },
     {
       name: "File Editor",
@@ -139,6 +155,13 @@ function Header() {
     if (e) e.stopPropagation() // Prevent dropdown from closing
     console.log("Connect to SAP button clicked")
     WebSocketService.connectToSAP()
+  }
+
+  // Desktop Connection handlers
+  function handleConnectToDesktop(e) {
+    if (e) e.stopPropagation() // Prevent dropdown from closing
+    console.log("Connect to Desktop button clicked")
+    WebSocketService.connectToDesktop()
   }
 
   // Open confirmation dialog before creating new chat
@@ -289,7 +312,7 @@ function Header() {
               <div
                 style={{
                   color: "#9C9B9F",
-                  fontSize: "14px",
+                  fontSize: "15px",
                   fontWeight: "400",
                   padding: "4px 0",
                 }}

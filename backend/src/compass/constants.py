@@ -48,7 +48,7 @@ AGENT_TOOLS = {
     "OpenFoam": ["bash", "file"],
     "FreeCAD": ["computer", "bash", "file"],
     "Generic": ["computer", "file", "bash"],
-    "structural-engineer": ["sap_com"]  # Needs all these tools
+    "structural-engineer": ["sap_com", "computer"]  # Needs SAP and desktop tools
 }
 
 # LLM Provider Configuration

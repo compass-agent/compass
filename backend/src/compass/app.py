@@ -288,6 +288,46 @@ def handle_get_sap_connection_status():
         emit('error', {'message': str(e)})
         emit('sap_connection_status', {'status': 'UNKNOWN'})
 
+@socketio.on('connect_to_desktop')
+def handle_connect_to_desktop():
+    logger.info('Received connect_to_desktop request')
+    try:
+        async def connect_desktop():
+            try:
+                result = await agent_service.tool_collection.connect_tool('computer')  # type: ignore
+                status = agent_service.tool_collection.get_tool_connection_status('computer') or "UNKNOWN"
+                
+                # Create a response dictionary 
+                response = {
+                    'status': status,
+                    'message': result.text if not result.error else result.error
+                }
+                
+                # Queue the response to be sent in the main thread
+                socketio.start_background_task(lambda: socketio.emit('desktop_connection_status', response))
+            except Exception as e:
+                logger.error(f"Error in connect_desktop async task: {e}", exc_info=True)
+                socketio.start_background_task(lambda: socketio.emit('desktop_connection_status', 
+                                             {'status': 'DISCONNECTED', 'message': str(e)}))
+            
+        with app.app_context():
+            eventlet.spawn(asyncio.run, connect_desktop())
+    except Exception as e:
+        logger.error(f"Error connecting to Desktop: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+        emit('desktop_connection_status', {'status': 'DISCONNECTED', 'message': str(e)})
+
+@socketio.on('get_desktop_connection_status')
+def handle_get_desktop_connection_status():
+    logger.info('Received get_desktop_connection_status request')
+    try:
+        status = agent_service.tool_collection.get_tool_connection_status('computer') or "DISCONNECTED"
+        emit('desktop_connection_status', {'status': status})
+    except Exception as e:
+        logger.error(f"Error getting Desktop connection status: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+        emit('desktop_connection_status', {'status': 'UNKNOWN'})
+
 if __name__ == '__main__':
     try:
         socketio.run(app, 

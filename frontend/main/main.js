@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require("electron")
 const path = require("path")
+const fs = require("fs")
 const { handleCoordinatePreview } = require("./components/coordinatePreview")
 const { handleTerminalEvents } = require("./components/terminalEvents")
 const setupFileHandlers = require("./components/fileHandlers")
@@ -21,6 +22,27 @@ const WINDOW_CONFIG = {
   MIN_WIDTH: 300,
   MIN_HEIGHT: 45,
   MINIMAL_HEIGHT: 45,
+}
+
+// Window bounds persistence
+const BOUNDS_FILE = path.join(app.getPath('userData'), 'window-bounds.json')
+
+function saveWindowBounds() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const bounds = mainWindow.getBounds()
+    fs.writeFileSync(BOUNDS_FILE, JSON.stringify(bounds))
+  }
+}
+
+function loadWindowBounds() {
+  try {
+    if (fs.existsSync(BOUNDS_FILE)) {
+      return JSON.parse(fs.readFileSync(BOUNDS_FILE, 'utf8'))
+    }
+  } catch (error) {
+    console.log('Could not load window bounds:', error.message)
+  }
+  return null
 }
 
 let mainWindow
@@ -63,9 +85,13 @@ function createMenu() {
 }
 
 function createWindow() {
+  const savedBounds = loadWindowBounds()
+  
   mainWindow = new BrowserWindow({
-    width: WINDOW_CONFIG.WIDTH,
-    height: WINDOW_CONFIG.HEIGHT,
+    width: savedBounds?.width || WINDOW_CONFIG.WIDTH,
+    height: savedBounds?.height || WINDOW_CONFIG.HEIGHT,
+    x: savedBounds?.x,
+    y: savedBounds?.y,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"), // Specify the preload script
       nodeIntegration: false,
@@ -99,6 +125,11 @@ function createWindow() {
     // Open DevTools in detached mode to preserve window transparency
     mainWindow.webContents.openDevTools({ mode: "detach" })
   }
+
+  // Save window bounds when closing
+  mainWindow.on('close', () => {
+    saveWindowBounds()
+  })
 
   setupFileHandlers(mainWindow)
   setupWindowHandlers(mainWindow)
@@ -155,6 +186,7 @@ app.whenReady().then(() => {
 
       // Make sure to terminate the backend process when the app quits
       app.on("quit", () => {
+        saveWindowBounds()
         logToFile("Application quitting, terminating backend process")
         if (backendProcess) {
           backendProcess.kill()

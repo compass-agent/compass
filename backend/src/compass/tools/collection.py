@@ -52,10 +52,15 @@ class ToolCollection:
         
         # Use type checking to avoid linter errors
         try:
-            # Check if the tool has connect_to_sap method dynamically
-            connect_method = getattr(tool, 'connect_to_sap', None)
+            # Check for tool-specific connection methods
+            connect_method = None
+            if tool_name == 'sap_com':
+                connect_method = getattr(tool, 'connect_to_sap', None)
+            elif tool_name == 'computer':
+                connect_method = getattr(tool, 'connect_to_desktop', None)
+            
             if connect_method and callable(connect_method):
-                return await connect_method()
+                return await connect_method()  # type: ignore
             else:
                 return ToolResult(error=f"Tool {tool_name} does not support connection")
         except AttributeError:
@@ -72,7 +77,7 @@ class ToolCollection:
             # Check if the tool has get_connection_status method dynamically
             status_method = getattr(tool, 'get_connection_status', None)
             if status_method and callable(status_method):
-                return status_method()
+                return status_method()  # type: ignore
             else:
                 return None
         except AttributeError:

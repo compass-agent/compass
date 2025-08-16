@@ -4,6 +4,7 @@ import {
   AgentMode,
   AgentStatus,
   SAPConnectionStatus,
+  DesktopConnectionStatus,
 } from "../constants"
 import WebSocketService from "../services/websocket"
 
@@ -43,6 +44,11 @@ const initialState = {
     connectionStatus: SAPConnectionStatus.DISCONNECTED,
     message: null,
     configStatus: { success: false, message: null },
+  },
+
+  desktop: {
+    connectionStatus: DesktopConnectionStatus.DISCONNECTED,
+    message: null,
   },
 }
 
@@ -172,6 +178,16 @@ function appReducer(state, action) {
         },
       }
 
+    case ActionTypes.SET_DESKTOP_CONNECTION_STATUS:
+      return {
+        ...state,
+        desktop: {
+          ...state.desktop,
+          connectionStatus: action.payload.status || state.desktop.connectionStatus,
+          message: action.payload.message || state.desktop.message,
+        },
+      }
+
     default:
       return state
   }
@@ -259,13 +275,22 @@ export function AppProvider({ children }) {
           payload: data,
         })
       },
+
+      onDesktopConnectionStatus: (data) => {
+        console.log("Received Desktop connection status:", data)
+        dispatch({
+          type: ActionTypes.SET_DESKTOP_CONNECTION_STATUS,
+          payload: data,
+        })
+      },
     })
 
     WebSocketService.connect()
 
-    // Request SAP connection status on initial load
+    // Request SAP and Desktop connection status on initial load
     setTimeout(() => {
       WebSocketService.getSAPConnectionStatus()
+      WebSocketService.getDesktopConnectionStatus()
     }, 1000)
 
     return () => WebSocketService.disconnect()

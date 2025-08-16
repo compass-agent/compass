@@ -135,6 +135,11 @@ Required parameters per action:
     def __init__(self, state_manager: StateManager):
         super().__init__()
         logger.info("Initializing ComputerTool")
+        
+        # Initialize connection status tracking
+        self._connection_status = "DISCONNECTED"  # Desktop tool starts disconnected and requires explicit connection
+        self._activated = False  # Track if tool is activated/enabled
+        
         self._initialize_screen_dimensions()
         logger.info("Finding best target dimension, XGA, WXGA, FWXGA...")
         self._find_best_standard_dimension()
@@ -209,6 +214,12 @@ Required parameters per action:
         coordinate: tuple[int, int] | list[float | int] | None = None,
         **kwargs,
     ):
+        # Check if desktop tool is connected before allowing any actions
+        if not self._activated or self._connection_status != "CONNECTED":
+            return ToolResult(
+                error="Desktop tool is not connected. Please ask user to click on connect to Desktop tool in Tools menu on top left corner. Then try again."
+            )
+        
         # Convert coordinate to proper integer tuple if provided
         processed_coordinate = None
         if coordinate is not None:
@@ -229,3 +240,36 @@ Required parameters per action:
             return await self.cursor_position_action.execute(coordinate=processed_coordinate, text=text)
         else:
             raise ToolError(f"Action '{action}' is not implemented yet.")
+
+    # Connection methods for desktop tool integration
+    async def connect_to_desktop(self) -> ToolResult:
+        """Connect/activate the desktop tool."""
+        try:
+            logger.info("Activating Desktop tool...")
+            self._connection_status = "CONNECTING"
+            
+            # Test basic functionality by checking screen dimensions
+            if not (self.width and self.height):
+                self._connection_status = "DISCONNECTED"
+                return ToolResult(error="Desktop tool cannot access screen dimensions")
+            
+            # Test screenshot capability
+            test_result = await self.screenshot_action.execute()
+            if test_result.error:
+                self._connection_status = "DISCONNECTED"
+                return ToolResult(error=f"Desktop tool screenshot test failed: {test_result.error}")
+            
+            self._activated = True
+            self._connection_status = "CONNECTED"
+            logger.info("Desktop tool successfully activated")
+            return ToolResult(text="Desktop tool activated and ready for use")
+            
+        except Exception as e:
+            logger.error(f"Failed to activate desktop tool: {str(e)}")
+            self._activated = False
+            self._connection_status = "DISCONNECTED"
+            return ToolResult(error=f"Failed to activate desktop tool: {str(e)}")
+
+    def get_connection_status(self) -> str:
+        """Get the current connection status of the desktop tool."""
+        return self._connection_status
