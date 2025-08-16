@@ -82,9 +82,14 @@ const TemplateTraining = () => {
       alert('Please upload an image first');
       return;
     }
+    console.log('🔍 handleAnalyze called with imageData:', imageData ? 'present' : 'missing');
+    console.log('🔍 agentData.name:', agentData.name);
+    console.log('🔍 WebSocketService.socket?.connected:', WebSocketService.socket?.connected);
+    
     setIsAnalyzing(true);
     
     const base64Image = imageData.split(',')[1] || imageData;
+    console.log('🔍 About to call WebSocketService.uploadScreenshot');
     WebSocketService.uploadScreenshot(base64Image, agentData.name);
   };
 

@@ -56,12 +56,44 @@ class Template(Base):
         
         return count
 
+class Page(Base):
+    """Model for storing full screenshots/pages"""
+    __tablename__ = 'pages'
+    
+    id = Column(Integer, primary_key=True)
+    agent_name = Column(String, nullable=False)
+    name = Column(String)  # Page name
+    base64_image = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'agent_name': self.agent_name,
+            'name': self.name,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 # Create engine
 DB_PATH = Path(__file__).parent / 'template_database.db'
 engine = create_engine(f'sqlite:///{DB_PATH}')
 
 # Create session maker
 Session = sessionmaker(bind=engine)
+
+# Create all tables
+def create_tables():
+    """Create all database tables"""
+    Base.metadata.create_all(engine)
+    logger.info("Database tables created successfully")
+
+# Create tables on import
+try:
+    create_tables()
+except Exception as e:
+    logger.warning(f"Could not create tables: {e}")
 
 def delete_templates(agent_name: str = None, page_name: str = None) -> int:
     """

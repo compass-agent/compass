@@ -25,64 +25,6 @@ class StructuralEngineerPrompt(BasePrompt):
     - Explain complex structural engineering concepts in an accessible way.
 </IMPORTANT>
 
-
-<below examples of questions user can ask>
-Question 1:    
-What key information should we be looking for in the modal analysis results to evaluate the dynamic characteristics of the building?
-
-
-Answer 1:
-In a modal analysis, the most important outputs to look at are:
-
-Natural frequencies and periods of vibration (especially the fundamental period)
-
-Mode shapes, which show how the building deforms in each mode
-
-Modal mass participation ratios, which indicate how much of the total mass is contributing to each mode
-
-Whether the cumulative mass participation exceeds 90% in each principal direction (as typically required by design codes like ASCE 7)
-
-These help you understand how the structure might respond to seismic or dynamic loads and whether additional modes need to be included in your analysis.
-Question 2: How can I check how many modes SAP2000 actually extracted and what their frequencies were after analysis?”
-
-Answer 2:
-I see you have your main SAP000 window open, great. I can help you with that, just follow these steps:
-1-Click on Analyze in the top menu.
-2-Select Show Analysis Messages. 
-3-On the open wnidow, on the  right side, click on "Show Log" 
-4-Scrolling through the output until you find lines like:
-
-yaml
-Copy
-Edit
-Found mode   1 of 16:  EV= 5.43E+01,  f= 1.25 Hz,  T= 0.80 sec  
-Found mode   2 of 16:  ...
-...
-Found mode  16 of 16: ...
-This tells you that SAP successfully extracted 16 modes. For each mode, it reports:
-
-EV: Eigenvalue (used internally)
-
-f: Frequency in Hz
-
-T: Period in seconds
-
-You can use these values to:
-
-Identify the dominant vibration modes
-
-Check whether the fundamental frequency aligns with expected behavior
-
-Compare against code requirements, such as period estimation formulas used for seismic base shear calculations
-
-You’ll also find a summary line like:
-
-java
-Copy
-Edit
-NUMBER OF EIGEN MODES FOUND = 16
-This confirms SAP was able to compute all 16 modes.
-If fewer modes are listed than requested, it could indicate convergence issues or potential modeling problems that need investigation.
 """)
 
     def get_tool_mode_prompt(self) -> SystemMessage:
@@ -109,12 +51,6 @@ If fewer modes are listed than requested, it could indicate convergence issues o
     - Break complex tasks into smaller, manageable script executions and complete them one at a time (rely on steps in the WORKFLOW section).
     - Check & print return values (ret) to confirm operations were successful (the workflow does not include this, but you should add).
     - Python scripts have access to: sap_model, sap_object, os, ModelPath, and other standard libraries.
-    
-    # SUPER IMPORTANT: STEPS 5 & 6 EXECUTION RULE
-    - For STEP 5 (calculate_section_usage_ratios) and STEP 6 (create_section_groups): ONLY RUN THE MAIN FUNCTION CALL
-    - DO NOT ADD any printing, post-processing, or result inspection code for these steps
-    - These functions return all needed verbose information automatically
-    - Example: Just run `frames = sap_model.calculate_section_usage_ratios(frames, model_path)` - NOTHING ELSE
     
     # CRITICAL API USAGE RULES:
     1. ALWAYS use the exact API calls and patterns shown in the workflow code below.

@@ -69,7 +69,7 @@ socketio = SocketIO(
     engineio_logger=True,
     ping_timeout=6000,
     ping_interval=25,
-    debug=True,
+    debug=True, # type: ignore
     async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True,  # Disable async handlers in debug mode
     max_http_buffer_size=1e4,  # Reduce buffer size
     manage_session=False  # Disable session management if not needed
@@ -80,11 +80,13 @@ from compass.agent.agent import AgentService
 from compass.constants import DEFAULT_AGENT_TYPE
 from compass.services.state_manager import StateManager
 from compass.services.workflow_manager import WorkflowManager
+from compass.training_agent.training_agent import TrainingAgent
 
 # Initialize services
 state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
 workflow_manager = WorkflowManager()
+training_agent = TrainingAgent()
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
@@ -264,7 +266,7 @@ def handle_load_sap_config(data):
                 socketio.emit('error', {'message': 'SAP2000 configuration loading not supported'})
                 return
                 
-            result = await load_config_method(config_path)
+            result = await load_config_method(config_path) # type: ignore
             socketio.emit('sap_config_status', {
                 'success': not result.error,
                 'message': result.text if not result.error else result.error
@@ -327,6 +329,75 @@ def handle_get_desktop_connection_status():
         logger.error(f"Error getting Desktop connection status: {e}", exc_info=True)
         emit('error', {'message': str(e)})
         emit('desktop_connection_status', {'status': 'UNKNOWN'})
+
+# Template Training handlers
+@socketio.on('upload_screenshot')
+def handle_upload_screenshot(data):
+    """Handle screenshot upload for template training"""
+    logger.info('Received upload_screenshot request')
+    try:
+        image_data = data.get('image')
+        agent_name = data.get('agent_name', 'structural-engineer')
+        
+        # Process screenshot using training agent
+        result = training_agent.process_screenshot(image_data, agent_name)
+        
+        # Emit detection results
+        emit('detection_result', {
+            'detections': result.get('detections', []),
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Error processing screenshot: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
+
+@socketio.on('save_templates')
+def handle_save_templates(data):
+    """Save multiple templates from training UI"""
+    logger.info('Received save_templates request')
+    try:
+        image_data = data.get('image')
+        agent_name = data.get('agent_name', 'structural-engineer')
+        page_name = data.get('page_name', '')
+        templates = data.get('templates', [])
+        
+        # Save each template
+        for template in templates:
+            training_agent.save_template(
+                image_data=image_data,
+                caption=template.get('caption', ''),
+                bbox=template.get('bbox', []),
+                agent_name=agent_name,
+                page_name=page_name
+            )
+        
+        emit('templates_saved', {
+            'success': True,
+            'message': f'Successfully saved {len(templates)} templates'
+        })
+    except Exception as e:
+        logger.error(f"Error saving templates: {e}", exc_info=True)
+        emit('templates_saved', {
+            'success': False,
+            'message': str(e)
+        })
+
+@socketio.on('get_screenshots')
+def handle_get_screenshots(data):
+    """Get screenshots/pages for an agent"""
+    logger.info('Received get_screenshots request')
+    try:
+        agent_name = data.get('agent_name', 'structural-engineer')
+        
+        screenshots = training_agent.get_screenshots(agent_name)
+        
+        emit('screenshots_list', {
+            'screenshots': screenshots,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Error getting screenshots: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
 
 if __name__ == '__main__':
     try:

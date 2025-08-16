@@ -33,7 +33,7 @@ class DesignOptimization:
             for frame_info in frames.values() if 'sections' in frame_info 
             for section in frame_info['sections']
         }
-        self.import_section_properties_to_sap(unique_sections) # Assumes this method exists elsewhere
+        self.import_section_properties_to_sap(unique_sections) # type: ignore
         logger.info(f"Prepared {len(unique_sections)} unique section candidates for the model.")
 
         # STEP 2: Assign a base-case structure and run ONE global analysis

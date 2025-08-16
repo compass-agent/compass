@@ -601,9 +601,37 @@ function Header() {
             WebkitAppRegion: "no-drag",
             display: "inline-flex",
             alignItems: "center",
+            gap: "8px",
             marginRight: "12px",
           }}
         >
+          <button
+            className="header-template-training-button"
+            onClick={() => {
+              if (window.electron?.ipcRenderer?.send) {
+                window.electron.ipcRenderer.send('open-template-training')
+              }
+            }}
+            title="Template Training"
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              borderRadius: "6px",
+              color: "#E0E0E0",
+              padding: "6px 12px",
+              fontSize: "12px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "rgba(255, 255, 255, 0.15)"
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "rgba(255, 255, 255, 0.1)"
+            }}
+          >
+            Training
+          </button>
           <button
             className="header-new-chat-button"
             onClick={handleNewChatButtonClick}
