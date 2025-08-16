@@ -41,7 +41,7 @@ out/
 *.exe
 *.out
 *.app
-
+davinci/*
 # Coverage directory used by tools like istanbul
 coverage/
 venv/
@@ -53,7 +53,7 @@ backend/venv/
 *.ntvs*
 *.njsproj
 *.sln
-
+backend/frames3.json
 # Miscellaneous files
 backend/.env
 frontend/.env

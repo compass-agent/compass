@@ -24,6 +24,7 @@ class StructuralEngineerPrompt(BasePrompt):
     - Focus on providing best practices for structural analysis and design.
     - Explain complex structural engineering concepts in an accessible way.
 </IMPORTANT>
+
 """)
 
     def get_tool_mode_prompt(self) -> SystemMessage:
@@ -113,16 +114,10 @@ print(f"Added section candidates to {len(frames)} frames")
 # STEP 5: Calculate usage ratios for each section candidate
 # This runs analysis for each section option and calculates usage ratios
 frames = sap_model.calculate_section_usage_ratios(frames, model_path)
-# Inspect usage ratios
-max_usage = max([max([s.get('usage_ratio', 0) for s in f.get('sections', [])]) for f in frames.values()])
-print(f"Maximum usage ratio across all frames and sections: {max_usage}")
 
 # STEP 6: Create section groups based on usage ratio
 # This uses optimization to group frames and assign the optimal section to each
 frames = sap_model.create_section_groups(frames)
-# Verify optimized design
-group_count = len(set([f.get('optimum_design', {}).get('group_id') for f in frames.values()]))
-print(f"Optimization complete: Used {group_count} unique section groups")
 </CODE>
 
 </APIs Documentation>

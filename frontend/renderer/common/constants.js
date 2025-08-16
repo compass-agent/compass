@@ -27,6 +27,14 @@ const SAPConnectionStatus = Object.freeze({
   UNKNOWN: "UNKNOWN",
 })
 
+// Desktop Connection status constants
+const DesktopConnectionStatus = Object.freeze({
+  DISCONNECTED: "DISCONNECTED",
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  UNKNOWN: "UNKNOWN",
+})
+
 const ButtonsBarHeight = 38
 
 // Action types
@@ -43,6 +51,7 @@ const ActionTypes = {
   SET_SCALING_FACTORS: "SET_SCALING_FACTORS",
   SET_WORKFLOWS: "SET_WORKFLOWS",
   SET_SAP_CONNECTION_STATUS: "SET_SAP_CONNECTION_STATUS",
+  SET_DESKTOP_CONNECTION_STATUS: "SET_DESKTOP_CONNECTION_STATUS",
   RESET_CHAT: "RESET_CHAT",
 }
 
@@ -60,4 +69,5 @@ module.exports = {
   AgentMode,
   WorkspaceWindowsConf,
   SAPConnectionStatus,
+  DesktopConnectionStatus,
 }

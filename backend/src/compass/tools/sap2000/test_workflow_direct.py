@@ -24,7 +24,7 @@ def main():
     
     # Step 2: Load configuration
     print("2. Loading configuration...")
-    config_path = r"C:\Users\sp_za\Desktop\kazem\compass\models\.sapConfig.yml"
+    config_path = r"C:\Users\mksad\Projects\compass\models\.sapConfig.yml"
     config = ModelConfig.from_yaml(config_path)
     
     # Step 3: Create custom model
@@ -65,10 +65,17 @@ def main():
     # STEP 5: Calculate usage ratios
     print("STEP 5: Calculating usage ratios...")
     print(" This step may take several minutes and includes the sleep delays...")
-    frames = custom_model.calculate_section_usage_ratios(frames, model_path)
-    max_usage = max([max([s.get('usage_ratio', 0) for s in f.get('sections', [])]) for f in frames.values()])
-    print(f"✓ Usage ratios calculated. Max usage ratio: {max_usage:.3f}")
-    
+    import json
+    if True:
+        frames = custom_model.calculate_section_usage_ratios(frames, model_path)
+        max_usage = max([max([s.get('usage_ratio', 0) for s in f.get('sections', [])]) for f in frames.values()])
+        print(f"✓ Usage ratios calculated. Max usage ratio: {max_usage:.3f}")
+        with open('frames.json', 'w') as f:
+            json.dump(frames, f)
+    else:
+        with open('frames.json', 'r') as f:
+            frames = json.load(f)
+
     # STEP 6: Create section groups
     print("STEP 6: Creating optimized section groups...")
     frames = custom_model.create_section_groups(frames)

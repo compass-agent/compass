@@ -75,8 +75,10 @@ function MessageInput() {
     console.log("Current agentState:", agent.status)
     console.log("Current chat state:", chat)
     setMessage(chat.currentInput)
+  }, [agent, chat])
 
-    // Check if SAP config file actually exists
+  // Separate effect for checking SAP config file existence - only run on mount
+  useEffect(() => {
     const checkFileAndSetState = async () => {
       console.log("checkFileAndSetState: Starting...")
       const fileExists = await checkSapConfigExists()
@@ -90,7 +92,7 @@ function MessageInput() {
     }
 
     checkFileAndSetState()
-  }, [agent, chat])
+  }, []) // Empty dependency array - only run on component mount
 
   // Add effect to handle clicks outside the dropdown
   useEffect(() => {
