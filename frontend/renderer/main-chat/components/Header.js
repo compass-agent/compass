@@ -270,10 +270,10 @@ function Header() {
             }}
           >
             <img
-              src="../../../resources/compass.png"
+              src="../../../resources/compass_v2.svg"
               alt="Compass"
               style={{
-                height: "25px",
+                height: "22px",
                 width: "auto",
               }}
             />
