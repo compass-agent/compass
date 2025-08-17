@@ -71,7 +71,7 @@ socketio = SocketIO(
     ping_interval=25,
     debug=True, # type: ignore
     async_handlers=False if os.environ.get('FLASK_DEBUG') == '1' else True,  # Disable async handlers in debug mode
-    max_http_buffer_size=1e4,  # Reduce buffer size
+    max_http_buffer_size=int(20 * 1024 * 1024),  # Reduce buffer size
     manage_session=False  # Disable session management if not needed
 )
 

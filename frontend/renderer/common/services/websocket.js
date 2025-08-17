@@ -52,7 +52,7 @@ class WebSocketService {
     })
 
     this.socket.on("connect", () => {
-      console.log("📡 WebSocket connected with ID:", this.socket.id)
+      console.log("WebSocket connected with ID:", this.socket.id)
       this.reconnectAttempts = 0
       this.stateHandlers.onConnect.forEach((handler) => handler())
     })
