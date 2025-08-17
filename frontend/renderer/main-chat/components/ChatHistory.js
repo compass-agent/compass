@@ -9,7 +9,9 @@ import {
   faClock,
   faPenToSquare,
   faImage,
-  faTerminal
+  faTerminal,
+  faChevronDown,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   FILE_EDIT_TOOLS_NAME,
@@ -355,6 +357,27 @@ function ChatHistory({onEditorWidthChange }) {
     );
   };
 
+  const ThinkingBlock = ({ content }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    return (
+      <div className="thinking-block">
+        <button 
+          className="thinking-toggle"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <FontAwesomeIcon icon={isExpanded ? faChevronDown : faChevronRight} />
+          Reasoning {isExpanded ? '(hide)' : '(show)'}
+        </button>
+        {isExpanded && (
+          <div className="thinking-content">
+            <ReactMarkdown>{normalizeMarkdown(content)}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMessage = (msg, agentState) => {
     console.log("renderMessage - Full message object:", msg);
 
@@ -388,6 +411,14 @@ function ChatHistory({onEditorWidthChange }) {
             <div className="message-content copyable-text markdown-content">
               <ReactMarkdown>{normalizeMarkdown(msg.content)}</ReactMarkdown>
             </div>
+          </div>
+        );
+
+      case MESSAGE_TYPES.AI_THINKING:
+        if (!msg.content) return null;
+        return (
+          <div className="message ai-thinking-message">
+            <ThinkingBlock content={msg.content} />
           </div>
         );
 
