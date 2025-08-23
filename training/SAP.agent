@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "sap-default",
+  "name": "SAP",
+  "description": "",
+  "prompt": "",
+  "tools": {
+    "desktopControl": true,
+    "commandLine": true,
+    "fileEditor": false
+  },
+  "targetApp": "SAP2000",
+  "createdAt": "2025-08-16T22:09:19.972890Z",
+  "updatedAt": "2025-08-16T22:09:19.972890Z",
+  "pagesCount": 0,
+  "templatesCount": 0,
+  "pages": [],
+  "templates": []
+}

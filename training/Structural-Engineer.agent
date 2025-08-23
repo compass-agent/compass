@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "structural-engineer-default",
+  "name": "Structural-Engineer",
+  "description": "Structural analysis expert for engineering calculations and design",
+  "prompt": "You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.",
+  "tools": {
+    "desktopControl": true,
+    "commandLine": false,
+    "fileEditor": false
+  },
+  "targetApp": "SAP2000",
+  "createdAt": "2025-08-18T04:39:15.169285Z",
+  "updatedAt": "2025-08-18T04:39:15.169285Z",
+  "pagesCount": 0,
+  "templatesCount": 0,
+  "pages": [],
+  "templates": []
+}

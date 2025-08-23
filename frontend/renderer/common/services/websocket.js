@@ -19,6 +19,7 @@ class WebSocketService {
       onTemplatesSaved: null,
       onSAPConnectionStatus: new Set(),
       onDesktopConnectionStatus: new Set(),
+      onAgentHub: new Set(),
     }
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 10
@@ -165,6 +166,11 @@ class WebSocketService {
     this.socket.on("agents_list", (data) => {
       console.log("WebSocket received agents list:", data)
       this.stateHandlers?.onAgentsList?.forEach((handler) => handler(data))
+    })
+
+    this.socket.on("agent_hub_result", (data) => {
+      console.log("WebSocket received agent_hub_result:", data)
+      this.stateHandlers.onAgentHub.forEach((handler) => handler(data))
     })
 
     this.socket.on("templates_saved", (data) => {
@@ -341,6 +347,15 @@ class WebSocketService {
       console.warn(
         "Cannot get Desktop connection status - socket not connected"
       )
+    }
+  }
+
+  // General Agent Hub action sender
+  agentHub(action, payload = {}) {
+    if (this.socket?.connected) {
+      this.socket.emit("agent_hub", { action, ...payload })
+    } else {
+      console.warn("Cannot send agent_hub action - socket not connected")
     }
   }
 }

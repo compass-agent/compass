@@ -1,35 +1,39 @@
 .template-navigation {
-  background-color: #2a2a2a;
-  padding: 12px 20px;
+  background: #2a2a2a;
   border-bottom: 1px solid #404040;
+  padding: 0 2rem;
 
-  .breadcrumbs {
+  .navigation-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: #e0e0e0;
+    min-height: 3.5rem;
 
-    .nav-item {
-      font-size: 0.95rem;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
 
-      &:hover:not(.active) {
-        background-color: #404040;
+      .nav-item {
+        color: #9c9b9f;
+        cursor: pointer;
+        padding: 0.5rem 0;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #e0e0e0;
+        }
+
+        &.active {
+          color: #e0e0e0;
+          font-weight: 500;
+        }
       }
 
-      &.active {
-        color: #fff;
-        font-weight: 500;
-        cursor: default;
+      .separator {
+        color: #666;
+        font-size: 0.7rem;
       }
-    }
-
-    .separator {
-      color: #666;
-      font-size: 12px;
     }
   }
 }

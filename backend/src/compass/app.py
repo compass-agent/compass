@@ -55,6 +55,7 @@ import signal
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
+from datetime import datetime
 
 # Initialize Flask
 app = Flask(__name__)
@@ -398,6 +399,256 @@ def handle_get_screenshots(data):
     except Exception as e:
         logger.error(f"Error getting screenshots: {e}", exc_info=True)
         emit('error', {'message': str(e)})
+
+# Global mocked agents data (can be modified in memory)
+mocked_agents = [
+    {
+        'agentId': 'generic-default',
+        'name': 'Generic',
+        'description': 'General purpose agent for various tasks',
+        'prompt': 'You are a helpful AI assistant that can help with a wide variety of tasks.',
+        'tools': {
+            'desktopControl': False,
+            'commandLine': True,
+            'fileEditor': True
+        },
+        'targetApp': '',
+        'configuration': {
+            'sapSetup': False
+        },
+        'pagesCount': 0,
+        'templatesCount': 0,
+        'last_modified': datetime.utcnow().isoformat() + 'Z',
+        'file': 'Generic.agent'
+    },
+    {
+        'agentId': 'freecad-default',
+        'name': 'FreeCAD',
+        'description': 'CAD design specialist for 3D modeling and engineering design',
+        'prompt': 'You are a FreeCAD expert assistant specialized in 3D modeling, parametric design, and engineering CAD workflows.',
+        'tools': {
+            'desktopControl': True,
+            'commandLine': False,
+            'fileEditor': True
+        },
+        'targetApp': 'FreeCAD',
+        'configuration': {
+            'sapSetup': False
+        },
+        'pagesCount': 0,
+        'templatesCount': 0,
+        'last_modified': datetime.utcnow().isoformat() + 'Z',
+        'file': 'FreeCAD.agent'
+    },
+    {
+        'agentId': 'openfoam-default',
+        'name': 'OpenFoam',
+        'description': 'Fluid dynamics expert for computational fluid dynamics simulations',
+        'prompt': 'You are an OpenFOAM expert assistant specialized in computational fluid dynamics, mesh generation, and CFD simulations.',
+        'tools': {
+            'desktopControl': True,
+            'commandLine': True,
+            'fileEditor': True
+        },
+        'targetApp': 'OpenFOAM',
+        'configuration': {
+            'sapSetup': False
+        },
+        'pagesCount': 0,
+        'templatesCount': 0,
+        'last_modified': datetime.utcnow().isoformat() + 'Z',
+        'file': 'OpenFoam.agent'
+    },
+    {
+        'agentId': 'structural-engineer-default',
+        'name': 'Structural-Engineer',
+        'description': 'Structural analysis expert for engineering calculations and design',
+        'prompt': 'You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.',
+        'tools': {
+            'desktopControl': True,
+            'commandLine': False,
+            'fileEditor': True
+        },
+        'targetApp': 'SAP2000',
+        'configuration': {
+            'sapSetup': True
+        },
+        'pagesCount': 0,
+        'templatesCount': 0,
+        'last_modified': datetime.utcnow().isoformat() + 'Z',
+        'file': 'Structural-Engineer.agent'
+    }
+]
+
+@socketio.on('agent_hub')
+def handle_agent_hub(data):
+    """General handler for Agent Hub actions with in-memory CRUD operations."""
+    global mocked_agents
+    try:
+        action = (data or {}).get('action')
+        logger.info(f"AGENT_HUB: action={action}")
+
+        if action == 'list':
+            logger.info(f"AGENT_HUB: emitting list with {len(mocked_agents)} agents")
+            emit('agent_hub_result', {'action': 'list', 'success': True, 'agents': mocked_agents})
+            return
+
+        if action == 'create':
+            name = data.get('name', 'New Agent')
+            description = data.get('description', '')
+            prompt = data.get('prompt', '')
+            tools = data.get('tools', {})
+            configuration = data.get('configuration', {'sapSetup': False})
+            
+            new_agent = {
+                'agentId': f"mock-{int(datetime.utcnow().timestamp())}",
+                'name': name,
+                'description': description,
+                'prompt': prompt,
+                'tools': tools,
+                'targetApp': data.get('targetApp', ''),
+                'configuration': configuration,
+                'pagesCount': 0,
+                'templatesCount': 0,
+                'last_modified': datetime.utcnow().isoformat() + 'Z',
+                'file': f"{name}.agent"
+            }
+            mocked_agents.append(new_agent)
+            logger.info(f"AGENT_HUB: created agent {name}")
+            emit('agent_hub_result', {'action': 'create', 'success': True, 'agent': new_agent})
+            return
+
+        if action == 'update':
+            agent_id = data.get('agentId')
+            if not agent_id:
+                emit('agent_hub_result', {'action': 'update', 'success': False, 'message': 'Agent ID required'})
+                return
+            
+            for agent in mocked_agents:
+                if agent['agentId'] == agent_id:
+                    # Update fields if provided
+                    if 'name' in data:
+                        agent['name'] = data['name']
+                        agent['file'] = f"{data['name']}.agent"
+                    if 'description' in data:
+                        agent['description'] = data['description']
+                    if 'prompt' in data:
+                        agent['prompt'] = data['prompt']
+                    if 'tools' in data:
+                        agent['tools'] = data['tools']
+                    if 'targetApp' in data:
+                        agent['targetApp'] = data['targetApp']
+                    if 'configuration' in data:
+                        agent['configuration'] = data['configuration']
+                    
+                    agent['last_modified'] = datetime.utcnow().isoformat() + 'Z'
+                    
+                    logger.info(f"AGENT_HUB: updated agent {agent['name']}")
+                    emit('agent_hub_result', {'action': 'update', 'success': True, 'agent': agent})
+                    return
+            
+            emit('agent_hub_result', {'action': 'update', 'success': False, 'message': 'Agent not found'})
+            return
+
+        if action == 'import':
+            # Just echo back a mocked import result
+            file_name = data.get('fileName', 'Imported.agent')
+            imported = {
+                'agentId': 'imported-mock',
+                'name': file_name.replace('.agent',''),
+                'targetApp': data.get('targetApp', ''),
+                'pagesCount': 0,
+                'templatesCount': 0,
+                'last_modified': datetime.utcnow().isoformat() + 'Z',
+                'file': file_name
+            }
+            mocked_agents.append(imported)
+            emit('agent_hub_result', {'action': 'import', 'success': True, 'agent': imported})
+            return
+
+        if action == 'export':
+            agent_id = data.get('agentId')
+            if not agent_id:
+                emit('agent_hub_result', {'action': 'export', 'success': False, 'message': 'Agent ID required'})
+                return
+            
+            # Find the agent to export
+            for agent in mocked_agents:
+                if agent['agentId'] == agent_id:
+                    # Create complete agent manifest with all fields
+                    agent_manifest = {
+                        'schemaVersion': '1.0.0',
+                        'agentId': agent['agentId'],
+                        'name': agent['name'],
+                        'description': agent.get('description', ''),
+                        'prompt': agent.get('prompt', ''),
+                        'tools': agent.get('tools', {}),
+                        'targetApp': agent.get('targetApp', ''),
+                        'createdAt': agent.get('last_modified', datetime.utcnow().isoformat() + 'Z'),
+                        'updatedAt': agent.get('last_modified', datetime.utcnow().isoformat() + 'Z'),
+                        'pagesCount': agent.get('pagesCount', 0),
+                        'templatesCount': agent.get('templatesCount', 0),
+                        'pages': [],
+                        'templates': []
+                    }
+                    
+                    # Convert to JSON string and create a simple base64 representation
+                    import json
+                    import base64
+                    json_str = json.dumps(agent_manifest, indent=2)
+                    base64_data = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+                    
+                    emit('agent_hub_result', {
+                        'action': 'export', 
+                        'success': True, 
+                        'agentId': agent_id,
+                        'agentData': agent_manifest,
+                        'zipBase64': base64_data
+                    })
+                    return
+            
+            emit('agent_hub_result', {'action': 'export', 'success': False, 'message': 'Agent not found'})
+            return
+
+        if action == 'rename':
+            agent_id = data.get('agentId')
+            new_name = data.get('name')
+            for agent in mocked_agents:
+                if agent['agentId'] == agent_id:
+                    agent['name'] = new_name
+                    emit('agent_hub_result', {'action': 'rename', 'success': True, 'agentId': agent_id, 'name': new_name})
+                    return
+            emit('agent_hub_result', {'action': 'rename', 'success': False, 'message': 'Agent not found'})
+            return
+
+        if action == 'delete':
+            agent_id = data.get('agentId')
+            initial_count = len(mocked_agents)
+            mocked_agents = [agent for agent in mocked_agents if agent['agentId'] != agent_id]
+            if len(mocked_agents) < initial_count:
+                emit('agent_hub_result', {'action': 'delete', 'success': True, 'agentId': agent_id})
+                return
+            emit('agent_hub_result', {'action': 'delete', 'success': False, 'message': 'Agent not found'})
+            return
+
+        if action == 'get':
+            # Return a minimal mocked manifest
+            manifest = {
+                'schemaVersion': '1.0.0',
+                'agentId': data.get('agentId', 'unknown'),
+                'name': data.get('name', 'Mock'),
+                'targetApp': 'MockApp',
+                'pages': [],
+                'templates': []
+            }
+            emit('agent_hub_result', {'action': 'get', 'success': True, 'manifest': manifest})
+            return
+
+        logger.warning(f"AGENT_HUB: unsupported action {action}")
+        emit('agent_hub_result', {'action': action or 'unknown', 'success': False, 'message': 'Unsupported action'})
+    except Exception as e:
+        logger.error(f"AGENT_HUB ERROR: {e}", exc_info=True)
+        emit('agent_hub_result', {'action': 'error', 'success': False, 'message': str(e)})
 
 if __name__ == '__main__':
     try:

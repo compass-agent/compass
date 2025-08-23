@@ -2,16 +2,38 @@ import { faSquare } from "@fortawesome/free-regular-svg-icons"
 import {
   faCheck,
   faChevronDown,
+  faGear,
+  faInfoCircle,
   faMinus,
   faWindowMinimize,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useEffect, useState } from "react"
-import { SAPConnectionStatus, DesktopConnectionStatus } from "../../common/constants"
+import {
+  DesktopConnectionStatus,
+  SAPConnectionStatus,
+} from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
 import WebSocketService from "../../common/services/websocket"
 import "../styles/Header.scss"
+
+// Tooltip component for tools dropdown
+const ToolTooltip = ({ text, children }) => {
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  return (
+    <div className="tool-tooltip-container">
+      <div
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {children}
+      </div>
+      {showTooltip && <div className="tool-tooltip-content">{text}</div>}
+    </div>
+  )
+}
 
 function Header() {
   const { state, dispatch } = useAppState()
@@ -22,15 +44,79 @@ function Header() {
   const [toolsDropdown, setToolsDropdown] = useState(false)
   const [modelDropdown, setModelDropdown] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [showAgentSelection, setShowAgentSelection] = useState(false)
   const [isInChat, setIsInChat] = useState(true) // Start as true so agent dropdown is read-only by default
+
+  const [selectedAgent, setSelectedAgent] = useState("Structural-Engineer")
+  const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
+  const [selectedAgentData, setSelectedAgentData] = useState({
+    name: "Structural-Engineer",
+    targetApp: "SAP2000",
+    tools: {
+      desktopControl: true,
+      commandLine: false,
+      fileEditor: true,
+    },
+    configuration: {
+      sapSetup: true,
+    },
+  })
+
+  // Listen for agent selection from template training window
+  useEffect(() => {
+    if (window.electron?.ipcRenderer?.on) {
+      const handleAgentUpdate = (agentData) => {
+        console.log("🎯 Received agent update in main window:", agentData)
+        console.log("🎯 Type of received data:", typeof agentData)
+        console.log("🎯 Is array:", Array.isArray(agentData))
+        console.log(
+          "🎯 Object keys:",
+          agentData ? Object.keys(agentData) : "no keys"
+        )
+        console.log("🎯 Raw agent data:", agentData)
+
+        // Try to access properties directly
+        if (agentData) {
+          console.log("🎯 Direct access - name:", agentData.name)
+          console.log("🎯 Direct access - agentId:", agentData.agentId)
+          console.log("🎯 Direct access - tools:", agentData.tools)
+          console.log("🎯 Direct access - targetApp:", agentData.targetApp)
+          console.log("🎯 Direct access - description:", agentData.description)
+        }
+
+        console.log(
+          "🎯 Full agent data structure:",
+          JSON.stringify(agentData, null, 2)
+        )
+
+        if (agentData && (agentData.name || agentData.agentId)) {
+          setSelectedAgent(agentData.name || "Unknown Agent")
+          setSelectedAgentData(agentData)
+          console.log("🎯 Updated selectedAgentData to:", agentData)
+          console.log("🎯 Tools in updated data:", agentData.tools)
+        } else {
+          console.error("🎯 Invalid agent data received:", agentData)
+        }
+      }
+
+      window.electron.ipcRenderer.on("update-selected-agent", handleAgentUpdate)
+
+      return () => {
+        if (window.electron?.ipcRenderer?.removeListener) {
+          window.electron.ipcRenderer.removeListener(
+            "update-selected-agent",
+            handleAgentUpdate
+          )
+        }
+      }
+    }
+  }, [])
 
   // Available options with descriptions
   const agentOptions = [
     { name: "Generic", description: "General purpose agent" },
     { name: "FreeCAD", description: "CAD design specialist" },
     { name: "OpenFoam", description: "Fluid dynamics expert" },
-    { name: "structural-engineer", description: "Structural analysis expert" },
+    { name: "Structural-Engineer", description: "Structural analysis expert" },
   ]
   const modelOptions = [
     {
@@ -73,34 +159,108 @@ function Header() {
     }
   }
 
-  // Tool definitions with descriptions
-  const toolOptions = [
-    {
-      name: "SAP",
-      description: "Control SAP2000 on your behalf",
-      status: getConnectionStatusColor(),
-      isEnabled: true,
-      isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
-      connectAction: handleConnectToSAP,
-    },
-    {
-      name: "Desktop",
-      description: "Control your screen, mouse and keyboard",
-      status: getDesktopConnectionStatusColor(),
-      isEnabled: true,
-      isConnected: desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
-      connectAction: handleConnectToDesktop,
-    },
-    {
-      name: "File Editor",
-      description: "Access and edit project files",
-      status: "gray",
-      isEnabled: false,
-    },
-  ]
+  // Tool definitions with descriptions - filtered based on selected agent
+  const getToolOptions = () => {
+    console.log(
+      "🔧 getToolOptions called with selectedAgentData:",
+      selectedAgentData
+    )
 
-  const [selectedAgent, setSelectedAgent] = useState("structural-engineer")
-  const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
+    const allTools = []
+
+    // Add target app specific tool if agent has a targetApp
+    if (selectedAgentData?.targetApp) {
+      const targetApp = selectedAgentData.targetApp
+      let targetAppTool = null
+
+      switch (targetApp) {
+        case "SAP2000":
+          targetAppTool = {
+            name: "SAP",
+            description: "Control SAP2000 on your behalf",
+            status: getConnectionStatusColor(),
+            isEnabled: true,
+            isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
+            connectAction: handleConnectToSAP,
+            toolKey: "sap",
+            targetApp: "SAP2000",
+          }
+          break
+        case "OpenFOAM":
+          targetAppTool = {
+            name: "OpenFOAM",
+            description: "Connect to OpenFOAM for CFD simulations",
+            status: "gray",
+            isEnabled: true,
+            isConnected: false,
+            connectAction: () =>
+              console.log("OpenFOAM connection not implemented yet"),
+            toolKey: "openfoam",
+            targetApp: "OpenFOAM",
+          }
+          break
+        case "FreeCAD":
+          targetAppTool = {
+            name: "FreeCAD",
+            description: "Connect to FreeCAD for 3D modeling",
+            status: "gray",
+            isEnabled: true,
+            isConnected: false,
+            connectAction: () =>
+              console.log("FreeCAD connection not implemented yet"),
+            toolKey: "freecad",
+            targetApp: "FreeCAD",
+          }
+          break
+      }
+
+      if (targetAppTool) {
+        allTools.push(targetAppTool)
+      }
+    }
+
+    // Add generic tools based on agent's enabled tools
+    if (selectedAgentData?.tools?.desktopControl === true) {
+      allTools.push({
+        name: "Desktop",
+        description: "Control your screen, mouse and keyboard",
+        status: getDesktopConnectionStatusColor(),
+        isEnabled: true,
+        isConnected:
+          desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
+        connectAction: handleConnectToDesktop,
+        toolKey: "desktopControl",
+      })
+    }
+
+    if (selectedAgentData?.tools?.fileEditor === true) {
+      allTools.push({
+        name: "File Editor",
+        description: "Access and edit project files",
+        status: "gray",
+        isEnabled: true,
+        toolKey: "fileEditor",
+      })
+    }
+
+    if (selectedAgentData?.tools?.commandLine === true) {
+      allTools.push({
+        name: "Command Line",
+        description: "Execute command line operations",
+        status: "gray",
+        isEnabled: true,
+        toolKey: "commandLine",
+      })
+    }
+
+    console.log(
+      "🔧 Built tools dynamically:",
+      allTools.map((t) => t.name)
+    )
+    return allTools
+  }
+
+  const toolOptions = getToolOptions()
 
   // Helper function to format agent names for display
   const formatAgentName = (agentName) => {
@@ -164,6 +324,13 @@ function Header() {
     WebSocketService.connectToDesktop()
   }
 
+  // Open Template Training window
+  const handleOpenTemplateTraining = () => {
+    if (window.electron?.ipcRenderer?.send) {
+      window.electron.ipcRenderer.send("open-template-training")
+    }
+  }
+
   // Open confirmation dialog before creating new chat
   const handleNewChatButtonClick = () => {
     setShowConfirmation(true)
@@ -174,22 +341,21 @@ function Header() {
     setShowConfirmation(false)
   }
 
-  // Proceed to agent selection after confirmation
+  // Proceed directly with new chat using current agent (no selection dialog)
   const handleConfirmNewChat = () => {
     setShowConfirmation(false)
-    setShowAgentSelection(true)
-    setIsInChat(false) // Allow agent selection during new chat flow
+    WebSocketService.handleNewChat(selectedAgent)
   }
 
   // Cancel agent selection
   const handleCancelAgentSelection = () => {
-    setShowAgentSelection(false)
+    // setShowAgentSelection(false) // This state is removed
     setIsInChat(true) // Return to read-only state
   }
 
   // Proceed with new chat after agent selection
   const handleFinalConfirmNewChat = (selectedAgent) => {
-    setShowAgentSelection(false)
+    // setShowAgentSelection(false) // This state is removed
     setSelectedAgent(selectedAgent)
     setIsInChat(true) // Return to read-only state after selection
     WebSocketService.handleNewChat(selectedAgent)
@@ -429,6 +595,15 @@ function Header() {
             </>
           ) : (
             <>
+              {/* Settings (Template Training) button before minimize */}
+              <button
+                className="window-control win"
+                onClick={handleOpenTemplateTraining}
+                title="Template Training"
+                style={{ color: "#9C9B9F" }}
+              >
+                <FontAwesomeIcon icon={faGear} />
+              </button>
               <button
                 className="window-control minimize win"
                 onClick={handleMinimize}
@@ -505,9 +680,14 @@ function Header() {
                           }}
                         ></div>
                         <div className="model-info">
-                          <div className="model-name">{tool.name}</div>
-                          <div className="model-description">
-                            {tool.description}
+                          <div className="model-name">
+                            {tool.name}
+                            <ToolTooltip text={tool.description}>
+                              <FontAwesomeIcon
+                                icon={faInfoCircle}
+                                className="tool-info-icon"
+                              />
+                            </ToolTooltip>
                           </div>
                         </div>
                       </div>
@@ -605,33 +785,7 @@ function Header() {
             marginRight: "12px",
           }}
         >
-          <button
-            className="header-template-training-button"
-            onClick={() => {
-              if (window.electron?.ipcRenderer?.send) {
-                window.electron.ipcRenderer.send('open-template-training')
-              }
-            }}
-            title="Template Training"
-            style={{
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: "6px",
-              color: "#E0E0E0",
-              padding: "6px 12px",
-              fontSize: "12px",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = "rgba(255, 255, 255, 0.15)"
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "rgba(255, 255, 255, 0.1)"
-            }}
-          >
-            Training
-          </button>
+          {/* Training button removed as per refactor */}
           <button
             className="header-new-chat-button"
             onClick={handleNewChatButtonClick}
@@ -669,77 +823,7 @@ function Header() {
       )}
 
       {/* Agent Selection Dialog */}
-      {showAgentSelection && (
-        <div className="confirmation-overlay">
-          <div
-            className="confirmation-dialog"
-            style={{ width: "280px", maxWidth: "90vw" }}
-          >
-            <div className="confirmation-content">
-              <h3 style={{ marginBottom: "6px", fontSize: "16px" }}>
-                Select Agent Type
-              </h3>
-              <p style={{ marginBottom: "12px", fontSize: "13px" }}>
-                Choose the type of agent for your new chat session.
-              </p>
-              <div className="agent-selection-grid">
-                {agentOptions.map((agent) => (
-                  <div
-                    key={agent.name}
-                    className="agent-option-card"
-                    onClick={() => handleFinalConfirmNewChat(agent.name)}
-                    style={{
-                      padding: "8px 12px",
-                      border: "1px solid #3D3D3D",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      marginBottom: "4px",
-                      backgroundColor:
-                        selectedAgent === agent.name ? "#4A4A4A" : "#2D2D2D",
-                      transition: "background-color 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedAgent !== agent.name) {
-                        e.currentTarget.style.backgroundColor = "#3A3A3A"
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedAgent !== agent.name) {
-                        e.currentTarget.style.backgroundColor = "#2D2D2D"
-                      }
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: "500",
-                        marginBottom: "1px",
-                        color: "#E0E0E0",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {formatAgentName(agent.name)}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "#9C9B9F" }}>
-                      {agent.description}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div
-                className="confirmation-buttons"
-                style={{ marginTop: "12px" }}
-              >
-                <button
-                  className="cancel-button"
-                  onClick={handleCancelAgentSelection}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* This section is removed as per the edit hint */}
     </div>
   )
 }
