@@ -77,6 +77,17 @@ const TemplateTraining = () => {
     }
   }, [selectedBox, captions])
 
+  // Update pageName when currentScreenshot changes
+  useEffect(() => {
+    if (currentScreenshot) {
+      // Backend returns screenshot with 'name' property
+      const name = currentScreenshot.name || ""
+      setPageName(name)
+    } else {
+      setPageName("")
+    }
+  }, [currentScreenshot])
+
   // WebSocket handlers setup
   useEffect(() => {
     // Set up template training specific handler
@@ -196,7 +207,10 @@ const TemplateTraining = () => {
   }
 
   const handleNavigate = (view) => {
-    // Add any cleanup or state reset logic here if needed
+    // Clear currentScreenshot when navigating to PAGES_LIST
+    if (view === VIEW_STATES.PAGES_LIST) {
+      setCurrentScreenshot(null)
+    }
     setCurrentView(view)
   }
 
@@ -467,7 +481,10 @@ const TemplateTraining = () => {
         return (
           <PagesList
             agentName={agentData.name}
-            onAddPage={() => setCurrentView(VIEW_STATES.PAGE_EDITOR)}
+            onAddPage={() => {
+              setCurrentScreenshot(null)
+              setCurrentView(VIEW_STATES.PAGE_EDITOR)
+            }}
             onEditPage={(screenshot) => {
               setCurrentScreenshot(screenshot)
               setCurrentView(VIEW_STATES.PAGE_EDITOR)
@@ -485,7 +502,10 @@ const TemplateTraining = () => {
               setPageName(pageData.name || "")
               setCurrentView(VIEW_STATES.PAGES_LIST)
             }}
-            onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
+            onCancel={() => {
+              setCurrentScreenshot(null)
+              setCurrentView(VIEW_STATES.PAGES_LIST)
+            }}
             handleAnalyze={handleAnalyze}
             isAnalyzing={isAnalyzing}
             boxes={boxes}
@@ -525,6 +545,7 @@ const TemplateTraining = () => {
           pageName={pageName}
           onNavigate={handleNavigate}
           pageTitle={getPageTitle()}
+          currentScreenshot={currentScreenshot}
         />
       )}
       {saveStatus && (

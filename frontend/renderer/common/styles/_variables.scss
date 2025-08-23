@@ -1,0 +1,28 @@
+/* Purple Theme Color Palette */
+:root {
+  /* Primary Purple Family */
+  --primary-purple: #9E61CA;
+  --primary-purple-light: #B47DD8;
+  --primary-purple-dark: #8A4FB8;
+  --primary-purple-transparent: rgba(158, 97, 202, 0.1);
+  --primary-purple-semi: rgba(158, 97, 202, 0.7);
+  --primary-purple-hover: rgba(158, 97, 202, 0.15);
+  --primary-purple-active: rgba(158, 97, 202, 0.25);
+  
+  /* Status Colors */
+  --status-success: #9E61CA;
+  --status-warning: #B47DD8;
+  --status-error: #8A4FB8;
+  --status-info: rgba(158, 97, 202, 0.6);
+  
+  /* Focus and Selection */
+  --focus-outline: #9E61CA;
+  --focus-shadow: rgba(158, 97, 202, 0.1);
+  --selection-bg: rgba(158, 97, 202, 0.15);
+  --selection-border: #9E61CA;
+  
+  /* Shadows and Effects */
+  --purple-shadow: rgba(158, 97, 202, 0.3);
+  --purple-shadow-light: rgba(158, 97, 202, 0.1);
+  --purple-glow: rgba(158, 97, 202, 0.3);
+} 

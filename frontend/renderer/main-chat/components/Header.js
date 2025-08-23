@@ -442,7 +442,7 @@ function Header() {
             }}
           >
             <img
-              src="../../../resources/compass_v2.svg"
+              src="../../../resources/compass.png"
               alt="Compass"
               style={{
                 height: "22px",

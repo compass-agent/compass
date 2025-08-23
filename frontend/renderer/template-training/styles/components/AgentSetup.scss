@@ -97,7 +97,17 @@
         input[type="checkbox"] {
           width: auto;
           margin-right: 0.8rem;
-          accent-color: #4a9eff;
+          accent-color: var(--primary-purple);
+          transition: all 0.2s ease;
+          
+          &:checked {
+            accent-color: var(--primary-purple);
+          }
+          
+          &:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 2px;
+          }
         }
 
         label {
@@ -117,12 +127,18 @@
             justify-content: center;
             width: 16px;
             height: 16px;
-            background-color: #4a9eff;
+            background-color: var(--primary-purple);
             color: white;
             border-radius: 50%;
             font-size: 10px;
             font-weight: bold;
             cursor: help;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              background-color: var(--primary-purple-light);
+              transform: scale(1.1);
+            }
           }
 
           .tool-description {

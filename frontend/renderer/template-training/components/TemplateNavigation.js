@@ -9,7 +9,8 @@ const TemplateNavigation = ({
   agentName,
   pageName,
   onNavigate,
-  pageTitle, // Add pageTitle prop
+  pageTitle,
+  currentScreenshot,
 }) => {
   const renderBreadcrumbs = () => {
     const items = []
@@ -119,7 +120,7 @@ const TemplateNavigation = ({
       )
       items.push(
         <span key="editor" className="nav-item active">
-          {pageName || "New Page"}
+          {currentScreenshot && pageName ? pageName : "New Page"}
         </span>
       )
     }

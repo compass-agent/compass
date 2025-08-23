@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faCamera } from '@fortawesome/free-solid-svg-icons';
-import '../styles/components/PageEditor.scss';
-import ImageWorkspace from './ImageWorkspace';
-import Toolbar from './Toolbar';
-import { useImageHandling } from '../hooks/useImageHandling';
-import WebSocketService from '../../common/services/websocket';
-import { VIEW_STATES } from '../constants/viewStates';
-import SaveDialog from './SaveDialog';
+import { faCamera, faUpload } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import React, { useEffect, useState } from "react"
+import WebSocketService from "../../common/services/websocket"
+import { VIEW_STATES } from "../constants/viewStates"
+import { useImageHandling } from "../hooks/useImageHandling"
+import "../styles/components/PageEditor.scss"
+import ImageWorkspace from "./ImageWorkspace"
+import SaveDialog from "./SaveDialog"
+import Toolbar from "./Toolbar"
 
-const PageEditor = ({ 
+const PageEditor = ({
   handleAnalyze,
   isAnalyzing,
   boxes,
@@ -29,18 +29,20 @@ const PageEditor = ({
   setIsAnalyzing,
   currentScreenshot,
   agentName,
-  handleAutoCaption
+  handleAutoCaption,
+  pageName: parentPageName,
+  setPageName: setParentPageName,
 }) => {
-  const [pageName, setPageName] = useState('');
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [pageName, setPageName] = useState("")
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false)
 
   const cleanupFunctions = {
     setDetections,
     setBoxes,
     setCaptions,
     setSelectedBox,
-    setIsAnalyzing
-  };
+    setIsAnalyzing,
+  }
 
   const {
     image,
@@ -48,93 +50,107 @@ const PageEditor = ({
     imageSize,
     handleImageLoad,
     handleImageUpload,
-    getImageSrc
-  } = useImageHandling(cleanupFunctions);
+    getImageSrc,
+  } = useImageHandling(cleanupFunctions)
 
   useEffect(() => {
     if (currentScreenshot) {
-      setImage(currentScreenshot.image);
-      setPageName(currentScreenshot.page_name || '');
+      setImage(currentScreenshot.image)
+      // Backend returns screenshot with 'name' property
+      const name = currentScreenshot.name || ""
+      setPageName(name)
+      if (setParentPageName) {
+        setParentPageName(name)
+      }
+    } else {
+      setPageName("")
+      if (setParentPageName) {
+        setParentPageName("")
+      }
     }
-  }, [currentScreenshot]);
+  }, [currentScreenshot, setParentPageName])
 
   useEffect(() => {
-    console.log('Number of boxes:', Object.keys(boxes).length);
-  }, [boxes]);
+    console.log("Number of boxes:", Object.keys(boxes).length)
+  }, [boxes])
 
   useEffect(() => {
     const handleDetectionResult = (data) => {
-      console.log("Handling detection result:", data);
+      console.log("Handling detection result:", data)
       if (data.detections) {
-        setDetections(data.detections);
-        setIsAnalyzing(false);
+        setDetections(data.detections)
+        setIsAnalyzing(false)
       }
-    };
+    }
 
-    WebSocketService.stateHandlers.onDetectionResult = handleDetectionResult;
+    WebSocketService.stateHandlers.onDetectionResult = handleDetectionResult
 
     return () => {
-      WebSocketService.stateHandlers.onDetectionResult = null;
-    };
-  }, [setDetections, setIsAnalyzing]);
+      WebSocketService.stateHandlers.onDetectionResult = null
+    }
+  }, [setDetections, setIsAnalyzing])
 
   const handleSave = () => {
     if (!image) {
-      alert('No image available');
-      return;
+      alert("No image available")
+      return
     }
 
     if (Object.keys(captions).length === 0) {
-      alert('No templates to save');
-      return;
+      alert("No templates to save")
+      return
     }
 
-    setIsSaveDialogOpen(true);
-  };
+    setIsSaveDialogOpen(true)
+  }
 
   const handleFinalSave = (newPageName) => {
-    const imageData = image.includes('base64,') 
-      ? image.split('base64,')[1] 
-      : image;
+    const imageData = image.includes("base64,")
+      ? image.split("base64,")[1]
+      : image
 
-    const templates = Object.entries(captions).map(([boxIndex, caption]) => {
-      const box = boxes[boxIndex];
-      if (!box) return null;
+    const templates = Object.entries(captions)
+      .map(([boxIndex, caption]) => {
+        const box = boxes[boxIndex]
+        if (!box) return null
 
-      return {
-        id: box.id,
-        bbox: [
-          box.x,
-          box.y,
-          box.x + box.width,
-          box.y + box.height
-        ],
-        caption: caption
-      };
-    }).filter(template => template !== null);
+        return {
+          id: box.id,
+          bbox: [box.x, box.y, box.x + box.width, box.y + box.height],
+          caption: caption,
+        }
+      })
+      .filter((template) => template !== null)
 
     // Add a success handler for saveTemplates
-    WebSocketService.stateHandlers.onTemplatesSaved = () => {
-      setIsSaveDialogOpen(false);
-      // Trigger a refresh of screenshots before changing view
-      WebSocketService.getScreenshots(agentName);
-      setCurrentView(VIEW_STATES.PAGES_LIST);
-    };
+    WebSocketService.stateHandlers.onTemplatesSaved = (data) => {
+      setIsSaveDialogOpen(false)
+
+      if (data.success) {
+        // Trigger a refresh of screenshots before changing view
+        WebSocketService.getScreenshots(agentName)
+
+        // Navigate back to pages list - this will also clear currentScreenshot
+        setCurrentView(VIEW_STATES.PAGES_LIST)
+      } else {
+        alert(`Error saving templates: ${data.message}`)
+      }
+    }
 
     WebSocketService.saveTemplates({
       image: imageData,
       agent_name: agentName,
       page_name: newPageName.trim(),
-      templates: templates
-    });
-  };
+      templates: templates,
+    })
+  }
 
   const handleBoxChange = (boxId, newBox) => {
-    setBoxes(prev => ({
+    setBoxes((prev) => ({
       ...prev,
-      [boxId]: newBox
-    }));
-  };
+      [boxId]: newBox,
+    }))
+  }
 
   return (
     <div className="page-editor">
@@ -170,16 +186,12 @@ const PageEditor = ({
                 id="imageUpload"
                 accept="image/*"
                 onChange={handleImageUpload}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
               />
               <label htmlFor="imageUpload" className="upload-button">
                 <FontAwesomeIcon icon={faUpload} /> Upload Image
               </label>
-              <button 
-                className="upload-button"
-                onClick={() => {}}
-                disabled
-              >
+              <button className="upload-button" onClick={() => {}} disabled>
                 <FontAwesomeIcon icon={faCamera} /> Take Screenshot
               </button>
             </div>
@@ -205,7 +217,6 @@ const PageEditor = ({
         )}
       </div>
     </div>
-  );
-};
-
-export default PageEditor; 
+  )
+}
+export default PageEditor

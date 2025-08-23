@@ -18,6 +18,21 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: var(--primary-purple-light);
+      border-color: var(--primary-purple);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--purple-shadow);
+    }
+    
+    &:active {
+      background: var(--primary-purple-dark);
+      transform: translateY(0);
+      box-shadow: 0 2px 6px var(--purple-shadow);
+    }
   }
   .btn-secondary { opacity: 0.85; }
 
@@ -63,20 +78,21 @@
         }
 
         &.selected {
-          background-color: #404040;
+          background-color: var(--selection-bg);
+          border-color: var(--selection-border);
           
           .col {
             color: #e0e0e0;
           }
           
           .icon-btn {
-            border-color: #606060;
-            background-color: #353535;
+            border-color: var(--primary-purple);
+            background-color: var(--primary-purple-transparent);
             color: #e0e0e0;
             
             &:hover {
-              background-color: #454545;
-              border-color: #707070;
+              background-color: var(--primary-purple-hover);
+              border-color: var(--primary-purple-light);
             }
           }
           

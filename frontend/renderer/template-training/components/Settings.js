@@ -53,10 +53,21 @@ const Settings = ({ onNavigate }) => {
               height: "28px",
               borderRadius: "50%",
               background: "#4A4A4A",
+              border: "3px solid #9E61CA",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontWeight: 600,
+              boxShadow: "0 0 20px rgba(158, 97, 202, 0.3)",
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = "#B47DD8"
+              e.target.style.boxShadow = "0 0 25px rgba(158, 97, 202, 0.5)"
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = "#9E61CA"
+              e.target.style.boxShadow = "0 0 20px rgba(158, 97, 202, 0.3)"
             }}
           >
             M

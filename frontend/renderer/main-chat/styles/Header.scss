@@ -1,3 +1,5 @@
+@import "../../common/styles/variables.scss";
+
 .window-control.minimize {
   position: relative;
 }
@@ -241,7 +243,7 @@
                 transition: background-color 0.3s ease;
                 
                 &.enabled {
-                  background-color: #5b3ba1;
+                  background-color: var(--primary-purple);
                 }
                 
                 .toggle-slider {
@@ -364,6 +366,21 @@
                   border-radius: 50%;
                   margin-right: 8px;
                   margin-top: 5px;
+                  transition: all 0.2s ease;
+                  
+                  &.connected {
+                    background-color: var(--primary-purple);
+                    box-shadow: 0 0 6px var(--purple-glow);
+                  }
+                  
+                  &.connecting {
+                    background-color: var(--primary-purple-light);
+                    animation: pulse 1.5s infinite;
+                  }
+                  
+                  &.disconnected {
+                    background-color: #6B7280;
+                  }
                 }
                 
                 .model-info {
@@ -399,9 +416,31 @@
               min-width: 75px;
               text-align: center;
               align-self: center;
+              transition: all 0.2s ease;
               
               &:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: var(--primary-purple-light);
+                border-color: var(--primary-purple);
+                color: white;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px var(--purple-shadow);
+              }
+              
+              &:active {
+                background-color: var(--primary-purple-dark);
+                transform: translateY(0);
+                box-shadow: 0 1px 4px var(--purple-shadow);
+              }
+              
+              &.connected {
+                background-color: var(--primary-purple);
+                border-color: var(--primary-purple);
+                color: white;
+                
+                &:hover {
+                  background-color: var(--primary-purple-light);
+                  box-shadow: 0 2px 8px var(--purple-shadow);
+                }
               }
               
               &.disabled {
@@ -410,6 +449,8 @@
                 
                 &:hover {
                   background-color: transparent;
+                  transform: none;
+                  box-shadow: none;
                 }
               }
             }
@@ -755,17 +796,25 @@ button, a, input, .interactive, [role="button"] {
   height: 19px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s ease;
   font-family: 'Abel', sans-serif;
   
   &:hover {
-    background: #4e4c53;
-    color: #9C9B9F;
+    background: var(--primary-purple-light);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--purple-shadow);
+  }
+  
+  &:active {
+    background: var(--primary-purple-dark);
+    transform: translateY(0);
+    box-shadow: 0 2px 6px var(--purple-shadow);
   }
   
   &.active {
-    background: #36353A;
-    color: #9C9B9F;
+    background: var(--primary-purple);
+    color: white;
   }
 }
 
@@ -781,20 +830,28 @@ button, a, input, .interactive, [role="button"] {
   height: 19px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s ease;
   font-family: 'Abel', sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
   
   &:hover {
-    background: #4e4c53;
-    color: #9C9B9F;
+    background: var(--primary-purple-light);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--purple-shadow);
+  }
+  
+  &:active {
+    background: var(--primary-purple-dark);
+    transform: translateY(0);
+    box-shadow: 0 2px 6px var(--purple-shadow);
   }
   
   &.active {
-    background: #36353A;
-    color: #9C9B9F;
+    background: var(--primary-purple);
+    color: white;
   }
 }
 
@@ -870,5 +927,21 @@ button, a, input, .interactive, [role="button"] {
     &::after, &::before {
       left: 20px;
     }
+  }
+}
+
+/* Purple theme animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
