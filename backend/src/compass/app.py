@@ -361,15 +361,13 @@ def handle_save_templates(data):
         page_name = data.get('page_name', '')
         templates = data.get('templates', [])
         
-        # Save each template
-        for template in templates:
-            training_agent.save_template(
-                image_data=image_data,
-                caption=template.get('caption', ''),
-                bbox=template.get('bbox', []),
-                agent_name=agent_name,
-                page_name=page_name
-            )
+        # Save all templates at once (page saved once inside the method)
+        training_agent.save_template(
+            image_data=image_data,
+            templates=templates,
+            agent_name=agent_name,
+            page_name=page_name
+        )
         
         emit('templates_saved', {
             'success': True,
@@ -381,6 +379,21 @@ def handle_save_templates(data):
             'success': False,
             'message': str(e)
         })
+
+@socketio.on('get_agents')
+def handle_get_agents(data):
+    """Get list of available agents"""
+    logger.info('Received get_agents request')
+    try:
+        agents = training_agent.get_agent_names()
+        
+        emit('agents_list', {
+            'agents': agents,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Error getting agents: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
 
 @socketio.on('get_screenshots')
 def handle_get_screenshots(data):

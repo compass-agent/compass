@@ -29,13 +29,12 @@ def migrate_to_uuid():
         cursor.execute('''
             CREATE TABLE templates_new (
                 id TEXT PRIMARY KEY,
-                base64_image TEXT NOT NULL,
-                caption TEXT NOT NULL,
-                page_name TEXT,
                 agent_name TEXT NOT NULL,
+                page_name TEXT,
+                base64_image TEXT NOT NULL,
+                caption TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (page_name) REFERENCES pages(name) ON DELETE SET NULL
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
@@ -44,7 +43,7 @@ def migrate_to_uuid():
         # Copy data from old table to new table, generating UUIDs
         cursor.execute('''
             INSERT INTO templates_new (
-                id, base64_image, caption, page_name, agent_name, 
+                id, agent_name, page_name, base64_image, caption, 
                 created_at, updated_at
             )
             SELECT 
@@ -52,7 +51,7 @@ def migrate_to_uuid():
                 substr(hex(randomblob(2)), 2) || '-' || 
                 substr('89ab', abs(random()) % 4 + 1, 1) || 
                 substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)),
-                base64_image, caption, page_name, agent_name, 
+                agent_name, page_name, base64_image, caption, 
                 created_at, updated_at
             FROM templates
         ''')

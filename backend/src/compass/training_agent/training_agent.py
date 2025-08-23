@@ -191,40 +191,43 @@ class TrainingAgent:
             logger.error(f"Failed to save page: {e}")
             raise
 
-    def save_template(self, image_data: str, caption: str, 
-                     bbox: List[float], agent_name: str = "FreeCAD", page_name: str = "") -> None:
-        """Save template to database, ensuring screenshot exists first"""
+    def save_template(self, image_data: str, templates: List[dict], agent_name: str = "FreeCAD", page_name: str = "") -> None:
+        """Save multiple templates to database, ensuring screenshot exists first"""
         try:
-            # First save the full screenshot
+            # First save the full screenshot once
             self.save_page(image_data, agent_name, page_name)
             
-            # Then save the template as before
-            cropped_image = self._crop_and_encode_image(image_data, bbox)
-            
-            with Session() as session:
-                existing_template = session.query(Template).filter_by(
-                    base64_image=cropped_image,
-                    agent_name=agent_name
-                ).first()
+            # Then save each template
+            for template in templates:
+                caption = template.get('caption', '')
+                bbox = template.get('bbox', [])
                 
-                if existing_template:
-                    existing_template.caption = caption
-                    existing_template.page_name = page_name
-                    logger.info(f"Updated existing template caption to: {caption}")
-                else:
-                    template = Template(
+                cropped_image = self._crop_and_encode_image(image_data, bbox)
+                
+                with Session() as session:
+                    existing_template = session.query(Template).filter_by(
                         base64_image=cropped_image,
-                        caption=caption,
-                        agent_name=agent_name,
-                        page_name=page_name
-                    )
-                    session.add(template)
-                    logger.info(f"Saved new template with caption: {caption}")
-                
-                session.commit()
+                        agent_name=agent_name
+                    ).first()
+                    
+                    if existing_template:
+                        existing_template.caption = caption
+                        existing_template.page_name = page_name
+                        logger.info(f"Updated existing template caption to: {caption}")
+                    else:
+                        template_obj = Template(
+                            base64_image=cropped_image,
+                            caption=caption,
+                            agent_name=agent_name,
+                            page_name=page_name
+                        )
+                        session.add(template_obj)
+                        logger.info(f"Saved new template with caption: {caption}")
+                    
+                    session.commit()
                 
         except Exception as e:
-            logger.error(f"Failed to save template: {e}")
+            logger.error(f"Failed to save templates: {e}")
             raise
 
     def _calculate_size_context(self, template_detections: List[Detection], 
