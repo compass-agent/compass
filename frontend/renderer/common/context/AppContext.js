@@ -3,8 +3,8 @@ import {
   ActionTypes,
   AgentMode,
   AgentStatus,
-  SAPConnectionStatus,
   DesktopConnectionStatus,
+  SAPConnectionStatus,
 } from "../constants"
 import WebSocketService from "../services/websocket"
 
@@ -49,6 +49,13 @@ const initialState = {
   desktop: {
     connectionStatus: DesktopConnectionStatus.DISCONNECTED,
     message: null,
+  },
+
+  agentHub: {
+    agents: [],
+    loading: false,
+    selectedAgent: null,
+    error: null,
   },
 }
 
@@ -183,8 +190,73 @@ function appReducer(state, action) {
         ...state,
         desktop: {
           ...state.desktop,
-          connectionStatus: action.payload.status || state.desktop.connectionStatus,
+          connectionStatus:
+            action.payload.status || state.desktop.connectionStatus,
           message: action.payload.message || state.desktop.message,
+        },
+      }
+
+    // Agent Hub management cases
+    case ActionTypes.SET_AGENT_HUB_AGENTS:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          agents: action.payload,
+          loading: false,
+          error: null,
+        },
+      }
+
+    case ActionTypes.SET_AGENT_HUB_LOADING:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          loading: action.payload,
+        },
+      }
+
+    case ActionTypes.AGENT_HUB_ADD_AGENT:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          agents: [...state.agentHub.agents, action.payload],
+        },
+      }
+
+    case ActionTypes.AGENT_HUB_UPDATE_AGENT:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          agents: state.agentHub.agents.map((agent) =>
+            agent.agentId === action.payload.agentId
+              ? { ...agent, ...action.payload }
+              : agent
+          ),
+        },
+      }
+
+    case ActionTypes.AGENT_HUB_REMOVE_AGENT:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          agents: state.agentHub.agents.filter(
+            (agent) => agent.agentId !== action.payload
+          ),
+        },
+      }
+
+    case ActionTypes.SET_AGENT_HUB_ERROR:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          error: action.payload,
+          loading: false,
         },
       }
 
@@ -282,6 +354,75 @@ export function AppProvider({ children }) {
           type: ActionTypes.SET_DESKTOP_CONNECTION_STATUS,
           payload: data,
         })
+      },
+
+      // Agent Hub handlers
+      onAgentHub: (data) => {
+        console.log("AGENT_HUB: Received event:", data?.action, data?.success)
+        if (!data) return
+
+        switch (data.action) {
+          case "list":
+            if (data.success && Array.isArray(data.agents)) {
+              console.log(
+                "AGENT_HUB: Setting agents list, count:",
+                data.agents.length
+              )
+              dispatch({
+                type: ActionTypes.SET_AGENT_HUB_AGENTS,
+                payload: data.agents,
+              })
+            } else {
+              console.warn("AGENT_HUB: Invalid list response", data)
+            }
+            break
+          case "create":
+          case "import":
+            if (data.success && data.agent) {
+              console.log("AGENT_HUB: Adding agent:", data.agent.name)
+              dispatch({
+                type: ActionTypes.AGENT_HUB_ADD_AGENT,
+                payload: data.agent,
+              })
+            }
+            break
+          case "update":
+            if (data.success && data.agent) {
+              console.log("AGENT_HUB: Updating agent:", data.agent.name)
+              dispatch({
+                type: ActionTypes.AGENT_HUB_UPDATE_AGENT,
+                payload: data.agent,
+              })
+            }
+            break
+          case "rename":
+            if (data.success && data.agentId) {
+              console.log("AGENT_HUB: Renaming agent:", data.agentId)
+              dispatch({
+                type: ActionTypes.AGENT_HUB_UPDATE_AGENT,
+                payload: { agentId: data.agentId, name: data.name },
+              })
+            }
+            break
+          case "delete":
+            if (data.success && data.agentId) {
+              console.log("AGENT_HUB: Removing agent:", data.agentId)
+              dispatch({
+                type: ActionTypes.AGENT_HUB_REMOVE_AGENT,
+                payload: data.agentId,
+              })
+            }
+            break
+          default:
+            if (!data.success && data.message) {
+              console.error("AGENT_HUB: Error:", data.message)
+              dispatch({
+                type: ActionTypes.SET_AGENT_HUB_ERROR,
+                payload: data.message,
+              })
+            }
+            break
+        }
       },
     })
 

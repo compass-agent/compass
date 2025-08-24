@@ -195,7 +195,7 @@
         overflow: visible;
         
         &.tools-menu {
-          min-width: 280px;
+          min-width: 310px;
         }
         
         &.chatgpt-style {
@@ -795,5 +795,80 @@ button, a, input, .interactive, [role="button"] {
   &.active {
     background: #36353A;
     color: #9C9B9F;
+  }
+}
+
+/* Tooltip styles for tools dropdown */
+.tool-tooltip-container {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+}
+
+.tool-info-icon {
+  color: #9C9B9F;
+  font-size: 12px;
+  cursor: help;
+  transition: color 0.3s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #C0C0C0;
+  }
+}
+
+.tool-tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 100%;
+  transform: translateX(-8px);
+  background-color: #4A4A4A;
+  color: #E0E0E0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+  max-width: 280px;
+  width: max-content;
+  z-index: 999999;
+  border: 1px solid #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-bottom: 8px;
+  pointer-events: none;
+
+  // Ensure tooltip doesn't go off-screen
+  @media (max-width: 600px) {
+    max-width: 250px;
+    left: 0;
+    transform: none;
+  }
+
+  // Arrow pointing down and to the left
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 8px;
+    border: 5px solid transparent;
+    border-top-color: #4A4A4A;
+  }
+
+  // Arrow border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 8px;
+    border: 6px solid transparent;
+    border-top-color: #666;
+    margin-top: 1px;
+  }
+
+  // Adjust arrow for mobile
+  @media (max-width: 600px) {
+    &::after, &::before {
+      left: 20px;
+    }
   }
 }
