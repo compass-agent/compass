@@ -20,6 +20,7 @@ class WebSocketService {
       onSAPConnectionStatus: new Set(),
       onDesktopConnectionStatus: new Set(),
       onAgentHub: new Set(),
+      onDeletePageResult: new Set(),
     }
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 10
@@ -171,6 +172,13 @@ class WebSocketService {
     this.socket.on("agent_hub_result", (data) => {
       console.log("WebSocket received agent_hub_result:", data)
       this.stateHandlers.onAgentHub.forEach((handler) => handler(data))
+    })
+
+    this.socket.on("delete_page_result", (data) => {
+      console.log("WebSocket received delete_page_result:", data)
+      if (this.stateHandlers.onDeletePageResult) {
+        this.stateHandlers.onDeletePageResult.forEach((handler) => handler(data))
+      }
     })
 
     this.socket.on("templates_saved", (data) => {
@@ -356,6 +364,16 @@ class WebSocketService {
       this.socket.emit("agent_hub", { action, ...payload })
     } else {
       console.warn("Cannot send agent_hub action - socket not connected")
+    }
+  }
+
+  // Page management
+  deletePage(pageId) {
+    if (this.socket?.connected) {
+      console.log("WebSocket sending delete_page request for ID:", pageId)
+      this.socket.emit("delete_page", { pageId })
+    } else {
+      console.warn("Cannot delete page - socket not connected")
     }
   }
 }
