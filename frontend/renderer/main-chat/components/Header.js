@@ -45,6 +45,7 @@ function Header() {
   const [modelDropdown, setModelDropdown] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [isInChat, setIsInChat] = useState(true) // Start as true so agent dropdown is read-only by default
+  const [thinkingModeEnabled, setThinkingModeEnabled] = useState(true) // Thinking mode enabled by default
 
   const [selectedAgent, setSelectedAgent] = useState("Structural-Engineer")
   const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
@@ -120,14 +121,16 @@ function Header() {
   ]
   const modelOptions = [
     {
-      name: "Claude Sonnet 3.5",
-      description: "Powerful reasoning and context",
+      name: "Claude Sonnet 4.0",
+      description: "Advanced reasoning with extended thinking capabilities, excels at complex analysis and problem-solving with enhanced emotional intelligence",
     },
-    { name: "OpenAI GPT-4o", description: "Great for most tasks" },
-    { name: "Google Gemini 2.0", description: "Uses advanced reasoning" },
-    {
-      name: "DeepSeek R1",
-      description: "Great at coding and visual reasoning",
+    { 
+      name: "OpenAI GPT-5", 
+      description: "Next-generation model with unified architecture, combining powerful reasoning and multimodal processing for sophisticated AI interactions" 
+    },
+    { 
+      name: "Google Gemini 2.5", 
+      description: "Price-performance champion with configurable thinking budgets, multimodal processing, and cost-efficient deployment at scale" 
     },
   ]
 
@@ -436,10 +439,10 @@ function Header() {
             }}
           >
             <img
-              src="../../../resources/compass.png"
+              src="../../../resources/compass_v2.svg"
               alt="Compass"
               style={{
-                height: "25px",
+                height: "22px",
                 width: "auto",
               }}
             />
@@ -727,7 +730,6 @@ function Header() {
 
             {modelDropdown && (
               <div className="header-dropdown-menu chatgpt-style">
-                <div className="dropdown-header">Models</div>
                 {modelOptions.map((model) => {
                   const isSelected = selectedModel === model.name
                   return (
@@ -768,7 +770,17 @@ function Header() {
                     </div>
                   )
                 })}
-                <div className="dropdown-footer">More models</div>
+                <div className="dropdown-footer">
+                  <div 
+                    className="thinking-toggle"
+                    onClick={() => setThinkingModeEnabled(!thinkingModeEnabled)}
+                  >
+                    <span>Thinking Mode</span>
+                    <div className={`toggle-switch ${thinkingModeEnabled ? 'enabled' : 'disabled'}`}>
+                      <div className="toggle-slider"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

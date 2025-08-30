@@ -6,7 +6,7 @@ from compass.tools import BashExecutor, ToolCollection, ComputerTool, FileOperat
 from compass.constants import MAX_ITERATIONS, PRE_RUN_SCREENSHOTS, AGENT_TOOLS, LLM_PROVIDER
 from compass.utils.utility import HistoryLogger, log_execution_time
 from compass.services.state_manager import StateManager, AgentStatus, AgentMode
-from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall
+from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ThinkingBlock
 from compass.llm.factory import LLMFactory
 from compass.agent.prompt import get_prompt_handler
 from compass.llm.memory_management import MemoryManager
@@ -186,6 +186,7 @@ class AgentService:
         )
         
         response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
+        thinking_content = []
         text_response_content = []
         tool_calls = []
         
@@ -198,15 +199,24 @@ class AgentService:
                 #     "is_final": False
                 # })
                 logger.info(f"AI response stream: {chunk}")
+            elif isinstance(chunk, ThinkingBlock):
+                thinking_content.append(chunk.content)
+                # Emit thinking content separately
+                self.state_manager.emit_response({
+                    "type": "ai_thinking",
+                    "content": chunk.content,
+                })
+                logger.info(f"AI thinking: {chunk.content[:100]}...")  # Log first 100 chars
             elif isinstance(chunk, ToolCall):
                 tool_calls.append(chunk)
                 logger.info(f"Tool call chunk: {chunk}")
         
-        # FIXME: this is a hack to get the final response to the frontend
-        self.state_manager.emit_response({
-                    "type": "ai_response",
-                    "content": "".join(text_response_content),
-                })
+        # Emit final text response if there's content
+        if text_response_content:
+            self.state_manager.emit_response({
+                        "type": "ai_response",
+                        "content": "".join(text_response_content),
+                    })
 
         
         if tool_calls:

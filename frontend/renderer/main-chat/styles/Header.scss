@@ -192,7 +192,7 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         z-index: 1000;
         margin-top: 5px;
-        overflow: hidden;
+        overflow: visible;
         
         &.tools-menu {
           min-width: 310px;
@@ -220,18 +220,59 @@
             &:hover {
               background-color: rgba(255, 255, 255, 0.1);
             }
+            
+            .thinking-toggle {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              color: #e0e0e0;
+              font-size: 13px;
+              
+              &:hover {
+                color: #ffffff;
+              }
+              
+              .toggle-switch {
+                width: 28px;
+                height: 16px;
+                background-color: #3a3a3a;
+                border-radius: 8px;
+                position: relative;
+                transition: background-color 0.3s ease;
+                
+                &.enabled {
+                  background-color: #5b3ba1;
+                }
+                
+                .toggle-slider {
+                  width: 12px;
+                  height: 12px;
+                  background-color: #ffffff;
+                  border-radius: 50%;
+                  position: absolute;
+                  top: 2px;
+                  left: 2px;
+                  transition: transform 0.3s ease;
+                }
+                
+                &.enabled .toggle-slider {
+                  transform: translateX(12px);
+                }
+              }
+            }
           }
           
           .dropdown-item {
-            padding: 8px 12px;
+            padding: 4px 12px;
             cursor: pointer;
+            background: none !important;
             
             &:hover {
-              background-color: rgba(255, 255, 255, 0.1);
+              background: none !important;
             }
             
             &.selected {
-              background-color: rgba(39, 201, 63, 0.1);
+              background: none !important;
             }
             
             .dropdown-item-content {
@@ -241,6 +282,7 @@
               
               .model-info {
                 text-align: left;
+                position: relative;
                 
                 .model-name {
                   color: #e0e0e0;
@@ -248,15 +290,46 @@
                 }
                 
                 .model-description {
-                  color: rgba(255, 255, 255, 0.5);
-                  font-size: 12px;
-                  margin-top: 2px;
+                  position: absolute;
+                  bottom: 100%;
+                  left: 50%;
+                  transform: translateX(-50%);
+                  background-color: #2a2a2a;
+                  color: rgba(255, 255, 255, 0.8);
+                  font-size: 11px;
+                  padding: 5px 8px;
+                  border-radius: 4px;
+                  white-space: normal;
+                  max-width: 280px;
+                  width: max-content;
+                  opacity: 0;
+                  visibility: hidden;
+                  transition: opacity 0.2s ease, visibility 0.2s ease;
+                  z-index: 1000;
+                  margin-bottom: 5px;
+                  border: 1px solid #444;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                  
+                  &::after {
+                    content: '';
+                    position: absolute;
+                    top: 100%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    border: 3px solid transparent;
+                    border-top-color: #2a2a2a;
+                  }
                 }
               }
               
+              &:hover .model-info .model-description {
+                opacity: 1;
+                visibility: visible;
+              }
+              
               .selected-icon {
-                color: #27c93f;
-                font-size: 14px;
+                color: #5b3ba1;
+                font-size: 13px;
                 margin-left: 8px;
                 display: block !important;
                 visibility: visible !important;

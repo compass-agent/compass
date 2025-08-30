@@ -7,13 +7,15 @@ from anthropic.types.beta import (
 )
 
 from compass.llm.base import BaseLLMInterface
-from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult
+from compass.types.agent import SystemMessage, HumanMessage, AIMessage, ToolCall, ToolResult, ThinkingBlock
 from compass.llm.memory_management import MemoryManager
 from compass.constants import (
     ANTHROPIC_MODEL_NAME_MANUAL,
     ANTHROPIC_MODEL_NAME_AUTO,
     MAX_TOKENS,
-    PROMPT_CACHING
+    PROMPT_CACHING,
+    ENABLE_EXTENDED_THINKING,
+    THINKING_BUDGET_TOKENS
 )
 from compass.key import ANTHROPIC_API_KEY
 from compass.utils.utility import log_execution_time
@@ -50,7 +52,7 @@ class AnthropicLLM(BaseLLMInterface):
         # We don't need to store system messages as Anthropic handles them differently
 
     @log_execution_time(logger)
-    def stream_call(self, system_message: SystemMessage, manual_mode: bool = False) -> Generator[Union[str, ToolCall], None, None]:
+    def stream_call(self, system_message: SystemMessage, manual_mode: bool = False) -> Generator[Union[str, ToolCall, ThinkingBlock], None, None]:
         messages = self.memory_manager.memory
         messages = self.memory_manager.optimize_messages(messages)
         formatted_messages = self.format_messages_for_llm(messages)
@@ -61,27 +63,71 @@ class AnthropicLLM(BaseLLMInterface):
         # Save formatted messages
         self._save_formatted_messages(formatted_messages, system_message.content)
 
+        # Add thinking configuration if enabled
+        thinking_config = None
+        if ENABLE_EXTENDED_THINKING:
+            thinking_config = {
+                "type": "enabled", 
+                "budget_tokens": THINKING_BUDGET_TOKENS
+            }
+
         try:
             if manual_mode:
                 # Preprocess messages for manual mode
                 formatted_messages = self._preprocess_messages(formatted_messages)
-                with self.client.messages.stream(
-                    max_tokens=MAX_TOKENS,
-                    messages=formatted_messages, # type: ignore
-                    model=ANTHROPIC_MODEL_NAME_MANUAL,
-                    system=system_message.content
-                ) as stream:
-                    for text in stream.text_stream:
-                        yield text
+                
+                if thinking_config:
+                    # Use beta API for thinking support in manual mode
+                    manual_api_params = {
+                        "max_tokens": MAX_TOKENS,
+                        "messages": formatted_messages, # type: ignore
+                        "model": ANTHROPIC_MODEL_NAME_MANUAL,
+                        "system": system_message.content,
+                        "betas": self.betas,
+                        "thinking": thinking_config
+                    }
+                    
+                    raw_response = self.client.beta.messages.with_raw_response.create(**manual_api_params)
+                    response = raw_response.parse()
+                    self.token_tracker.track_usage(
+                        response.usage.input_tokens,
+                        response.usage.output_tokens,
+                        response.usage.cache_creation_input_tokens or 0,
+                        response.usage.cache_read_input_tokens or 0
+                    )
+                    
+                    for block in response.content:
+                        if block.type == "text":
+                            yield block.text
+                        elif block.type == "thinking":
+                            thinking_block = ThinkingBlock(content=block.thinking)
+                            yield thinking_block
+                else:
+                    # Use regular streaming API when thinking is disabled
+                    with self.client.messages.stream(
+                        max_tokens=MAX_TOKENS,
+                        messages=formatted_messages, # type: ignore
+                        model=ANTHROPIC_MODEL_NAME_MANUAL,
+                        system=system_message.content
+                    ) as stream:
+                        for text in stream.text_stream:
+                            yield text
             else:
-                raw_response = self.client.beta.messages.with_raw_response.create(
-                    max_tokens=MAX_TOKENS,
-                    messages=formatted_messages, # type: ignore
-                    model=ANTHROPIC_MODEL_NAME_AUTO,
-                    system=system_message_content, # type: ignore
-                    tools=self.tools_params, # type: ignore
-                    betas=self.betas,
-                )
+                # Prepare API call parameters
+                api_params = {
+                    "max_tokens": MAX_TOKENS,
+                    "messages": formatted_messages, # type: ignore
+                    "model": ANTHROPIC_MODEL_NAME_AUTO,
+                    "system": system_message_content, # type: ignore
+                    "tools": self.tools_params, # type: ignore
+                    "betas": self.betas,
+                }
+                
+                # Add thinking parameter if enabled
+                if thinking_config:
+                    api_params["thinking"] = thinking_config
+                
+                raw_response = self.client.beta.messages.with_raw_response.create(**api_params)
                 response = raw_response.parse()
                 self.token_tracker.track_usage(
                     response.usage.input_tokens,
@@ -92,6 +138,9 @@ class AnthropicLLM(BaseLLMInterface):
                 for block in response.content:
                     if block.type == "text":
                         yield block.text
+                    elif block.type == "thinking":
+                        thinking_block = ThinkingBlock(content=block.thinking)
+                        yield thinking_block
                     elif block.type == "tool_use":
                         tool_call = ToolCall(
                             name=block.name,

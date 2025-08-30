@@ -70,6 +70,16 @@ class AIMessage:
             "tool_calls": [tc.to_dict() for tc in (self.tool_calls or [])]
         }
 
+@dataclass
+class ThinkingBlock:
+    content: str
+    
+    def to_dict(self) -> dict:
+        return {
+            "content": self.content,
+            "type": "thinking"
+        }
+
 class ScalingSource(StrEnum):
     COMPUTER = "computer"
     API = "api"

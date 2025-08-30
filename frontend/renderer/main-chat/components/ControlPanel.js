@@ -1,7 +1,5 @@
 import {
   faForwardStep,
-  faPlay,
-  faStop,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useState } from "react"
@@ -71,28 +69,42 @@ function ControlPanel() {
     console.log("ControlPanel: getButtonConfig: - Agent state: ", agentState)
     if (isAgentStatePlaying) {
       return {
-        icon: faStop,
+        iconType: "svg",
+        iconSrc: "../../../resources/pause.svg",
         loading: true,
         title: "Processing...",
         action: handleStop,
       }
     } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
       return {
+        iconType: "fontawesome",
         icon: faForwardStep,
         title: "Execute Pending Tools & Generate Next Action",
         action: handleToolsAndNextActionClick,
       }
     } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
       return {
-        icon: faPlay,
+        iconType: "svg",
+        iconSrc: "../../../resources/play.svg",
         title: "Process Message & Update Tools",
         action: handlePlayClick,
       } // LLM Response: new tools
     } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
-      return { icon: faPlay, title: "Process Message", action: handlePlayClick } // message
+      return { 
+        iconType: "svg",
+        iconSrc: "../../../resources/play.svg",
+        title: "Process Message", 
+        action: handlePlayClick 
+      } // message
     } else {
       console.log("ControlPanel: getButtonConfig else: PT0 & Msg0")
-      return { icon: faPlay, title: "", action: handlePlayClick, disable: true } // Default case
+      return { 
+        iconType: "svg",
+        iconSrc: "../../../resources/play.svg",
+        title: "", 
+        action: handlePlayClick, 
+        disable: true 
+      } // Default case
     }
   }
 
@@ -155,7 +167,18 @@ function ControlPanel() {
           onClick={playButtonConfig.action}
           title={playButtonConfig.title}
         >
-          <FontAwesomeIcon icon={playButtonConfig.icon} />
+          {playButtonConfig.iconType === "svg" ? (
+            <img 
+              src={playButtonConfig.iconSrc} 
+              alt={playButtonConfig.title}
+              style={{
+                width: "24px",
+                height: "24px"
+              }}
+            />
+          ) : (
+            <FontAwesomeIcon icon={playButtonConfig.icon} />
+          )}
         </button>
       </div>
     </div>

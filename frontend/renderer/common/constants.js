@@ -2,6 +2,7 @@ const MESSAGE_TYPES = {
   USER: "user",
   AI_RESPONSE: "ai_response",
   AI_RESPONSE_STREAM: "ai_response_stream",
+  AI_THINKING: "ai_thinking",
   TOOL_RESULT: "tool_result",
   TOOL_USE_GROUP: "tool_use_group",
 }

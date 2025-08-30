@@ -7,12 +7,16 @@ DEFAULT_AGENT_TYPE = "structural-engineer"  # Default agent type to use
 
 # LLM constants:
 # Generic:
-MAX_TOKENS = 4096
+MAX_TOKENS = 16384  # Increased to accommodate thinking budget
 
 # Anthropic Provider:
 PROMPT_CACHING = True
 ANTHROPIC_MODEL_NAME_MANUAL = "claude-sonnet-4-20250514" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
 ANTHROPIC_MODEL_NAME_AUTO = "claude-sonnet-4-20250514" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
+
+# Thinking mode configuration
+ENABLE_EXTENDED_THINKING = True
+THINKING_BUDGET_TOKENS = 12000  # Adjustable budget (up to 128K)
 
 # Google Provider:
 GOOGLE_MODEL_NAME = "gemini-2.0-flash-exp"
