@@ -1,12 +1,12 @@
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faSave, 
-  faTimes, 
+import {
   faObjectGroup,
-  faWandMagicSparkles
-} from '@fortawesome/free-solid-svg-icons';
-import '../styles/components/Toolbar.scss';
+  faSave,
+  faTimes,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import React from "react"
+import "../styles/components/Toolbar.scss"
 
 const Toolbar = ({
   handleAnalyze,
@@ -16,57 +16,72 @@ const Toolbar = ({
   setInputValue,
   handleKeyPress,
   selectedBox,
+  onDeleteBox,
   onCancel,
   pageName,
-  agentName
+  agentName,
 }) => {
   return (
     <div className="toolbar">
-      <div className="toolbar-top">
-        <div className="right-actions">
-          <button 
-            onClick={onCancel}
-            className="cancel-button"
-          >
-            <FontAwesomeIcon icon={faTimes} /> Cancel
-          </button>
-          <button 
-            onClick={handleSaveTemplates}
-            className="save-button"
-          >
-            <FontAwesomeIcon icon={faSave} /> Save
-          </button>
-        </div>
-      </div>
-
-      <div className="toolbar-bottom">
-        <textarea
-          placeholder="Enter caption for selected box"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          disabled={selectedBox === null}
-          rows={4}
-        />
-        <div className="box-actions">
-          <button 
+      {/* Action Buttons Row */}
+      <div className="toolbar-actions">
+        <div className="left-actions">
+          <button
             onClick={handleAnalyze}
             className="extract-button"
             disabled={isAnalyzing}
           >
             <FontAwesomeIcon icon={faObjectGroup} />
-            {isAnalyzing ? 'Extracting...' : 'Extract Templates'}
+            {isAnalyzing ? "Extracting Templates..." : "Extract Templates"}
           </button>
-          <button 
-            className="caption-all-button"
-            disabled={selectedBox !== null}
-          >
-            <FontAwesomeIcon icon={faWandMagicSparkles} /> Caption All
+        </div>
+
+        <div className="right-actions">
+          <button onClick={onCancel} className="cancel-button">
+            <FontAwesomeIcon icon={faTimes} /> Cancel
+          </button>
+          <button onClick={handleSaveTemplates} className="save-button">
+            <FontAwesomeIcon icon={faSave} /> Save
           </button>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Toolbar; 
+      {/* Caption Input Row */}
+      <div className="toolbar-input">
+        <div className="input-section">
+          <label className="input-label">
+            {selectedBox !== null
+              ? "Edit Template Caption"
+              : "Select a template to add caption"}
+          </label>
+          <div className="input-row">
+            <textarea
+              placeholder={
+                selectedBox !== null
+                  ? "Enter caption for the selected template..."
+                  : "Select a template first"
+              }
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={selectedBox === null}
+              rows={2}
+              className="caption-input"
+            />
+            {selectedBox !== null && (
+              <button
+                onClick={onDeleteBox}
+                className="delete-button"
+                title="Delete selected template"
+              >
+                <FontAwesomeIcon icon={faTrash} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Toolbar

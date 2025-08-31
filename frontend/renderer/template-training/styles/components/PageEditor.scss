@@ -1,10 +1,147 @@
+@import '../_variables.scss';
+
 .page-editor {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background-color: #202020;
+  height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: #e0e0e0;
+  overflow: hidden;
 
+  .editor-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    max-height: calc(100vh - 220px); // Reserve more space for controls
+
+    .upload-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+
+      .upload-content {
+        text-align: center;
+        max-width: 500px;
+        padding: 60px 40px;
+        border: 2px dashed var(--primary-purple-transparent);
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(158, 97, 202, 0.05) 0%, rgba(158, 97, 202, 0.02) 100%);
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: var(--primary-purple-light);
+          background: linear-gradient(135deg, rgba(158, 97, 202, 0.08) 0%, rgba(158, 97, 202, 0.04) 100%);
+        }
+
+        .upload-icon {
+          font-size: 48px;
+          color: var(--primary-purple);
+          margin-bottom: 20px;
+          opacity: 0.8;
+        }
+
+        h3 {
+          color: #f0f0f0;
+          font-size: 24px;
+          font-weight: 600;
+          margin: 0 0 12px 0;
+        }
+
+        p {
+          color: #a0a0a0;
+          font-size: 16px;
+          margin: 0 0 30px 0;
+          line-height: 1.5;
+        }
+
+        .upload-buttons {
+          display: flex;
+          gap: 16px;
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .upload-button {
+            padding: 14px 28px;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            justify-content: center;
+
+            &.primary {
+              background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+              color: white;
+              box-shadow: 0 4px 12px var(--primary-purple-shadow);
+
+              &:hover:not(:disabled) {
+                background: linear-gradient(135deg, var(--primary-purple-light) 0%, var(--primary-purple) 100%);
+                box-shadow: 0 6px 20px var(--primary-purple-shadow);
+                transform: translateY(-2px);
+              }
+            }
+
+            &.secondary {
+              background: transparent;
+              border: 2px solid #404040;
+              color: #a0a0a0;
+
+              &:hover:not(:disabled) {
+                border-color: var(--primary-purple-transparent);
+                color: var(--primary-purple-light);
+                background: rgba(158, 97, 202, 0.05);
+              }
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+              transform: none !important;
+            }
+
+            svg {
+              font-size: 16px;
+            }
+          }
+        }
+      }
+    }
+
+    .image-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #1e1e1e;
+      border-radius: 12px 12px 0 0;
+      margin: 8px 8px 0 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .editor-controls {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+    border-top: 1px solid #404040;
+    padding: 16px;
+    margin: 0 8px 8px 8px;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    min-height: 140px; // Increased minimum height for controls
+    max-height: 180px; // Adjusted max height
+    overflow: visible; // Allow content to be fully visible
+  }
+
+  // Legacy styles for backward compatibility
   .editor-header {
     display: flex;
     justify-content: space-between;
@@ -27,11 +164,11 @@
         gap: 8px;
 
         &.primary {
-          background-color: #444;
-          color: #e0e0e0;
+          background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+          color: white;
 
           &:hover:not(:disabled) {
-            background-color: #555;
+            background: linear-gradient(135deg, var(--primary-purple-light) 0%, var(--primary-purple) 100%);
           }
 
           &:disabled {
@@ -60,56 +197,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
-
-    .upload-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 40px;
-      border: 2px dashed #444;
-      border-radius: 8px;
-      background-color: #2a2a2a;
-      min-width: 300px;
-
-      .upload-buttons {
-        display: flex;
-        gap: 16px;
-
-        .upload-button {
-          padding: 12px 24px;
-          border-radius: 6px;
-          border: none;
-          background-color: #404040;
-          color: #e0e0e0;
-          cursor: pointer;
-          font-size: 14px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: background-color 0.2s;
-
-          &:hover:not(:disabled) {
-            background-color: #505050;
-          }
-
-          &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-
-          svg {
-            font-size: 16px;
-          }
-        }
-      }
-
-      .upload-instructions {
-        color: #888;
-        font-size: 14px;
-        text-align: center;
-      }
-    }
   }
 } 

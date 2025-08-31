@@ -1,0 +1,58 @@
+// Purple Theme Variables
+:root {
+  // Primary purple colors
+  --primary-purple: #9E61CA;
+  --primary-purple-light: #b884d4;
+  --primary-purple-dark: #7d4ba3;
+  
+  // Purple transparencies
+  --primary-purple-transparent: rgba(158, 97, 202, 0.2);
+  --primary-purple-transparent-light: rgba(158, 97, 202, 0.1);
+  
+  // Status colors
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --error-color: #e74c3c;
+  --info-color: #3498db;
+  
+  // Focus and selection colors
+  --primary-purple-focus: rgba(158, 97, 202, 0.3);
+  --primary-purple-selection: rgba(158, 97, 202, 0.15);
+  
+  // Shadow colors
+  --primary-purple-shadow: rgba(158, 97, 202, 0.25);
+  --primary-purple-shadow-light: rgba(158, 97, 202, 0.15);
+}
+
+// SCSS Variables (for compatibility)
+$primary-purple: #9E61CA;
+$primary-purple-light: #b884d4;
+$primary-purple-dark: #7d4ba3;
+$primary-purple-transparent: rgba(158, 97, 202, 0.2);
+$success-color: #2ecc71;
+$warning-color: #f39c12;
+$error-color: #e74c3c;
+
+// Font and text
+$font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+$font-size-base: 14px;
+$font-size-large: 16px;
+$font-size-small: 12px;
+$color-text-primary: #ffffff;
+$color-text-secondary: #e0e0e0;
+$color-text-muted: #a0a0a0;
+
+// Background colors
+$color-background-primary: #1e1e1e;
+$color-background-secondary: #2a2a2a;
+$color-background-tertiary: #333333;
+
+// Border and spacing
+$border-color: #404040;
+$border-radius-base: 8px;
+$border-radius-small: 6px;
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px; 

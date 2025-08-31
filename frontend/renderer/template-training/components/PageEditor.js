@@ -67,8 +67,23 @@ const PageEditor = ({
       if (setParentPageName) {
         setParentPageName("")
       }
+      // Clear template state when no screenshot (new page)
+      console.log("🧹 Clearing template state - no screenshot")
+      setDetections([])
+      setBoxes({})
+      setCaptions({})
+      setSelectedBox(null)
+      setIsAnalyzing(false)
     }
-  }, [currentScreenshot, setParentPageName])
+  }, [
+    currentScreenshot,
+    setParentPageName,
+    setDetections,
+    setBoxes,
+    setCaptions,
+    setSelectedBox,
+    setIsAnalyzing,
+  ])
 
   useEffect(() => {
     console.log("Number of boxes:", Object.keys(boxes).length)
@@ -154,21 +169,6 @@ const PageEditor = ({
 
   return (
     <div className="page-editor">
-      <Toolbar
-        handleAnalyze={() => handleAnalyze(image)}
-        handleSaveTemplates={handleSave}
-        isAnalyzing={isAnalyzing}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        handleKeyPress={handleKeyPress}
-        selectedBox={selectedBox}
-        onDeleteBox={() => deleteBox(selectedBox)}
-        onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
-        pageName={pageName}
-        setPageName={setPageName}
-        agentName={agentName}
-      />
-
       <SaveDialog
         isOpen={isSaveDialogOpen}
         onClose={() => setIsSaveDialogOpen(false)}
@@ -177,44 +177,76 @@ const PageEditor = ({
         isExisting={!!currentScreenshot}
       />
 
-      <div className="editor-content">
+      {/* Main Content Area - Image at Top */}
+      <div className="editor-main">
         {!image && !currentScreenshot ? (
           <div className="upload-area">
-            <div className="upload-buttons">
-              <input
-                type="file"
-                id="imageUpload"
-                accept="image/*"
-                onChange={handleImageUpload}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="imageUpload" className="upload-button">
-                <FontAwesomeIcon icon={faUpload} /> Upload Image
-              </label>
-              <button className="upload-button" onClick={() => {}} disabled>
-                <FontAwesomeIcon icon={faCamera} /> Take Screenshot
-              </button>
-            </div>
-            <div className="upload-instructions">
-              Upload an image or take a screenshot to begin
+            <div className="upload-content">
+              <div className="upload-icon">
+                <FontAwesomeIcon icon={faUpload} />
+              </div>
+              <h3>Upload Image to Start Training</h3>
+              <p>
+                Choose an image or take a screenshot to begin template
+                extraction
+              </p>
+              <div className="upload-buttons">
+                <input
+                  type="file"
+                  id="imageUpload"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "none" }}
+                />
+                <label htmlFor="imageUpload" className="upload-button primary">
+                  <FontAwesomeIcon icon={faUpload} /> Upload Image
+                </label>
+                <button
+                  className="upload-button secondary"
+                  onClick={() => {}}
+                  disabled
+                >
+                  <FontAwesomeIcon icon={faCamera} /> Take Screenshot
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <ImageWorkspace
-            image={image}
-            handleImageLoad={handleImageLoad}
-            imageSize={imageSize}
-            boxes={boxes}
-            selectedBox={selectedBox}
-            captions={captions}
-            handleBoxClick={handleBoxClick}
-            createNewBox={createNewBox}
-            deleteBox={deleteBox}
-            getImageSrc={getImageSrc}
-            handleAutoCaption={handleAutoCaption}
-            onBoxChange={handleBoxChange}
-          />
+          <div className="image-section">
+            <ImageWorkspace
+              image={image}
+              handleImageLoad={handleImageLoad}
+              imageSize={imageSize}
+              boxes={boxes}
+              selectedBox={selectedBox}
+              captions={captions}
+              handleBoxClick={handleBoxClick}
+              createNewBox={createNewBox}
+              deleteBox={deleteBox}
+              getImageSrc={getImageSrc}
+              handleAutoCaption={handleAutoCaption}
+              onBoxChange={handleBoxChange}
+            />
+          </div>
         )}
+      </div>
+
+      {/* Controls at Bottom */}
+      <div className="editor-controls">
+        <Toolbar
+          handleAnalyze={() => handleAnalyze(image)}
+          handleSaveTemplates={handleSave}
+          isAnalyzing={isAnalyzing}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          handleKeyPress={handleKeyPress}
+          selectedBox={selectedBox}
+          onDeleteBox={() => deleteBox(selectedBox)}
+          onCancel={() => setCurrentView(VIEW_STATES.PAGES_LIST)}
+          pageName={pageName}
+          setPageName={setPageName}
+          agentName={agentName}
+        />
       </div>
     </div>
   )

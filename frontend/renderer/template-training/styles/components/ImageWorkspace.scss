@@ -1,3 +1,5 @@
+@import '../_variables.scss';
+
 .image-workspace {
   flex: 1;
   height: 100%;
@@ -7,6 +9,7 @@
   padding: 20px;
   box-sizing: border-box;
   overflow: hidden;
+  background: radial-gradient(ellipse at center, rgba(30, 30, 30, 0.8) 0%, rgba(20, 20, 20, 0.95) 100%);
 
   .image-container {
     position: relative;
@@ -15,6 +18,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    border-radius: 8px;
+    overflow: hidden;
 
     img {
       width: auto;
@@ -23,73 +28,96 @@
       max-height: 100%;
       object-fit: contain;
       display: block;
+      border-radius: 6px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
   }
 
   .detection-box {
     position: absolute;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     border-width: 2px;
     border-style: solid;
+    border-radius: 4px;
     
-    // Default state (uncaptioned) - Amazon Orange
+    // Default state (uncaptioned) - Orange
     &:not(.labeled):not(.selected) {
-      border-color: rgba(255, 153, 0, 0.8); // Amazon Orange
-      background-color: rgba(255, 153, 0, 0.05);
+      border-color: rgba(255, 165, 0, 0.8); // Orange
+      background-color: rgba(255, 165, 0, 0.08);
 
       &:hover {
-        border-color: rgba(255, 153, 0, 1);
-        background-color: rgba(255, 153, 0, 0.1);
+        border-color: rgba(255, 165, 0, 1);
+        background-color: rgba(255, 165, 0, 0.15);
+        box-shadow: 0 0 0 1px rgba(255, 165, 0, 0.3);
+        transform: scale(1.02);
       }
     }
 
-    // Captioned state - Amazon Purple
+    // Captioned state - Purple theme
     &.labeled:not(.selected) {
-      border-color: rgba(86, 57, 153, 0.8); // Amazon Purple
-      background-color: rgba(86, 57, 153, 0.05);
+      border-color: var(--primary-purple);
+      background-color: var(--primary-purple-transparent);
 
       &:hover {
-        border-color: rgba(86, 57, 153, 1);
-        background-color: rgba(86, 57, 153, 0.1);
+        border-color: var(--primary-purple-light);
+        background-color: rgba(158, 97, 202, 0.15);
+        box-shadow: 0 0 0 1px var(--primary-purple-transparent);
+        transform: scale(1.02);
       }
     }
 
-    // Selected state - Amazon Blue
+    // Selected state - Bright purple
     &.selected {
-      border-color: rgba(0, 119, 204, 0.8); // Amazon Blue
-      background-color: rgba(0, 119, 204, 0.1);
-      box-shadow: 0 0 0 2px rgba(0, 119, 204, 0.3);
+      border-color: var(--primary-purple-light);
+      background-color: rgba(158, 97, 202, 0.15);
+      box-shadow: 0 0 0 3px var(--primary-purple-transparent);
 
       &:hover {
-        border-color: rgba(0, 119, 204, 1);
-        background-color: rgba(0, 119, 204, 0.15);
+        border-color: #c084f5;
+        background-color: rgba(158, 97, 202, 0.2);
+        box-shadow: 0 0 0 3px rgba(158, 97, 202, 0.3);
       }
     }
 
     .caption-preview {
       position: absolute;
-      bottom: -28px;
-      left: 0;
-      background-color: rgba(35, 47, 62, 0.95); // Amazon Dark
+      bottom: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
       color: #fff;
       font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 4px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 200px;
-      transform: translateY(0);
+      max-width: 250px;
       opacity: 0;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       pointer-events: none;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 4px solid #4a4a4a;
+      }
     }
 
     &:hover .caption-preview {
       opacity: 1;
-      transform: translateY(-4px);
+      transform: translateX(-50%) translateY(-4px);
     }
   }
 } 

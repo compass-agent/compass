@@ -1,4 +1,4 @@
-@import "../../../common/styles/variables.scss";
+@import '../_variables.scss';
 
 .save-dialog-overlay {
   position: fixed;
@@ -11,6 +11,8 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .save-dialog {
@@ -18,6 +20,8 @@
   border-radius: 8px;
   padding: 24px;
   width: 400px;
+  max-width: 90vw;
+  box-sizing: border-box;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
   h2 {
@@ -42,12 +46,14 @@
 
     input {
       width: 100%;
+      max-width: 100%;
       padding: 8px 12px;
       border-radius: 4px;
       border: 1px solid #404040;
       background-color: #363636;
       color: #fff;
       font-size: 1rem;
+      box-sizing: border-box;
 
       &:focus {
         outline: none;
@@ -61,6 +67,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    flex-wrap: wrap;
 
     button {
       padding: 8px 16px;
@@ -68,6 +75,7 @@
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
+      flex-shrink: 0;
 
       &.cancel-button {
         background-color: #404040;
@@ -85,13 +93,13 @@
         &:hover {
           background-color: var(--primary-purple-light);
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px var(--purple-shadow);
+          box-shadow: 0 4px 12px var(--primary-purple-shadow);
         }
         
         &:active {
           background-color: var(--primary-purple-dark);
           transform: translateY(0);
-          box-shadow: 0 2px 6px var(--purple-shadow);
+          box-shadow: 0 2px 6px var(--primary-purple-shadow);
         }
       }
     }

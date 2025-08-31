@@ -211,6 +211,21 @@ const TemplateTraining = () => {
     if (view === VIEW_STATES.PAGES_LIST) {
       setCurrentScreenshot(null)
     }
+
+    // Clear template state when navigating away from PAGE_EDITOR
+    if (
+      currentView === VIEW_STATES.PAGE_EDITOR &&
+      view !== VIEW_STATES.PAGE_EDITOR
+    ) {
+      console.log("🧹 Clearing template state when leaving PageEditor")
+      setDetections([])
+      setBoxes({})
+      setCaptions({})
+      setSelectedBox(null)
+      setIsAnalyzing(false)
+      setInputValue("")
+    }
+
     setCurrentView(view)
   }
 
@@ -482,10 +497,30 @@ const TemplateTraining = () => {
           <PagesList
             agentName={agentData.name}
             onAddPage={() => {
+              // Clear template state when creating new page
+              console.log("🧹 Clearing template state when creating new page")
+              setDetections([])
+              setBoxes({})
+              setCaptions({})
+              setSelectedBox(null)
+              setIsAnalyzing(false)
+              setInputValue("")
+
               setCurrentScreenshot(null)
               setCurrentView(VIEW_STATES.PAGE_EDITOR)
             }}
             onEditPage={(screenshot) => {
+              // Clear template state when opening a different page
+              console.log(
+                "🧹 Clearing template state when opening different page"
+              )
+              setDetections([])
+              setBoxes({})
+              setCaptions({})
+              setSelectedBox(null)
+              setIsAnalyzing(false)
+              setInputValue("")
+
               setCurrentScreenshot(screenshot)
               setCurrentView(VIEW_STATES.PAGE_EDITOR)
             }}
@@ -503,6 +538,15 @@ const TemplateTraining = () => {
               setCurrentView(VIEW_STATES.PAGES_LIST)
             }}
             onCancel={() => {
+              // Clear template state when canceling
+              console.log("🧹 Clearing template state when canceling")
+              setDetections([])
+              setBoxes({})
+              setCaptions({})
+              setSelectedBox(null)
+              setIsAnalyzing(false)
+              setInputValue("")
+
               setCurrentScreenshot(null)
               setCurrentView(VIEW_STATES.PAGES_LIST)
             }}
