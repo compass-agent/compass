@@ -15,34 +15,17 @@ const TemplateNavigation = ({
   const renderBreadcrumbs = () => {
     const items = []
 
-    // Settings root (always first when not on SETTINGS view)
-    items.push(
-      <span
-        key="settings"
-        className={`nav-item ${
-          currentView === VIEW_STATES.SETTINGS ? "active" : ""
-        }`}
-        onClick={() => onNavigate(VIEW_STATES.SETTINGS)}
-      >
-        Settings
-      </span>
-    )
-
-    // If we're on settings root, just return it
+    // If we're on SETTINGS view, show only Settings
     if (currentView === VIEW_STATES.SETTINGS) {
+      items.push(
+        <span key="settings" className="nav-item active">
+          Settings
+        </span>
+      )
       return items
     }
 
-    // Separator after Settings
-    items.push(
-      <FontAwesomeIcon
-        key="sep-settings"
-        icon={faChevronRight}
-        className="separator"
-      />
-    )
-
-    // Agent Hub
+    // For all other views, start with Agent Hub (no Settings breadcrumb)
     items.push(
       <span
         key="hub"

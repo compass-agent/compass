@@ -200,6 +200,10 @@
           min-width: 310px;
         }
         
+        &.models-menu {
+          min-width: 310px;
+        }
+        
         &.chatgpt-style {
           padding: 4px 0;
           
@@ -424,6 +428,18 @@
                 color: white;
                 transform: translateY(-1px);
                 box-shadow: 0 2px 8px var(--purple-shadow);
+              }
+              
+              &.selected {
+                background-color: var(--primary-purple);
+                border-color: var(--primary-purple-light);
+                color: white;
+                
+                &:hover {
+                  background-color: var(--primary-purple-light);
+                  transform: translateY(-1px);
+                  box-shadow: 0 2px 8px var(--purple-shadow);
+                }
               }
               
               &:active {
@@ -790,10 +806,10 @@ button, a, input, .interactive, [role="button"] {
   border: none;
   background: #232326;
   color: #9C9B9F;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 0 8px;
-  height: 19px;
+  padding: 0 10px;
+  height: 24px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -824,10 +840,10 @@ button, a, input, .interactive, [role="button"] {
   border: none;
   background: #232326;
   color: #9C9B9F;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 0 8px;
-  height: 19px;
+  padding: 0 10px;
+  height: 24px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -932,6 +948,30 @@ button, a, input, .interactive, [role="button"] {
 
 /* 3D Text Effect for Agent Labels */
 .agent-text {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #E0E0E0 !important;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &.clickable-agent {
+    &:hover {
+      span {
+        opacity: 1 !important;
+        color: #8A4FB8 !important;
+      }
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  
   &.agent-text-3d {
     font-weight: 600 !important;
     letter-spacing: 0.8px;
@@ -941,10 +981,12 @@ button, a, input, .interactive, [role="button"] {
     
     &:hover {
       letter-spacing: 1px;
+      color: #E0E0E0 !important;
       text-shadow: 
         1px 1px 0px rgba(138, 79, 184, 0.35),
         2px 2px 0px rgba(138, 79, 184, 0.25),
         3px 3px 0px rgba(138, 79, 184, 0.15);
+      transform: translateY(-1px);
     }
   }
 }

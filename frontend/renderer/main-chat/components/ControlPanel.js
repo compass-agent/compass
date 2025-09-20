@@ -1,14 +1,84 @@
-import {
-  faForwardStep,
-  faPlay,
-  faStop,
-} from "@fortawesome/free-solid-svg-icons"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useState } from "react"
 import { ActionTypes, AgentMode, AgentStatus } from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
 import WebSocketService from "../../common/services/websocket"
 import "../styles/ControlPanel.scss"
+
+// Custom SVG Icons
+const PlayIcon = () => (
+  <svg
+    width="36"
+    height="36"
+    viewBox="0 0 120 120"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="60"
+      cy="60"
+      r="55"
+      stroke="#9E61CA"
+      strokeOpacity="0.48"
+      strokeWidth="10"
+    />
+    <path
+      d="M81.2887 57.2938C84.5436 59.2326 84.5436 63.9462 81.2887 65.885L48.8088 85.2326C45.476 87.2179 41.25 84.8163 41.25 80.937V42.2418C41.25 38.3625 45.476 35.9609 48.8088 37.9462L81.2887 57.2938Z"
+      fill="#9E61CA"
+    />
+  </svg>
+)
+
+const StopIcon = () => (
+  <svg
+    width="36"
+    height="36"
+    viewBox="0 0 120 120"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="60"
+      cy="60"
+      r="55"
+      stroke="#9E61CA"
+      strokeOpacity="0.48"
+      strokeWidth="10"
+    />
+    <rect x="36" y="36" width="48" height="48" rx="5" fill="#9E61CA" />
+  </svg>
+)
+
+const FastForwardIcon = () => (
+  <svg
+    width="36"
+    height="36"
+    viewBox="0 0 121 121"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="60.6387"
+      cy="60.9106"
+      r="55"
+      stroke="#9E61CA"
+      strokeOpacity="0.48"
+      strokeWidth="10"
+    />
+    <path
+      d="M98.7887 58.2044C102.044 60.1432 102.044 64.8568 98.7887 66.7956L66.3088 86.1432C62.976 88.1285 58.75 85.7269 58.75 81.8476V43.1524C58.75 39.2731 62.976 36.8715 66.3088 38.8568L98.7887 58.2044Z"
+      fill="#9E61CA"
+    />
+    <rect
+      x="31"
+      y="36"
+      width="20"
+      height="52"
+      rx="5"
+      fill="#9E61CA"
+      fillOpacity="0.48"
+    />
+  </svg>
+)
 
 const MODES = {
   MANUAL: { mode: AgentMode.MANUAL, title: "Manual Mode", label: "Trainer" },
@@ -71,48 +141,33 @@ function ControlPanel() {
     console.log("ControlPanel: getButtonConfig: - Agent state: ", agentState)
     if (isAgentStatePlaying) {
       return {
-        icon: faStop,
-        // SVG version (commented out):
-        // iconType: "svg",
-        // iconSrc: "../../../resources/pause.svg",
+        iconComponent: StopIcon,
         loading: true,
         title: "Processing...",
         action: handleStop,
       }
     } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
       return {
-        icon: faForwardStep,
-        // SVG version (commented out):
-        // iconType: "fontawesome",
-        // icon: faForwardStep,
+        iconComponent: FastForwardIcon,
         title: "Execute Pending Tools & Generate Next Action",
         action: handleToolsAndNextActionClick,
       }
     } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
       return {
-        icon: faPlay,
-        // SVG version (commented out):
-        // iconType: "svg",
-        // iconSrc: "../../../resources/play.svg",
+        iconComponent: PlayIcon,
         title: "Process Message & Update Tools",
         action: handlePlayClick,
       } // LLM Response: new tools
     } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
       return {
-        icon: faPlay,
-        // SVG version (commented out):
-        // iconType: "svg",
-        // iconSrc: "../../../resources/play.svg",
+        iconComponent: PlayIcon,
         title: "Process Message",
         action: handlePlayClick,
       } // message
     } else {
       console.log("ControlPanel: getButtonConfig else: PT0 & Msg0")
       return {
-        icon: faPlay,
-        // SVG version (commented out):
-        // iconType: "svg",
-        // iconSrc: "../../../resources/play.svg",
+        iconComponent: PlayIcon,
         title: "",
         action: handlePlayClick,
         disable: true,
@@ -179,21 +234,7 @@ function ControlPanel() {
           onClick={playButtonConfig.action}
           title={playButtonConfig.title}
         >
-          <FontAwesomeIcon icon={playButtonConfig.icon} />
-          {/* SVG version (commented out):
-          {playButtonConfig.iconType === "svg" ? (
-            <img 
-              src={playButtonConfig.iconSrc} 
-              alt={playButtonConfig.title}
-              style={{
-                width: "24px",
-                height: "24px"
-              }}
-            />
-          ) : (
-            <FontAwesomeIcon icon={playButtonConfig.icon} />
-          )}
-          */}
+          <playButtonConfig.iconComponent />
         </button>
       </div>
     </div>

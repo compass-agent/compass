@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("electron", {
         "show-coordinate-preview",
         "hide-coordinate-preview",
         "open-template-training",
+        "close-template-training",
         "open-file-editor",
         "save-file-content",
         "close-editor-window",

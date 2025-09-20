@@ -2,7 +2,6 @@ import { faSquare } from "@fortawesome/free-regular-svg-icons"
 import {
   faCheck,
   faChevronDown,
-  faGear,
   faInfoCircle,
   faMinus,
   faWindowMinimize,
@@ -481,19 +480,34 @@ function Header() {
                 />
               </button>
             ) : (
-              <div
-                className={`agent-text ${
+              <button
+                className={`agent-text clickable-agent ${
                   selectedAgent === "Structural-Engineer" ? "agent-text-3d" : ""
                 }`}
+                onClick={handleOpenTemplateTraining}
                 style={{
                   color: "#9C9B9F",
                   fontSize: "15px",
                   fontWeight: "400",
                   padding: "4px 0",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
                 }}
+                title="Click to open Agent Hub"
               >
                 {formatAgentName(selectedAgent)}
-              </div>
+                <span
+                  style={{
+                    marginLeft: "6px",
+                    fontSize: "12px",
+                    color: "#6A6A6A",
+                    opacity: 0.7,
+                  }}
+                >
+                  ⚙️
+                </span>
+              </button>
             )}
 
             {agentDropdown && !isInChat && (
@@ -604,15 +618,6 @@ function Header() {
             </>
           ) : (
             <>
-              {/* Settings (Template Training) button before minimize */}
-              <button
-                className="window-control win"
-                onClick={handleOpenTemplateTraining}
-                title="Template Training"
-                style={{ color: "#9C9B9F" }}
-              >
-                <FontAwesomeIcon icon={faGear} />
-              </button>
               <button
                 className="window-control minimize win"
                 onClick={handleMinimize}
@@ -667,7 +672,6 @@ function Header() {
 
             {toolsDropdown && (
               <div className="header-dropdown-menu chatgpt-style tools-menu">
-                <div className="dropdown-header">Tools</div>
                 {toolOptions.map((tool) => (
                   <div key={tool.name} className="tool-item">
                     <div className="tool-info">
@@ -735,44 +739,34 @@ function Header() {
             </button>
 
             {modelDropdown && (
-              <div className="header-dropdown-menu chatgpt-style">
+              <div className="header-dropdown-menu chatgpt-style models-menu">
                 {modelOptions.map((model) => {
                   const isSelected = selectedModel === model.name
                   return (
-                    <div
-                      key={model.name}
-                      className={`dropdown-item ${
-                        isSelected ? "selected" : ""
-                      }`}
-                      onClick={() => handleModelSelect(model.name)}
-                      style={
-                        isSelected
-                          ? {
-                              backgroundColor: "#4A4A4A",
-                              width: "100%",
-                              boxSizing: "border-box",
-                            }
-                          : {
-                              width: "100%",
-                              boxSizing: "border-box",
-                            }
-                      }
-                    >
-                      <div className="dropdown-item-content">
-                        <div className="model-info">
-                          <div className="model-name">{model.name}</div>
-                          <div className="model-description">
-                            {model.description}
+                    <div key={model.name} className="tool-item">
+                      <div className="tool-info">
+                        <div className="tool-status">
+                          <div className="model-info">
+                            <div className="model-name">
+                              {model.name}
+                              <ToolTooltip text={model.description}>
+                                <FontAwesomeIcon
+                                  icon={faInfoCircle}
+                                  className="tool-info-icon"
+                                />
+                              </ToolTooltip>
+                            </div>
                           </div>
                         </div>
-                        {isSelected && (
-                          <FontAwesomeIcon
-                            icon={faCheck}
-                            className="selected-icon"
-                            style={{ color: "#E0E0E0" }}
-                          />
-                        )}
                       </div>
+                      <button
+                        className={`tool-button ${
+                          isSelected ? "selected" : ""
+                        }`}
+                        onClick={() => handleModelSelect(model.name)}
+                      >
+                        {isSelected ? "Selected" : "Select"}
+                      </button>
                     </div>
                   )
                 })}
