@@ -6,7 +6,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import React, { useEffect } from "react"
+import React, { useEffect, useRef } from "react"
 import { ActionTypes } from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
 import AgentHubService from "../services/agentHubService"
@@ -15,14 +15,24 @@ import "../styles/components/AgentHub.scss"
 const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   const { state, dispatch } = useAppState()
   const { agents, loading, error } = state.agentHub
+  const { connected } = state.connection
+  const hasAttemptedFetch = useRef(false)
+
+  // Reset fetch attempt when WebSocket connects
+  useEffect(() => {
+    if (connected) {
+      hasAttemptedFetch.current = false
+    }
+  }, [connected])
 
   useEffect(() => {
-    // Only fetch if we don't have agents cached
-    if (agents.length === 0 && !loading && !error) {
+    // Only fetch if we don't have agents cached, haven't attempted to fetch yet, and WebSocket is connected
+    if (agents.length === 0 && !loading && !error && !hasAttemptedFetch.current && connected) {
+      hasAttemptedFetch.current = true
       dispatch({ type: ActionTypes.SET_AGENT_HUB_LOADING, payload: true })
       AgentHubService.listAgents()
     }
-  }, [agents.length, loading, error, dispatch])
+  }, [agents.length, loading, error, connected])
 
   const handleCreate = () => {
     // Navigate to agent setup for creating new agent
@@ -44,25 +54,14 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
       const reader = new FileReader()
       reader.onload = (e) => {
         try {
-          const agentData = JSON.parse(e.target.result)
-
-          // Validate basic structure
-          if (!agentData.name) {
-            alert("Invalid agent file: missing name field")
-            return
-          }
-
-          // Create new agent with imported data
-          const importedAgent = {
-            name: agentData.name,
-            description: agentData.description || "",
-            prompt: agentData.prompt || "",
-            tools: agentData.tools || {},
-            targetApp: agentData.targetApp || "",
-          }
-
-          // Call the backend to create the agent
-          AgentHubService.createAgent(importedAgent)
+          // Send the complete file content to backend for processing
+          const fileContent = e.target.result
+          
+          // Basic JSON validation
+          JSON.parse(fileContent) // This will throw if invalid JSON
+          
+          // Send to backend for complete import (agent + pages + templates)
+          AgentHubService.importAgent(fileContent)
         } catch (error) {
           alert("Failed to parse agent file. Please check the file format.")
           console.error("Import error:", error)
@@ -78,41 +77,16 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   }
 
   const handleExport = (agent) => {
-    // Create complete agent file content with all available fields
-    const agentData = {
-      schemaVersion: "1.0.0",
-      agentId: agent.agentId,
-      name: agent.name,
-      description: agent.description || "",
-      prompt: agent.prompt || "",
-      tools: agent.tools || {},
-      targetApp: agent.targetApp || "",
-      createdAt: agent.last_modified || new Date().toISOString(),
-      updatedAt: agent.last_modified || new Date().toISOString(),
-      pagesCount: agent.pagesCount || 0,
-      templatesCount: agent.templatesCount || 0,
-      pages: [],
-      templates: [],
-    }
-
-    // Convert to JSON and create download
-    const jsonContent = JSON.stringify(agentData, null, 2)
-    const blob = new Blob([jsonContent], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-
-    // Create download link
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `${agent.name || "agent"}.agent`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    // Use backend export to get complete data (agent + pages + templates)
+    AgentHubService.exportAgent(agent.agentId)
   }
 
   const handleDelete = (agent) => {
-    if (confirm(`Delete agent "${agent.name}"?`))
+    const confirmMessage = `Delete agent "${agent.name}"?\n\nThis will permanently delete:\n• The agent configuration\n• All training pages (${agent.pagesCount || 0})\n• All UI templates (${agent.templatesCount || 0})\n\nThis action cannot be undone.`
+    
+    if (confirm(confirmMessage)) {
       AgentHubService.deleteAgent(agent.agentId)
+    }
   }
 
   if (loading) {

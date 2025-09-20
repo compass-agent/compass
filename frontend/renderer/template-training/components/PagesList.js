@@ -31,8 +31,32 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
       }
     }
 
-    // Set up the handler using the proper method
-    WebSocketService.addHandler("onScreenshotsList", screenshotsHandler)
+    const deletePageHandler = (data) => {
+      console.log("🗑️ Delete page result:", data)
+      if (data.success) {
+        console.log("✅ Page deleted successfully:", data.message)
+        // Remove the deleted page from the local state
+        setPages((prevPages) =>
+          prevPages.filter((page) => page.id !== data.pageId)
+        )
+
+        // Show success message
+        if (data.message) {
+          alert(data.message)
+        }
+      } else {
+        console.error("❌ Page deletion failed:", data.message)
+        alert(`Failed to delete page: ${data.message}`)
+      }
+    }
+
+    // Set up the handlers
+    WebSocketService.stateHandlers.onScreenshotsList = new Set([
+      screenshotsHandler,
+    ])
+    WebSocketService.stateHandlers.onDeletePageResult = new Set([
+      deletePageHandler,
+    ])
 
     // Request screenshots if we have an agent name
     if (agentName) {
@@ -41,24 +65,22 @@ const PagesList = ({ agentName, onAddPage, onEditPage }) => {
       setIsLoading(false)
     }
 
-    // Cleanup handler when component unmounts
+    // Cleanup handlers when component unmounts
     return () => {
-      WebSocketService.removeHandler("onScreenshotsList", screenshotsHandler)
+      WebSocketService.stateHandlers.onScreenshotsList.clear()
+      WebSocketService.stateHandlers.onDeletePageResult.clear()
     }
   }, [agentName])
 
   const handleDeletePage = (page, e) => {
     e.stopPropagation()
-    if (confirm(`Delete page "${page.name || "Untitled"}"?`)) {
-      // TODO: Implement delete functionality
-      console.log("Delete page:", page)
-    }
-  }
+    const pageName = page.name || "Untitled"
+    const confirmMessage = `Delete page "${pageName}"?\n\nThis will also delete all associated templates for this page.`
 
-  const handleDuplicatePage = (page, e) => {
-    e.stopPropagation()
-    // TODO: Implement duplicate functionality
-    console.log("Duplicate page:", page)
+    if (confirm(confirmMessage)) {
+      console.log("🗑️ Deleting page:", page)
+      WebSocketService.deletePage(page.id)
+    }
   }
 
   const handleEditPage = (page, e) => {

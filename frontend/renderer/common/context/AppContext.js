@@ -377,13 +377,28 @@ export function AppProvider({ children }) {
             }
             break
           case "create":
-          case "import":
             if (data.success && data.agent) {
               console.log("AGENT_HUB: Adding agent:", data.agent.name)
               dispatch({
                 type: ActionTypes.AGENT_HUB_ADD_AGENT,
                 payload: data.agent,
               })
+            }
+            break
+          case "import":
+            if (data.success && data.agent) {
+              console.log("AGENT_HUB: Imported agent:", data.agent.name)
+              if (data.message) {
+                console.log("AGENT_HUB: Import details:", data.message)
+                // Could show a success toast/notification here
+              }
+              dispatch({
+                type: ActionTypes.AGENT_HUB_ADD_AGENT,
+                payload: data.agent,
+              })
+            } else if (!data.success && data.message) {
+              console.error("AGENT_HUB: Import failed:", data.message)
+              alert(`Import failed: ${data.message}`)
             }
             break
           case "update":
@@ -395,22 +410,52 @@ export function AppProvider({ children }) {
               })
             }
             break
-          case "rename":
-            if (data.success && data.agentId) {
-              console.log("AGENT_HUB: Renaming agent:", data.agentId)
-              dispatch({
-                type: ActionTypes.AGENT_HUB_UPDATE_AGENT,
-                payload: { agentId: data.agentId, name: data.name },
-              })
-            }
-            break
+
           case "delete":
             if (data.success && data.agentId) {
               console.log("AGENT_HUB: Removing agent:", data.agentId)
+              
+              // Show deletion statistics
+              if (data.message) {
+                console.log("AGENT_HUB: Delete details:", data.message)
+                const statsMessage = `${data.message}\n\nDeleted:\n• Pages: ${data.pagesDeleted || 0}\n• Templates: ${data.templatesDeleted || 0}`
+                alert(statsMessage)
+              }
+              
               dispatch({
                 type: ActionTypes.AGENT_HUB_REMOVE_AGENT,
                 payload: data.agentId,
               })
+            } else if (!data.success && data.message) {
+              console.error("AGENT_HUB: Delete failed:", data.message)
+              alert(`Failed to delete agent: ${data.message}`)
+            }
+            break
+          case "export":
+            if (data.success && data.content && data.filename) {
+              console.log("AGENT_HUB: Downloading exported agent:", data.filename)
+              // Decode base64 content and trigger download
+              try {
+                const jsonContent = atob(data.content)
+                const blob = new Blob([jsonContent], { type: "application/json" })
+                const url = URL.createObjectURL(blob)
+                
+                // Create download link
+                const link = document.createElement("a")
+                link.href = url
+                link.download = data.filename
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                URL.revokeObjectURL(url)
+                
+                console.log("AGENT_HUB: Export download completed")
+              } catch (error) {
+                console.error("AGENT_HUB: Export download failed:", error)
+              }
+            } else if (!data.success && data.message) {
+              console.error("AGENT_HUB: Export failed:", data.message)
+              // Could dispatch an error action here if needed
             }
             break
           default:

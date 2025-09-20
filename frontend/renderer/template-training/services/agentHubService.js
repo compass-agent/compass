@@ -10,26 +10,14 @@ const AgentHubService = {
   updateAgent(agentId, agentData) {
     WebSocketService.agentHub("update", { agentId, ...agentData })
   },
-  importAgent(fileName) {
-    WebSocketService.agentHub("import", { fileName })
+  importAgent(importData) {
+    WebSocketService.agentHub("import", { importData })
   },
   exportAgent(agentId) {
     WebSocketService.agentHub("export", { agentId })
   },
-  renameAgent(agentId, name) {
-    WebSocketService.agentHub("rename", { agentId, name })
-  },
   deleteAgent(agentId) {
     WebSocketService.agentHub("delete", { agentId })
-  },
-  getAgent(agentId) {
-    WebSocketService.agentHub("get", { agentId })
-  },
-  addHandler(handler) {
-    WebSocketService.addHandler("onAgentHub", handler)
-  },
-  removeHandler(handler) {
-    WebSocketService.removeHandler("onAgentHub", handler)
   },
 }
 

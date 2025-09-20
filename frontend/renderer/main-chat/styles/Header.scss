@@ -930,6 +930,25 @@ button, a, input, .interactive, [role="button"] {
   }
 }
 
+/* 3D Text Effect for Agent Labels */
+.agent-text {
+  &.agent-text-3d {
+    font-weight: 600 !important;
+    letter-spacing: 0.8px;
+    text-shadow: 
+      1px 1px 0px rgba(138, 79, 184, 0.25),
+      2px 2px 0px rgba(138, 79, 184, 0.15);
+    
+    &:hover {
+      letter-spacing: 1px;
+      text-shadow: 
+        1px 1px 0px rgba(138, 79, 184, 0.35),
+        2px 2px 0px rgba(138, 79, 184, 0.25),
+        3px 3px 0px rgba(138, 79, 184, 0.15);
+    }
+  }
+}
+
 /* Purple theme animations */
 @keyframes pulse {
   0% {

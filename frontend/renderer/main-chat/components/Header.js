@@ -482,6 +482,9 @@ function Header() {
               </button>
             ) : (
               <div
+                className={`agent-text ${
+                  selectedAgent === "Structural-Engineer" ? "agent-text-3d" : ""
+                }`}
                 style={{
                   color: "#9C9B9F",
                   fontSize: "15px",

@@ -88,6 +88,12 @@ class ConvTemplateDetector:
             logger.warning("No templates loaded")
             return []
         
+        # ---- FOR DEBUGGING: ONLY USE THE FIRST TEMPLATE ----
+        logger.info("DEBUGGING: Using only the first template.")
+        template_data = template_data[1:2]
+        logger.info(f"DEBUGGING: Template ID: {template_data[0]['id']}, Caption: {template_data[0]['caption']}")
+        # ----------------------------------------------------
+        
         # Group templates by size using clustering
         return self._cluster_templates_by_size(template_data)
     
@@ -105,6 +111,8 @@ class ConvTemplateDetector:
             # If we have very few templates, put them all in one group
             max_h = max(t['height'] for t in template_data)
             max_w = max(t['width'] for t in template_data)
+            max_h = max_h
+            max_w = max_w
             return [self._create_template_group(template_data, max_h, max_w)]
         
         # Extract size features for clustering
@@ -280,7 +288,10 @@ class ConvTemplateDetector:
         template_means_t = torch.from_numpy(template_means).float().view(1, n_templates, 1, 1).to(self.device)
         template_norms_t = torch.from_numpy(template_norms).float().view(1, n_templates, 1, 1).to(self.device)
 
-        # --- 2. Calculate local image statistics using convolution with a 'ones' kernel ---
+        # --- 2. Make the kernel zero-mean before convolution for better numerical stability ---
+        kernel_tensor_demeaned = kernel_tensor - template_means_t.permute(1, 0, 2, 3)
+
+        # --- 3. Calculate local image statistics using convolution with a 'ones' kernel ---
         ones_kernel = torch.ones(1, 1, h, w, device=self.device, dtype=torch.float32)
         
         with torch.no_grad():
@@ -298,31 +309,43 @@ class ConvTemplateDetector:
             image_std_map = torch.sqrt(image_variance)
             image_norm_map = image_std_map * np.sqrt(n_pixels)
 
-            # --- 3. Calculate main cross-correlation ---
-            cross_corr_map = F.conv2d(screen_tensor, kernel_tensor, padding='valid')
+            # --- 4. Calculate main cross-correlation using the demeaned kernel ---
+            cross_corr_map = F.conv2d(screen_tensor, kernel_tensor_demeaned, padding='valid')
 
-            # --- 4. Assemble the NCC Numerator ---
-            numerator = cross_corr_map - n_pixels * template_means_t * local_mean_map
+            # --- 5. Assemble the NCC Numerator ---
+            # Simplified numerator because the kernel is already zero-mean
+            # sum((I - I_mean) * (T - T_mean)) = sum(I * (T - T_mean)) - I_mean * sum(T - T_mean)
+            # Since sum(T - T_mean) = 0, the second term vanishes.
+            # sum(I * (T - T_mean)) = sum(I*T) - T_mean*sum(I) = cross_corr_map - T_mean * (n * I_mean)
+            numerator = cross_corr_map
 
-            # --- 5. Assemble the NCC Denominator ---
+            # --- 6. Assemble the NCC Denominator ---
             # norm(T) * norm(I)
             denominator = template_norms_t * image_norm_map
             
-            # --- 6. Calculate final NCC score ---
+            # --- 7. Calculate final NCC score ---
             ncc_map = torch.zeros_like(denominator)
             stable_mask = denominator > 1e-6 
             ncc_map[stable_mask] = numerator[stable_mask] / denominator[stable_mask]
 
         ncc_map_np = ncc_map.squeeze(0).cpu().numpy() # [num_templates, H', W']
         
-        # --- 7. Find detections for each template ---
+        # --- 8. Find detections for each template ---
         detections = []
         
         for template_idx, template_data in enumerate(template_info):
             response_map = ncc_map_np[template_idx]
             
+            # --- DEBUGGING: Save response map and log max value ---
+            logger.info(f"Max NCC value for template {template_data['id']} ('{template_data['caption']}'): {np.max(response_map):.4f}")
+            response_map_normalized = cv2.normalize(response_map, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+            debug_filename = f"debug_response_map_{template_data['id']}.png"
+            cv2.imwrite(debug_filename, response_map_normalized)
+            logger.info(f"Saved debug response map to {debug_filename}")
+            # --- END DEBUGGING ---
+            
             # Find peaks above threshold
-            locations = np.where(response_map >= self.threshold)
+            locations = np.where(response_map >= 0.99)
             
             for y, x in zip(locations[0], locations[1]):
                 # Use original template size for bounding box

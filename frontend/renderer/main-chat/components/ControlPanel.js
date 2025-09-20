@@ -1,5 +1,7 @@
 import {
   faForwardStep,
+  faPlay,
+  faStop,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useState } from "react"
@@ -69,41 +71,51 @@ function ControlPanel() {
     console.log("ControlPanel: getButtonConfig: - Agent state: ", agentState)
     if (isAgentStatePlaying) {
       return {
-        iconType: "svg",
-        iconSrc: "../../../resources/pause.svg",
+        icon: faStop,
+        // SVG version (commented out):
+        // iconType: "svg",
+        // iconSrc: "../../../resources/pause.svg",
         loading: true,
         title: "Processing...",
         action: handleStop,
       }
     } else if (agentState.pendingTools > 0 && !chat.currentInput?.trim()) {
       return {
-        iconType: "fontawesome",
         icon: faForwardStep,
+        // SVG version (commented out):
+        // iconType: "fontawesome",
+        // icon: faForwardStep,
         title: "Execute Pending Tools & Generate Next Action",
         action: handleToolsAndNextActionClick,
       }
     } else if (agentState.pendingTools > 0 && chat.currentInput?.trim()) {
       return {
-        iconType: "svg",
-        iconSrc: "../../../resources/play.svg",
+        icon: faPlay,
+        // SVG version (commented out):
+        // iconType: "svg",
+        // iconSrc: "../../../resources/play.svg",
         title: "Process Message & Update Tools",
         action: handlePlayClick,
       } // LLM Response: new tools
     } else if (agentState.pendingTools === 0 && chat.currentInput?.trim()) {
-      return { 
-        iconType: "svg",
-        iconSrc: "../../../resources/play.svg",
-        title: "Process Message", 
-        action: handlePlayClick 
+      return {
+        icon: faPlay,
+        // SVG version (commented out):
+        // iconType: "svg",
+        // iconSrc: "../../../resources/play.svg",
+        title: "Process Message",
+        action: handlePlayClick,
       } // message
     } else {
       console.log("ControlPanel: getButtonConfig else: PT0 & Msg0")
-      return { 
-        iconType: "svg",
-        iconSrc: "../../../resources/play.svg",
-        title: "", 
-        action: handlePlayClick, 
-        disable: true 
+      return {
+        icon: faPlay,
+        // SVG version (commented out):
+        // iconType: "svg",
+        // iconSrc: "../../../resources/play.svg",
+        title: "",
+        action: handlePlayClick,
+        disable: true,
       } // Default case
     }
   }
@@ -167,6 +179,8 @@ function ControlPanel() {
           onClick={playButtonConfig.action}
           title={playButtonConfig.title}
         >
+          <FontAwesomeIcon icon={playButtonConfig.icon} />
+          {/* SVG version (commented out):
           {playButtonConfig.iconType === "svg" ? (
             <img 
               src={playButtonConfig.iconSrc} 
@@ -179,6 +193,7 @@ function ControlPanel() {
           ) : (
             <FontAwesomeIcon icon={playButtonConfig.icon} />
           )}
+          */}
         </button>
       </div>
     </div>
