@@ -122,7 +122,7 @@ function createWindow() {
 
   if (isDev) {
     // Open DevTools in detached mode to preserve window transparency
-    mainWindow.webContents.openDevTools({ mode: "detach" })
+    // mainWindow.webContents.openDevTools({ mode: "detach" })
   }
 
   // Save window bounds when closing
@@ -171,7 +171,7 @@ function createTemplateTrainingWindow() {
   // Remove or comment out these lines
   templateTrainingWindow.webContents.on("did-finish-load", () => {
     console.log("Template training window finished loading")
-    templateTrainingWindow.webContents.openDevTools()
+    // templateTrainingWindow.webContents.openDevTools()
   })
 
   templateTrainingWindow.once("ready-to-show", () => {

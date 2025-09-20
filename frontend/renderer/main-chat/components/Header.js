@@ -154,102 +154,94 @@ function Header() {
 
   // Tool definitions with descriptions - filtered based on selected agent
   const getToolOptions = () => {
-    console.log(
-      "🔧 getToolOptions called with selectedAgentData:",
-      selectedAgentData
-    )
+    console.log("🔧 getToolOptions called with selectedAgentData:", selectedAgentData)
 
     const allTools = []
 
-    // Add target app specific tool if agent has a targetApp
-    if (selectedAgentData?.targetApp) {
-      const targetApp = selectedAgentData.targetApp
-      let targetAppTool = null
-
-      switch (targetApp) {
+    // Add software integrations (SAP2000, OpenFOAM, FreeCAD, etc.)
+    selectedAgentData?.softwareIntegrations?.forEach(integration => {
+      // Add scripting tool for the software
+      switch (integration.id) {
         case "SAP2000":
-          targetAppTool = {
-            name: "SAP",
-            description: "Control SAP2000 on your behalf",
-            status: getConnectionStatusColor(),
-            isEnabled: true,
-            isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
-            connectAction: handleConnectToSAP,
-            toolKey: "sap",
-            targetApp: "SAP2000",
+          if (integration.scripting) {
+            allTools.push({
+              name: "SAP",
+              description: "Control SAP2000 through scripting",
+              status: getConnectionStatusColor(),
+              isEnabled: true,
+              isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
+              connectAction: handleConnectToSAP,
+              toolKey: "sap",
+            })
           }
           break
         case "OpenFOAM":
-          targetAppTool = {
-            name: "OpenFOAM",
-            description: "Connect to OpenFOAM for CFD simulations",
-            status: "gray",
-            isEnabled: true,
-            isConnected: false,
-            connectAction: () =>
-              console.log("OpenFOAM connection not implemented yet"),
-            toolKey: "openfoam",
-            targetApp: "OpenFOAM",
+          if (integration.scripting) {
+            allTools.push({
+              name: "OpenFOAM",
+              description: "Connect to OpenFOAM for CFD simulations",
+              status: "gray",
+              isEnabled: true,
+              isConnected: false,
+              connectAction: () => console.log("OpenFOAM connection not implemented yet"),
+              toolKey: "openfoam",
+            })
           }
           break
         case "FreeCAD":
-          targetAppTool = {
-            name: "FreeCAD",
-            description: "Connect to FreeCAD for 3D modeling",
-            status: "gray",
-            isEnabled: true,
-            isConnected: false,
-            connectAction: () =>
-              console.log("FreeCAD connection not implemented yet"),
-            toolKey: "freecad",
-            targetApp: "FreeCAD",
+          if (integration.scripting) {
+            allTools.push({
+              name: "FreeCAD",
+              description: "Connect to FreeCAD for 3D modeling",
+              status: "gray",
+              isEnabled: true,
+              isConnected: false,
+              connectAction: () => console.log("FreeCAD connection not implemented yet"),
+              toolKey: "freecad",
+            })
           }
           break
       }
 
-      if (targetAppTool) {
-        allTools.push(targetAppTool)
+      // Add desktop UI tool if enabled for this software
+      if (integration.desktop) {
+        allTools.push({
+          name: "Desktop UI",
+          description: `Control ${integration.name || integration.id} through desktop interface`,
+          status: getDesktopConnectionStatusColor(),
+          isEnabled: true,
+          isConnected: desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
+          connectAction: handleConnectToDesktop,
+          toolKey: "desktop",
+        })
       }
-    }
+    })
 
-    // Add generic tools based on agent's enabled tools
-    if (selectedAgentData?.tools?.desktopControl === true) {
-      allTools.push({
-        name: "Desktop",
-        description: "Control your screen, mouse and keyboard",
-        status: getDesktopConnectionStatusColor(),
-        isEnabled: true,
-        isConnected:
-          desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
-        connectAction: handleConnectToDesktop,
-        toolKey: "desktopControl",
-      })
-    }
+    // Add general tools (file editor, command line, etc.)
+    selectedAgentData?.generalTools?.forEach(tool => {
+      switch (tool.id) {
+        case "fileEditor":
+          allTools.push({
+            name: "File Editor",
+            description: "Access and edit project files",
+            status: "gray",
+            isEnabled: true,
+            toolKey: "fileEditor",
+          })
+          break
+        case "commandLine":
+          allTools.push({
+            name: "Command Line",
+            description: "Execute command line operations",
+            status: "gray",
+            isEnabled: true,
+            toolKey: "commandLine",
+          })
+          break
+      }
+    })
 
-    if (selectedAgentData?.tools?.fileEditor === true) {
-      allTools.push({
-        name: "File Editor",
-        description: "Access and edit project files",
-        status: "gray",
-        isEnabled: true,
-        toolKey: "fileEditor",
-      })
-    }
-
-    if (selectedAgentData?.tools?.commandLine === true) {
-      allTools.push({
-        name: "Command Line",
-        description: "Execute command line operations",
-        status: "gray",
-        isEnabled: true,
-        toolKey: "commandLine",
-      })
-    }
-
-    console.log(
-      "🔧 Built tools dynamically:",
-      allTools.map((t) => t.name)
-    )
+    console.log("🔧 Built tools dynamically:", allTools.map(t => t.name))
     return allTools
   }
 

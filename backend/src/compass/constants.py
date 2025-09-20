@@ -2,7 +2,7 @@ import os
 
 # Agent constants:
 MAX_ITERATIONS = 20 # Maximum number of iterations for the agent in auto Mode
-DEFAULT_AGENT_TYPE = None  # No default agent - user must select
+DEFAULT_AGENT_TYPE = "structural-engineer"  # Default to structural engineer agent
 
 
 # LLM constants:
@@ -15,7 +15,7 @@ ANTHROPIC_MODEL_NAME_MANUAL = "claude-sonnet-4-20250514" # claude-3-7-sonnet-202
 ANTHROPIC_MODEL_NAME_AUTO = "claude-sonnet-4-20250514" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
 
 # Thinking mode configuration
-ENABLE_EXTENDED_THINKING = True
+ENABLE_EXTENDED_THINKING = False
 THINKING_BUDGET_TOKENS = 12000  # Adjustable budget (up to 128K)
 
 # Google Provider:
@@ -52,7 +52,7 @@ AGENT_TOOLS = {
     "OpenFoam": ["bash", "file"],
     "FreeCAD": ["computer", "bash", "file"],
     "Generic": ["computer", "file", "bash"],
-    "structural-engineer": ["sap_com", "computer"]  # Needs SAP and desktop tools
+    "structural-engineer": ["sap_com"]  # Needs SAP tools only (desktop tools commented out)
 }
 
 # LLM Provider Configuration

@@ -121,7 +121,7 @@ pre,
         flex-grow: 1;
         background-color: transparent;
         overflow-y: auto;
-        padding: 1px 18px;
+        padding: 1px 12px;
         box-sizing: border-box;
         max-height: var(--chat-history-wrapper-height, 100%);
         @include custom-scrollbar;
