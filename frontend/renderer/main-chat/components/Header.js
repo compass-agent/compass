@@ -46,20 +46,29 @@ function Header() {
   const [isInChat, setIsInChat] = useState(true) // Start as true so agent dropdown is read-only by default
   const [thinkingModeEnabled, setThinkingModeEnabled] = useState(true) // Thinking mode enabled by default
 
-  const [selectedAgent, setSelectedAgent] = useState("Structural-Engineer")
+  const [selectedAgent, setSelectedAgent] = useState(null)
   const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
-  const [selectedAgentData, setSelectedAgentData] = useState({
-    name: "Structural-Engineer",
-    targetApp: "SAP2000",
-    tools: {
-      desktopControl: true,
-      commandLine: false,
-      fileEditor: true,
-    },
-    configuration: {
-      sapSetup: true,
-    },
-  })
+  const [selectedAgentData, setSelectedAgentData] = useState(null)
+
+  // Load last selected agent on startup
+  useEffect(() => {
+    const loadLastAgent = async () => {
+      if (window.electron?.ipcRenderer?.invoke) {
+        try {
+          const lastAgent = await window.electron.ipcRenderer.invoke("load-last-agent")
+          if (lastAgent && (lastAgent.name || lastAgent.agentId)) {
+            console.log("🎯 Loading last selected agent:", lastAgent)
+            setSelectedAgent(lastAgent.name || "Unknown Agent")
+            setSelectedAgentData(lastAgent)
+          }
+        } catch (error) {
+          console.log("🎯 Could not load last agent:", error.message)
+        }
+      }
+    }
+
+    loadLastAgent()
+  }, [])
 
   // Listen for agent selection from template training window
   useEffect(() => {
@@ -116,7 +125,6 @@ function Header() {
     { name: "Generic", description: "General purpose agent" },
     { name: "FreeCAD", description: "CAD design specialist" },
     { name: "OpenFoam", description: "Fluid dynamics expert" },
-    { name: "Structural-Engineer", description: "Structural analysis expert" },
   ]
   const modelOptions = [
     {
@@ -166,102 +174,94 @@ function Header() {
 
   // Tool definitions with descriptions - filtered based on selected agent
   const getToolOptions = () => {
-    console.log(
-      "🔧 getToolOptions called with selectedAgentData:",
-      selectedAgentData
-    )
+    console.log("🔧 getToolOptions called with selectedAgentData:", selectedAgentData)
 
     const allTools = []
 
-    // Add target app specific tool if agent has a targetApp
-    if (selectedAgentData?.targetApp) {
-      const targetApp = selectedAgentData.targetApp
-      let targetAppTool = null
-
-      switch (targetApp) {
+    // Add software integrations (SAP2000, OpenFOAM, FreeCAD, etc.)
+    selectedAgentData?.softwareIntegrations?.forEach(integration => {
+      // Add scripting tool for the software
+      switch (integration.id) {
         case "SAP2000":
-          targetAppTool = {
-            name: "SAP",
-            description: "Control SAP2000 on your behalf",
-            status: getConnectionStatusColor(),
-            isEnabled: true,
-            isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
-            connectAction: handleConnectToSAP,
-            toolKey: "sap",
-            targetApp: "SAP2000",
+          if (integration.scripting) {
+            allTools.push({
+              name: "SAP2000 Scripting",
+              description: "Control SAP2000 through scripting",
+              status: getConnectionStatusColor(),
+              isEnabled: true,
+              isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
+              connectAction: handleConnectToSAP,
+              toolKey: "sap",
+            })
           }
           break
         case "OpenFOAM":
-          targetAppTool = {
-            name: "OpenFOAM",
-            description: "Connect to OpenFOAM for CFD simulations",
-            status: "gray",
-            isEnabled: true,
-            isConnected: false,
-            connectAction: () =>
-              console.log("OpenFOAM connection not implemented yet"),
-            toolKey: "openfoam",
-            targetApp: "OpenFOAM",
+          if (integration.scripting) {
+            allTools.push({
+              name: "OpenFOAM",
+              description: "Connect to OpenFOAM for CFD simulations",
+              status: "gray",
+              isEnabled: true,
+              isConnected: false,
+              connectAction: () => console.log("OpenFOAM connection not implemented yet"),
+              toolKey: "openfoam",
+            })
           }
           break
         case "FreeCAD":
-          targetAppTool = {
-            name: "FreeCAD",
-            description: "Connect to FreeCAD for 3D modeling",
-            status: "gray",
-            isEnabled: true,
-            isConnected: false,
-            connectAction: () =>
-              console.log("FreeCAD connection not implemented yet"),
-            toolKey: "freecad",
-            targetApp: "FreeCAD",
+          if (integration.scripting) {
+            allTools.push({
+              name: "FreeCAD",
+              description: "Connect to FreeCAD for 3D modeling",
+              status: "gray",
+              isEnabled: true,
+              isConnected: false,
+              connectAction: () => console.log("FreeCAD connection not implemented yet"),
+              toolKey: "freecad",
+            })
           }
           break
       }
 
-      if (targetAppTool) {
-        allTools.push(targetAppTool)
+      // Add desktop UI tool if enabled for this software
+      if (integration.desktop) {
+        allTools.push({
+          name: "SAP2000 UI Interaction",
+          description: `Control ${integration.name || integration.id} through desktop interface`,
+          status: getDesktopConnectionStatusColor(),
+          isEnabled: true,
+          isConnected: desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
+          connectAction: handleConnectToDesktop,
+          toolKey: "desktop",
+        })
       }
-    }
+    })
 
-    // Add generic tools based on agent's enabled tools
-    if (selectedAgentData?.tools?.desktopControl === true) {
-      allTools.push({
-        name: "Desktop",
-        description: "Control your screen, mouse and keyboard",
-        status: getDesktopConnectionStatusColor(),
-        isEnabled: true,
-        isConnected:
-          desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
-        connectAction: handleConnectToDesktop,
-        toolKey: "desktopControl",
-      })
-    }
+    // Add general tools (file editor, command line, etc.)
+    selectedAgentData?.generalTools?.forEach(tool => {
+      switch (tool.id) {
+        case "fileEditor":
+          allTools.push({
+            name: "File Editor",
+            description: "Access and edit project files",
+            status: "gray",
+            isEnabled: true,
+            toolKey: "fileEditor",
+          })
+          break
+        case "commandLine":
+          allTools.push({
+            name: "Command Line",
+            description: "Execute command line operations",
+            status: "gray",
+            isEnabled: true,
+            toolKey: "commandLine",
+          })
+          break
+      }
+    })
 
-    if (selectedAgentData?.tools?.fileEditor === true) {
-      allTools.push({
-        name: "File Editor",
-        description: "Access and edit project files",
-        status: "gray",
-        isEnabled: true,
-        toolKey: "fileEditor",
-      })
-    }
-
-    if (selectedAgentData?.tools?.commandLine === true) {
-      allTools.push({
-        name: "Command Line",
-        description: "Execute command line operations",
-        status: "gray",
-        isEnabled: true,
-        toolKey: "commandLine",
-      })
-    }
-
-    console.log(
-      "🔧 Built tools dynamically:",
-      allTools.map((t) => t.name)
-    )
+    console.log("🔧 Built tools dynamically:", allTools.map(t => t.name))
     return allTools
   }
 
@@ -269,9 +269,10 @@ function Header() {
 
   // Helper function to format agent names for display
   const formatAgentName = (agentName) => {
+    if (!agentName) {
+      return "No Agent Selected"
+    }
     switch (agentName) {
-      case "structural-engineer":
-        return "Structural-Engineer"
       case "FreeCAD":
         return "FreeCAD"
       case "OpenFoam":
@@ -481,9 +482,7 @@ function Header() {
               </button>
             ) : (
               <button
-                className={`agent-text clickable-agent ${
-                  selectedAgent === "Structural-Engineer" ? "agent-text-3d" : ""
-                }`}
+                className="agent-text clickable-agent"
                 onClick={handleOpenTemplateTraining}
                 style={{
                   color: "#9C9B9F",
@@ -656,7 +655,7 @@ function Header() {
           {/* Tools Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-tools-button"
+              className={`header-tools-button ${toolsDropdown ? "active" : ""}`}
               onClick={(e) => toggleDropdown("tools", setToolsDropdown, e)}
             >
               Tools
@@ -724,7 +723,7 @@ function Header() {
           {/* AI Model Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-model-button"
+              className={`header-model-button ${modelDropdown ? "active" : ""}`}
               onClick={(e) => toggleDropdown("model", setModelDropdown, e)}
             >
               Model
@@ -743,7 +742,11 @@ function Header() {
                 {modelOptions.map((model) => {
                   const isSelected = selectedModel === model.name
                   return (
-                    <div key={model.name} className="tool-item">
+                    <div
+                      key={model.name}
+                      className={`tool-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleModelSelect(model.name)}
+                    >
                       <div className="tool-info">
                         <div className="tool-status">
                           <div className="model-info">
@@ -759,14 +762,6 @@ function Header() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        className={`tool-button ${
-                          isSelected ? "selected" : ""
-                        }`}
-                        onClick={() => handleModelSelect(model.name)}
-                      >
-                        {isSelected ? "Selected" : "Select"}
-                      </button>
                     </div>
                   )
                 })}

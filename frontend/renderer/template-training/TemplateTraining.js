@@ -14,25 +14,15 @@ console.log("TemplateTraining component is rendering")
 
 const TemplateTraining = () => {
   const [currentView, setCurrentView] = useState(VIEW_STATES.AGENT_HUB)
-  const [selectedAgentId, setSelectedAgentId] = useState(
-    "structural-engineer-default"
-  )
+  const [selectedAgentId, setSelectedAgentId] = useState(null)
   const [agentData, setAgentData] = useState({
-    agentId: "structural-engineer-default",
-    name: "Structural-Engineer",
-    description:
-      "Structural analysis expert for engineering calculations and design",
-    prompt:
-      "You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.",
-    tools: {
-      desktopControl: true,
-      commandLine: false,
-      fileEditor: true,
-    },
-    configuration: {
-      sapSetup: true,
-    },
-    targetApp: "SAP2000",
+    agentId: null,
+    name: "",
+    description: "",
+    prompt: "",
+    generalTools: [],
+    softwareIntegrations: [],
+    configuration: {},
     pages: [],
   })
   const [saveStatus, setSaveStatus] = useState("")
@@ -123,54 +113,21 @@ const TemplateTraining = () => {
     }
   }, [])
 
-  // Auto-send default agent data to main window on mount
+  // Load last selected agent from Agent Hub on mount
   useEffect(() => {
-    // Send default agent data to main window when component mounts
-    if (window.electron?.ipcRenderer?.invoke) {
-      const defaultAgentData = {
-        agentId: "structural-engineer-default",
-        name: "Structural-Engineer",
-        description:
-          "Structural analysis expert for engineering calculations and design",
-        prompt:
-          "You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.",
-        tools: {
-          desktopControl: true,
-          commandLine: false,
-          fileEditor: true,
-        },
-        configuration: {
-          sapSetup: true,
-        },
-        targetApp: "SAP2000",
-      }
-
-      console.log(
-        "🚀 Auto-sending default agent data to main window:",
-        defaultAgentData
-      )
-
-      window.electron.ipcRenderer
-        .invoke("agent-selected", defaultAgentData)
-        .then((result) => {
-          console.log("🚀 Auto-send result:", result)
-        })
-        .catch((error) => {
-          console.error("🚀 Auto-send error:", error)
-        })
-    }
+    // Only load if no agent is currently set - avoid overriding user selection
+    console.log(
+      "🚀 TemplateTraining mounted, checking for existing agent selection"
+    )
+    // The agent selection should come from Agent Hub, not be hardcoded here
   }, [])
 
-  // Set default agent data when Agent Hub is first displayed
+  // Monitor view changes for Agent Hub
   useEffect(() => {
-    if (
-      currentView === VIEW_STATES.AGENT_HUB &&
-      agentData.agentId === "structural-engineer-default"
-    ) {
-      // This ensures the default agent is properly set when Agent Hub is first shown
-      console.log("🎯 Agent Hub displayed, default agent data is set")
+    if (currentView === VIEW_STATES.AGENT_HUB) {
+      console.log("🎯 Agent Hub displayed")
     }
-  }, [currentView, agentData.agentId])
+  }, [currentView])
 
   const handleAnalyze = (imageData) => {
     if (!imageData) {
@@ -203,6 +160,26 @@ const TemplateTraining = () => {
       setSelectedBox(null)
       setInputValue("")
     }
+  }
+
+  const deleteCaption = (boxId) => {
+    setCaptions((prev) => {
+      const newCaptions = { ...prev };
+      delete newCaptions[boxId];
+      return newCaptions;
+    });
+    
+    // If the deleted caption was for the currently selected box, clear the input
+    if (selectedBox === boxId) {
+      setInputValue("");
+    }
+  }
+
+  const handleAutoCaption = (boxId) => {
+    // TODO: Implement auto-captioning functionality
+    // For now, this is a placeholder function
+    console.log('Auto caption requested for box:', boxId);
+    // You could implement AI-based captioning here
   }
 
   const handleNavigate = (view) => {
@@ -258,15 +235,11 @@ const TemplateTraining = () => {
                   agentId: agent.agentId,
                   name: agent.name,
                   description: agent.description,
-                  tools: agent.tools,
-                  targetApp: agent.targetApp,
+                  generalTools: agent.generalTools,
+                  softwareIntegrations: agent.softwareIntegrations,
+                  configuration: agent.configuration,
                 }
                 console.log("🚀 Sending agent data via IPC:", agentDataToSend)
-                console.log("🚀 Agent tools being sent:", agentDataToSend.tools)
-                console.log(
-                  "🚀 Agent targetApp being sent:",
-                  agentDataToSend.targetApp
-                )
 
                 window.electron.ipcRenderer
                   .invoke("agent-selected", agentDataToSend)
@@ -300,11 +273,10 @@ const TemplateTraining = () => {
                     name: agentNameOrData.name,
                     description: agentNameOrData.description || "",
                     prompt: agentNameOrData.prompt || "",
-                    tools: agentNameOrData.tools || {},
-                    configuration: agentNameOrData.configuration || {
-                      sapSetup: false,
-                    },
-                    targetApp: agentNameOrData.targetApp || "",
+                    generalTools: agentNameOrData.generalTools || [],
+                    softwareIntegrations:
+                      agentNameOrData.softwareIntegrations || [],
+                    configuration: agentNameOrData.configuration || {},
                     pages: [],
                   })
                 }
@@ -315,8 +287,9 @@ const TemplateTraining = () => {
                   name: "",
                   description: "",
                   prompt: "",
-                  tools: {},
-                  configuration: { sapSetup: false },
+                  generalTools: [],
+                  softwareIntegrations: [],
+                  configuration: {},
                   pages: [],
                 })
               }
@@ -335,7 +308,8 @@ const TemplateTraining = () => {
                 name: agentInfo.name,
                 description: agentInfo.description,
                 prompt: agentInfo.prompt,
-                tools: agentInfo.tools,
+                generalTools: agentInfo.generalTools,
+                softwareIntegrations: agentInfo.softwareIntegrations,
                 configuration: agentInfo.configuration,
               }
 
@@ -347,39 +321,14 @@ const TemplateTraining = () => {
                   agentId: updatedAgentData.agentId,
                   name: updatedAgentData.name,
                   description: updatedAgentData.description,
-                  tools: updatedAgentData.tools,
+                  generalTools: updatedAgentData.generalTools,
+                  softwareIntegrations: updatedAgentData.softwareIntegrations,
                   configuration: updatedAgentData.configuration,
-                  targetApp:
-                    updatedAgentData.targetApp ||
-                    (updatedAgentData.name === "Structural-Engineer"
-                      ? "SAP2000"
-                      : ""),
                 }
                 console.log(
                   "🚀 Sending updated agent data via IPC:",
                   agentDataToSend
                 )
-                console.log(
-                  "🚀 Updated agent tools being sent:",
-                  agentDataToSend.tools
-                )
-                console.log(
-                  "🚀 Agent data JSON string:",
-                  JSON.stringify(agentDataToSend)
-                )
-                console.log("🚀 Agent data keys:", Object.keys(agentDataToSend))
-                console.log(
-                  "🚀 Agent data values:",
-                  Object.values(agentDataToSend)
-                )
-
-                // Ensure all required fields are present
-                if (!agentDataToSend.agentId || !agentDataToSend.name) {
-                  console.error(
-                    "🚀 Missing required fields in agent data:",
-                    agentDataToSend
-                  )
-                }
 
                 window.electron.ipcRenderer
                   .invoke("agent-selected", agentDataToSend)
@@ -408,10 +357,10 @@ const TemplateTraining = () => {
               // Determine if we're creating or updating
               if (agentData.agentId) {
                 // Updating existing agent
-                AgentHubService.updateAgent(agentData.agentId, agentInfo)
+                AgentHubService.updateAgent(agentData.agentId, updatedAgentData)
               } else {
                 // Creating new agent
-                AgentHubService.createAgent(agentInfo)
+                AgentHubService.createAgent(updatedAgentData)
               }
 
               setCurrentView(VIEW_STATES.AGENT_HUB)
@@ -422,7 +371,8 @@ const TemplateTraining = () => {
                 name: agentInfo.name,
                 description: agentInfo.description,
                 prompt: agentInfo.prompt,
-                tools: agentInfo.tools,
+                generalTools: agentInfo.generalTools,
+                softwareIntegrations: agentInfo.softwareIntegrations,
                 configuration: agentInfo.configuration,
               }
 
@@ -434,13 +384,9 @@ const TemplateTraining = () => {
                   agentId: updatedAgentData.agentId,
                   name: updatedAgentData.name,
                   description: updatedAgentData.description,
-                  tools: updatedAgentData.tools,
+                  generalTools: updatedAgentData.generalTools,
+                  softwareIntegrations: updatedAgentData.softwareIntegrations,
                   configuration: updatedAgentData.configuration,
-                  targetApp:
-                    updatedAgentData.targetApp ||
-                    (updatedAgentData.name === "Structural-Engineer"
-                      ? "SAP2000"
-                      : ""),
                 }
                 console.log(
                   "🚀 Sending updated agent data via IPC (Train UI):",
@@ -570,6 +516,8 @@ const TemplateTraining = () => {
             agentName={agentData.name}
             pageName={pageName}
             setPageName={setPageName}
+            deleteCaption={deleteCaption}
+            handleAutoCaption={handleAutoCaption}
           />
         )
       case VIEW_STATES.SETTINGS:

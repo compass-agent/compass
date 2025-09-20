@@ -133,7 +133,7 @@ class CustomSAP2000Model(AreaMethods, FrameMethods, GroupMethods, DesignOptimiza
                 continue
 
             filtered_list = []
-            keep_rate = 45
+            keep_rate = 60
             keeping_idx = 0
             for section in sections:
                 keeping_idx += 1

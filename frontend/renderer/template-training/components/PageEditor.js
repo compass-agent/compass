@@ -32,6 +32,7 @@ const PageEditor = ({
   handleAutoCaption,
   pageName: parentPageName,
   setPageName: setParentPageName,
+  deleteCaption,
 }) => {
   const [pageName, setPageName] = useState("")
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false)
@@ -226,6 +227,7 @@ const PageEditor = ({
               getImageSrc={getImageSrc}
               handleAutoCaption={handleAutoCaption}
               onBoxChange={handleBoxChange}
+              deleteCaption={deleteCaption}
             />
           </div>
         )}

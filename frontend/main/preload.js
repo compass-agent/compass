@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld("electron", {
         "terminal.input",
         "terminal.close",
         "agent-selected",
+        "load-last-agent",
       ]
       if (validChannels.includes(channel)) {
         return ipcRenderer.invoke(channel, data)

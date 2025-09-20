@@ -78,7 +78,8 @@
 }
 
 .mode-toggle {
-  font-family: 'Abel', sans-serif;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
   font-size: 14px;
   display: flex;
   background: #232326;
