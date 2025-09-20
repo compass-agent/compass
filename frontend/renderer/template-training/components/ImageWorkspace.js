@@ -13,7 +13,8 @@ const ImageWorkspace = ({
   createNewBox,
   deleteBox,
   getImageSrc,
-  handleAutoCaption
+  handleAutoCaption,
+  deleteCaption
 }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const imageRef = useRef(null);
@@ -92,6 +93,14 @@ const ImageWorkspace = ({
         label: 'Auto Caption',
         onClick: () => handleAutoCaption(boxId),
         disabled: !!captions[boxId]
+      },
+      {
+        label: 'Delete Caption',
+        onClick: () => {
+          console.log('Deleting caption for box ID:', boxId);
+          deleteCaption(boxId);
+        },
+        disabled: !captions[boxId]
       }
     ] : [
       {
