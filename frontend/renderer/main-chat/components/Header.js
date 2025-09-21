@@ -50,6 +50,26 @@ function Header() {
   const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
   const [selectedAgentData, setSelectedAgentData] = useState(null)
 
+  // Load last selected agent on startup
+  useEffect(() => {
+    const loadLastAgent = async () => {
+      if (window.electron?.ipcRenderer?.invoke) {
+        try {
+          const lastAgent = await window.electron.ipcRenderer.invoke("load-last-agent")
+          if (lastAgent && (lastAgent.name || lastAgent.agentId)) {
+            console.log("🎯 Loading last selected agent:", lastAgent)
+            setSelectedAgent(lastAgent.name || "Unknown Agent")
+            setSelectedAgentData(lastAgent)
+          }
+        } catch (error) {
+          console.log("🎯 Could not load last agent:", error.message)
+        }
+      }
+    }
+
+    loadLastAgent()
+  }, [])
+
   // Listen for agent selection from template training window
   useEffect(() => {
     if (window.electron?.ipcRenderer?.on) {
@@ -165,7 +185,7 @@ function Header() {
         case "SAP2000":
           if (integration.scripting) {
             allTools.push({
-              name: "SAP",
+              name: "SAP2000 Scripting",
               description: "Control SAP2000 through scripting",
               status: getConnectionStatusColor(),
               isEnabled: true,
@@ -206,7 +226,7 @@ function Header() {
       // Add desktop UI tool if enabled for this software
       if (integration.desktop) {
         allTools.push({
-          name: "Desktop UI",
+          name: "SAP2000 UI Interaction",
           description: `Control ${integration.name || integration.id} through desktop interface`,
           status: getDesktopConnectionStatusColor(),
           isEnabled: true,

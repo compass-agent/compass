@@ -45,6 +45,33 @@ function loadWindowBounds() {
   return null
 }
 
+// Agent persistence
+const AGENT_FILE = path.join(app.getPath("userData"), "last-agent.json")
+
+function saveLastAgent(agentData) {
+  try {
+    fs.writeFileSync(AGENT_FILE, JSON.stringify(agentData))
+    console.log("Last agent saved:", agentData)
+  } catch (error) {
+    console.error("Failed to save last agent:", error.message)
+  }
+}
+
+function loadLastAgent() {
+  try {
+    if (fs.existsSync(AGENT_FILE)) {
+      const agentData = JSON.parse(fs.readFileSync(AGENT_FILE, "utf8"))
+      console.log("Last agent loaded:", agentData)
+      return agentData
+    } else {
+      console.log("No saved agent found")
+    }
+  } catch (error) {
+    console.log("Could not load last agent:", error.message)
+  }
+  return null
+}
+
 let mainWindow
 let previewWindow = null
 let templateTrainingWindow = null
@@ -225,6 +252,9 @@ ipcMain.handle("agent-selected", async (event, agentData) => {
     return { success: false, error: "Invalid agent data" }
   }
 
+  // Save the selected agent for persistence
+  saveLastAgent(agentData)
+
   // Send the selected agent to the main window
   if (mainWindow && !mainWindow.isDestroyed()) {
     console.log("🔧 About to send to main window:", agentData)
@@ -254,6 +284,11 @@ ipcMain.handle("agent-selected", async (event, agentData) => {
 
   // Return success response
   return { success: true }
+})
+
+// Handle loading last agent on startup
+ipcMain.handle("load-last-agent", async () => {
+  return loadLastAgent()
 })
 
 app.whenReady().then(() => {
