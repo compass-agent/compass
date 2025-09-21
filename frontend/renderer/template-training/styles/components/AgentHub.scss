@@ -12,27 +12,30 @@
 
   .btn-primary,
   .btn-secondary {
-    border: 1px solid #404040;
+    border: 1px solid transparent;
     background: #2c2c2c;
     color: #e0e0e0;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
     transition: all 0.2s ease;
+    position: relative;
     
     &:hover {
       background: var(--primary-purple-light);
-      border-color: var(--primary-purple);
+      border-color: var(--primary-purple-light);
       color: white;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px var(--purple-shadow);
+      box-shadow: 0 2px 8px rgba(158, 97, 202, 0.2);
     }
     
     &:active {
       background: var(--primary-purple-dark);
+      border-color: var(--primary-purple);
       transform: translateY(0);
-      box-shadow: 0 2px 6px var(--purple-shadow);
+      box-shadow: 0 1px 4px rgba(158, 97, 202, 0.3);
     }
   }
   .btn-secondary { opacity: 0.85; }
@@ -74,7 +77,6 @@
         border-bottom: 1px solid #333;
         color: #e0e0e0;
         transition: background-color 0.2s ease;
-        cursor: pointer;
 
         &:hover {
           background-color: #2a2a2a;
@@ -210,4 +212,127 @@
   text-align: center;
   color: #666;
   font-style: italic;
+}
+
+// Confirmation Dialog Styles
+.confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+
+  .confirmation-dialog {
+    background: #2c2c2c;
+    border: 1px solid #404040;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    max-width: 420px;
+    width: 90%;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+
+    .dialog-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid #404040;
+      
+      h3 {
+        margin: 0;
+        color: #e0e0e0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    .dialog-content {
+      padding: 20px 24px;
+      
+      p {
+        margin: 0 0 12px 0;
+        color: #b0b0b0;
+        line-height: 1.5;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        strong {
+          color: var(--primary-purple-light);
+          font-weight: 600;
+        }
+      }
+    }
+
+    .dialog-actions {
+      padding: 16px 24px 20px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      
+      button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 80px;
+        
+        &.btn-cancel {
+          background: transparent;
+          border: 1px solid #666;
+          color: #e0e0e0;
+          
+          &:hover {
+            background: #3a3a3a;
+            border-color: #888;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          }
+          
+          &:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+          }
+        }
+        
+        &.btn-confirm {
+          background: var(--primary-purple);
+          border: 1px solid var(--primary-purple);
+          color: white;
+          
+          &:hover {
+            background: var(--primary-purple-light);
+            border-color: var(--primary-purple-light);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(158, 97, 202, 0.2);
+          }
+          
+          &:active {
+            background: var(--primary-purple-dark);
+            border-color: var(--primary-purple);
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(158, 97, 202, 0.3);
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }

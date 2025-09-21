@@ -33,8 +33,8 @@ $success-color: #2ecc71;
 $warning-color: #f39c12;
 $error-color: #e74c3c;
 
-// Font and text
-$font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+// Font and text - Updated to use centralized font system
+$font-family-primary: var(--font-family-primary);
 $font-size-base: 14px;
 $font-size-large: 16px;
 $font-size-small: 12px;

@@ -35,7 +35,8 @@
       color: #9C9B9F;
       font-size: 14px;
       font-weight: 500;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: var(--font-family-primary);
+      font-weight: var(--font-weight-medium);
     }
 
     .title-breadcrumb {
@@ -43,7 +44,8 @@
       align-items: center;
       gap: 8px;
       font-size: 14px;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: var(--font-family-primary);
+      font-weight: var(--font-weight-medium);
       -webkit-app-region: no-drag;
 
       .nav-item {
@@ -81,7 +83,8 @@
       background: transparent;
       color: #9C9B9F;
       font-size: 12px;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: var(--font-family-primary);
+      font-weight: var(--font-weight-medium);
       cursor: pointer;
       display: flex;
       align-items: center;

@@ -20,6 +20,8 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   const { connected } = state.connection
   const hasAttemptedFetch = useRef(false)
   const [openDropdown, setOpenDropdown] = useState(null)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [pendingAgent, setPendingAgent] = useState(null)
 
   // Reset fetch attempt when WebSocket connects
   useEffect(() => {
@@ -51,6 +53,34 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
       return () => document.removeEventListener("click", handleClickOutside)
     }
   }, [openDropdown])
+
+  // Handle agent selection with confirmation
+  const handleAgentSelection = (agent) => {
+    // If no agent is currently selected, or selecting the same agent, no confirmation needed
+    if (!selectedAgentId || selectedAgentId === agent.agentId) {
+      if (onAgentSelect) {
+        onAgentSelect(agent)
+      }
+      return
+    }
+
+    // If switching agents, show confirmation dialog
+    setPendingAgent(agent)
+    setShowConfirmDialog(true)
+  }
+
+  const confirmAgentSwitch = () => {
+    if (pendingAgent && onAgentSelect) {
+      onAgentSelect(pendingAgent)
+    }
+    setShowConfirmDialog(false)
+    setPendingAgent(null)
+  }
+
+  const cancelAgentSwitch = () => {
+    setShowConfirmDialog(false)
+    setPendingAgent(null)
+  }
 
   const handleCreate = () => {
     // Navigate to agent setup for creating new agent
@@ -178,41 +208,11 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
                   selectedAgentId === agent.agentId ? "selected" : ""
                 }`}
                 key={agent.agentId || agent.name}
-                onClick={() => {
-                  console.log(
-                    "🎯 Agent row clicked:",
-                    agent.name,
-                    "ID:",
-                    agent.agentId
-                  )
-                  console.log("🎯 onAgentSelect function:", onAgentSelect)
-                  console.log("🎯 onAgentSelect type:", typeof onAgentSelect)
-                  console.log("🎯 onAgentSelect exists:", !!onAgentSelect)
-                  console.log("🎯 Full agent data:", agent)
-
-                  try {
-                    if (onAgentSelect) {
-                      console.log(
-                        "🎯 About to call onAgentSelect with agent:",
-                        agent
-                      )
-                      onAgentSelect(agent)
-                      console.log("🎯 Successfully called onAgentSelect")
-                    } else {
-                      console.warn("⚠️ onAgentSelect callback not provided")
-                      console.log("⚠️ Available props:", {
-                        onSelectAgent,
-                        selectedAgentId,
-                        onAgentSelect,
-                      })
-                    }
-                  } catch (error) {
-                    console.error("🎯 Error calling onAgentSelect:", error)
-                  }
-                }}
               >
                 <div className="col name">{agent.name || "Unnamed Agent"}</div>
-                <div className="col app">{agent.softwareIntegrations?.[0]?.name || "-"}</div>
+                <div className="col app">
+                  {agent.softwareIntegrations?.[0]?.name || "-"}
+                </div>
                 <div className="col updated">
                   {agent.last_modified
                     ? new Date(agent.last_modified).toLocaleDateString()
@@ -241,9 +241,7 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
                           onClick={(e) => {
                             e.stopPropagation()
                             setOpenDropdown(null)
-                            if (onAgentSelect) {
-                              onAgentSelect(agent)
-                            }
+                            handleAgentSelection(agent)
                           }}
                         >
                           <FontAwesomeIcon icon={faCheck} />
@@ -294,6 +292,39 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
           )}
         </div>
       </div>
+
+      {/* Agent Switch Confirmation Dialog */}
+      {showConfirmDialog && pendingAgent && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-dialog">
+            <div className="dialog-header">
+              <h3>Switch Agent?</h3>
+            </div>
+            <div className="dialog-content">
+              <p>
+                You are about to switch from{" "}
+                <strong>
+                  {agents.find((a) => a.agentId === selectedAgentId)?.name ||
+                    "current agent"}
+                </strong>{" "}
+                to <strong>{pendingAgent.name}</strong>.
+              </p>
+              <p>
+                This will change your active agent and may affect your current
+                workflow.
+              </p>
+            </div>
+            <div className="dialog-actions">
+              <button className="btn-cancel" onClick={cancelAgentSwitch}>
+                Cancel
+              </button>
+              <button className="btn-confirm" onClick={confirmAgentSwitch}>
+                Switch Agent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
