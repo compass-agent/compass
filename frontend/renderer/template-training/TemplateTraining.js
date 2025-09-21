@@ -201,6 +201,26 @@ const TemplateTraining = () => {
     }
   }
 
+  const deleteCaption = (boxId) => {
+    setCaptions((prev) => {
+      const newCaptions = { ...prev };
+      delete newCaptions[boxId];
+      return newCaptions;
+    });
+    
+    // If the deleted caption was for the currently selected box, clear the input
+    if (selectedBox === boxId) {
+      setInputValue("");
+    }
+  }
+
+  const handleAutoCaption = (boxId) => {
+    // TODO: Implement auto-captioning functionality
+    // For now, this is a placeholder function
+    console.log('Auto caption requested for box:', boxId);
+    // You could implement AI-based captioning here
+  }
+
   const handleNavigate = (view) => {
     // Clear currentScreenshot when navigating to PAGES_LIST
     if (view === VIEW_STATES.PAGES_LIST) {
@@ -534,6 +554,8 @@ const TemplateTraining = () => {
             agentName={agentData.name}
             pageName={pageName}
             setPageName={setPageName}
+            deleteCaption={deleteCaption}
+            handleAutoCaption={handleAutoCaption}
           />
         )
       case VIEW_STATES.SETTINGS:
