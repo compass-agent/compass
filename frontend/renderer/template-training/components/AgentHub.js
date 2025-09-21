@@ -16,12 +16,14 @@ import "../styles/components/AgentHub.scss"
 
 const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   const { state, dispatch } = useAppState()
-  const { agents, loading, error } = state.agentHub
+  const { agents, loading, error, successMessage } = state.agentHub
   const { connected } = state.connection
   const hasAttemptedFetch = useRef(false)
   const [openDropdown, setOpenDropdown] = useState(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingAgent, setPendingAgent] = useState(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [pendingDeleteAgent, setPendingDeleteAgent] = useState(null)
 
   // Reset fetch attempt when WebSocket connects
   useEffect(() => {
@@ -130,17 +132,28 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   }
 
   const handleDelete = (agent) => {
-    const confirmMessage = `Delete agent "${
-      agent.name
-    }"?\n\nThis will permanently delete:\n• The agent configuration\n• All training pages (${
-      agent.pagesCount || 0
-    })\n• All UI templates (${
-      agent.templatesCount || 0
-    })\n\nThis action cannot be undone.`
+    setPendingDeleteAgent(agent)
+    setShowDeleteDialog(true)
+  }
 
-    if (confirm(confirmMessage)) {
-      AgentHubService.deleteAgent(agent.agentId)
+  const confirmAgentDelete = () => {
+    if (pendingDeleteAgent) {
+      AgentHubService.deleteAgent(pendingDeleteAgent.agentId)
+      setShowDeleteDialog(false)
+      setPendingDeleteAgent(null)
     }
+  }
+
+  const cancelAgentDelete = () => {
+    setShowDeleteDialog(false)
+    setPendingDeleteAgent(null)
+  }
+
+  const closeSuccessDialog = () => {
+    dispatch({
+      type: ActionTypes.SHOW_AGENT_HUB_SUCCESS,
+      payload: null,
+    })
   }
 
   if (loading) {
@@ -320,6 +333,80 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
               </button>
               <button className="btn-confirm" onClick={confirmAgentSwitch}>
                 Switch Agent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Delete Confirmation Dialog */}
+      {showDeleteDialog && pendingDeleteAgent && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-dialog">
+            <div className="dialog-header">
+              <h3>Delete Agent?</h3>
+            </div>
+            <div className="dialog-content">
+              <p>
+                You are about to permanently delete{" "}
+                <strong>{pendingDeleteAgent.name}</strong>.
+              </p>
+              <p>This will permanently delete:</p>
+              <ul className="delete-list">
+                <li>The agent configuration</li>
+                <li>
+                  All training pages ({pendingDeleteAgent.pagesCount || 0})
+                </li>
+                <li>
+                  All UI templates ({pendingDeleteAgent.templatesCount || 0})
+                </li>
+              </ul>
+              <p className="warning-text">
+                <strong>This action cannot be undone.</strong>
+              </p>
+            </div>
+            <div className="dialog-actions">
+              <button className="btn-cancel" onClick={cancelAgentDelete}>
+                Cancel
+              </button>
+              <button className="btn-delete" onClick={confirmAgentDelete}>
+                Delete Agent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Delete Success Dialog */}
+      {successMessage && (
+        <div className="confirmation-overlay">
+          <div className="confirmation-dialog success-dialog">
+            <div className="dialog-header">
+              <h3>Agent Deleted</h3>
+            </div>
+            <div className="dialog-content">
+              <p>
+                {successMessage.agentName} and all training data deleted
+                successfully
+              </p>
+              <div className="success-stats">
+                <div className="stat-item">
+                  <span className="stat-label">Pages:</span>
+                  <span className="stat-value">
+                    {successMessage.pagesDeleted || 0}
+                  </span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Templates:</span>
+                  <span className="stat-value">
+                    {successMessage.templatesDeleted || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="dialog-actions">
+              <button className="btn-confirm" onClick={closeSuccessDialog}>
+                OK
               </button>
             </div>
           </div>
