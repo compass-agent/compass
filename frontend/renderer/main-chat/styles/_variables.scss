@@ -1,6 +1,6 @@
-// Font and Label styles
-$font-family-primary: 'Courier New', Courier, monospace;
-$font-family-secondary: 'Arial', sans-serif;
+// Font and Label styles - Updated to use centralized font system
+$font-family-primary: var(--font-family-primary);
+$font-family-secondary: var(--font-family-mono);
 $font-size-base: 14px;
 $font-size-large: 18px;
 $font-size-small: 12px;

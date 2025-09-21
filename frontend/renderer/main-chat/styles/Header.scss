@@ -197,11 +197,11 @@
         overflow: visible;
         
         &.tools-menu {
-          min-width: 310px;
+          min-width: 220px;
         }
         
         &.models-menu {
-          min-width: 310px;
+          min-width: 220px;
         }
         
         &.chatgpt-style {
@@ -303,10 +303,11 @@
                   background-color: #2a2a2a;
                   color: rgba(255, 255, 255, 0.8);
                   font-size: 11px;
-                  padding: 5px 8px;
-                  border-radius: 4px;
+                  padding: 8px 12px;
+                  border-radius: 6px;
                   white-space: normal;
-                  max-width: 280px;
+                  max-width: 380px;
+                  min-width: 320px;
                   width: max-content;
                   opacity: 0;
                   visibility: hidden;
@@ -315,6 +316,7 @@
                   margin-bottom: 5px;
                   border: 1px solid #444;
                   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                  line-height: 1.4;
                   
                   &::after {
                     content: '';
@@ -349,16 +351,27 @@
             justify-content: space-between;
             padding: 8px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
             
             &:last-child {
               border-bottom: none;
+            }
+            
+            &:hover {
+              background-color: #2a2a2a;
+            }
+            
+            &.selected {
+              background-color: var(--selection-bg);
+              border-color: var(--selection-border);
             }
             
             .tool-info {
               display: flex;
               flex-direction: column;
               flex: 1;
-              max-width: 210px;
+              max-width: 160px;
               
               .tool-status {
                 display: flex;
@@ -561,28 +574,49 @@
       gap: 12px;
       
       button {
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-size: 13px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
-        border: none;
+        transition: all 0.2s ease;
+        min-width: 80px;
         
         &.cancel-button {
-          background-color: transparent;
+          background: transparent;
+          border: 1px solid #666;
           color: #e0e0e0;
-          border: 1px solid rgba(255, 255, 255, 0.2);
           
           &:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background: #3a3a3a;
+            border-color: #888;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+          }
+          
+          &:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
           }
         }
         
         &.confirm-button {
-          background-color: #333;
-          color: #e0e0e0;
+          background: var(--primary-purple);
+          border: 1px solid var(--primary-purple);
+          color: white;
           
           &:hover {
-            background-color: #444;
+            background: var(--primary-purple-light);
+            border-color: var(--primary-purple-light);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(158, 97, 202, 0.2);
+          }
+          
+          &:active {
+            background: var(--primary-purple-dark);
+            border-color: var(--primary-purple);
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(158, 97, 202, 0.3);
           }
         }
       }
@@ -813,7 +847,8 @@ button, a, input, .interactive, [role="button"] {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Abel', sans-serif;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
   
   &:hover {
     background: var(--primary-purple-light);
@@ -834,10 +869,11 @@ button, a, input, .interactive, [role="button"] {
   }
 }
 
-/* Tools and Model buttons with same rectangular styling */
+/* Header buttons with enhanced styling */
+.header-new-chat-button,
 .header-tools-button,
 .header-model-button {
-  border: none;
+  border: 1px solid transparent;
   background: #232326;
   color: #9C9B9F;
   font-size: 14px;
@@ -847,27 +883,40 @@ button, a, input, .interactive, [role="button"] {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Abel', sans-serif;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   
   &:hover {
     background: var(--primary-purple-light);
     color: white;
+    border-color: var(--primary-purple-light);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--purple-shadow);
+    box-shadow: 0 2px 8px rgba(158, 97, 202, 0.2);
   }
   
   &:active {
     background: var(--primary-purple-dark);
+    border-color: var(--primary-purple);
     transform: translateY(0);
-    box-shadow: 0 2px 6px var(--purple-shadow);
+    box-shadow: 0 1px 4px rgba(158, 97, 202, 0.3);
   }
   
   &.active {
     background: var(--primary-purple);
     color: white;
+    border-color: var(--primary-purple-light);
+    box-shadow: 0 0 8px rgba(158, 97, 202, 0.3);
+    transform: translateY(-1px);
+    
+    &:hover {
+      background: var(--primary-purple-light);
+      border-color: #B47DD8;
+      box-shadow: 0 2px 12px rgba(158, 97, 202, 0.4);
+    }
   }
 }
 

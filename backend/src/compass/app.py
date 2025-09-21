@@ -328,7 +328,7 @@ def handle_upload_screenshot(data):
     logger.info('Received upload_screenshot request')
     try:
         image_data = data.get('image')
-        agent_name = data.get('agent_name', 'structural-engineer')
+        agent_name = data.get('agent_name', None)
         
         # Process screenshot using training agent
         result = training_agent.process_screenshot(image_data, agent_name)
@@ -348,7 +348,7 @@ def handle_save_templates(data):
     logger.info('Received save_templates request')
     try:
         image_data = data.get('image')
-        agent_name = data.get('agent_name', 'structural-engineer')
+        agent_name = data.get('agent_name', None)
         page_name = data.get('page_name', '')
         templates = data.get('templates', [])
         
@@ -378,7 +378,7 @@ def handle_get_screenshots(data):
     """Get screenshots/pages for an agent"""
     logger.info('Received get_screenshots request')
     try:
-        agent_name = data.get('agent_name', 'structural-engineer')
+        agent_name = data.get('agent_name', None)
         
         screenshots = training_agent.get_screenshots(agent_name)
         
