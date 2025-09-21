@@ -188,7 +188,7 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
                 }}
               >
                 <div className="col name">{agent.name || "Unnamed Agent"}</div>
-                <div className="col app">{agent.targetApp || "-"}</div>
+                <div className="col app">{agent.softwareIntegrations?.[0]?.name || "-"}</div>
                 <div className="col updated">
                   {agent.last_modified
                     ? new Date(agent.last_modified).toLocaleDateString()

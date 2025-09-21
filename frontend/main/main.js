@@ -226,9 +226,9 @@ ipcMain.handle("agent-selected", async (event, agentData) => {
         agentId: agentData.agentId,
         name: agentData.name,
         description: agentData.description,
-        tools: agentData.tools,
+        generalTools: agentData.generalTools,
+        softwareIntegrations: agentData.softwareIntegrations,
         configuration: agentData.configuration,
-        targetApp: agentData.targetApp,
       }
       console.log("🔧 Clean data to send:", cleanData)
       console.log("🔧 Clean data JSON:", JSON.stringify(cleanData))

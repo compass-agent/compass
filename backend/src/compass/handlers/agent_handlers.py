@@ -93,8 +93,8 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                 name = data.get('name', 'New Agent')
                 description = data.get('description', '')
                 prompt = data.get('prompt', '')
-                tools = data.get('tools', {})
-                target_apps = data.get('targetApps', [])  # Note: expecting targetApps (plural)
+                general_tools = data.get('generalTools', [])
+                software_integrations = data.get('softwareIntegrations', [])
                 
                 with Session() as session:
                     # Check if agent name already exists
@@ -107,8 +107,8 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                         name=name,
                         description=description,
                         prompt=prompt,
-                        tools=tools,
-                        target_apps=target_apps
+                        general_tools=general_tools,
+                        software_integrations=software_integrations
                     )
                     session.add(new_agent)
                     session.commit()
@@ -145,10 +145,10 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                         agent.description = data['description']
                     if 'prompt' in data:
                         agent.prompt = data['prompt']
-                    if 'tools' in data:
-                        agent.tools = data['tools']
-                    if 'targetApps' in data:
-                        agent.target_apps = data['targetApps']
+                    if 'generalTools' in data:
+                        agent.general_tools = data['generalTools']
+                    if 'softwareIntegrations' in data:
+                        agent.software_integrations = data['softwareIntegrations']
                     
                     agent.updated_at = datetime.utcnow()
                     session.commit()
@@ -222,8 +222,9 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                             return
                     
                     # Check schema version compatibility
-                    if parsed_data.get('schemaVersion') != '1.0.0':
-                        emit('agent_hub_result', {'action': 'import', 'success': False, 'message': f'Unsupported schema version: {parsed_data.get("schemaVersion")}'})
+                    schema_version = parsed_data.get('schemaVersion', '1.0.0')
+                    if schema_version not in ['1.0.0', '2.0.0']:
+                        emit('agent_hub_result', {'action': 'import', 'success': False, 'message': f'Unsupported schema version: {schema_version}'})
                         return
                     
                     with Session() as session:
@@ -233,19 +234,55 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                             emit('agent_hub_result', {'action': 'import', 'success': False, 'message': f'Agent with name "{parsed_data["name"]}" already exists'})
                             return
                         
+                        # Handle different schema versions
+                        if schema_version == '2.0.0':
+                            # New format
+                            general_tools = parsed_data.get('generalTools', [])
+                            software_integrations = parsed_data.get('softwareIntegrations', [])
+                        else:
+                            # Legacy format (1.0.0) - convert old structure to new
+                            general_tools = []
+                            software_integrations = []
+                            
+                            # Convert old tools format
+                            old_tools = parsed_data.get('tools', {})
+                            if old_tools.get('commandLine'):
+                                general_tools.append({'id': 'commandLine', 'name': 'Command Line', 'config': {'access': 'full'}})
+                            if old_tools.get('fileEditor'):
+                                general_tools.append({'id': 'fileEditor', 'name': 'File Editor', 'config': {'rootDir': '', 'restricted': True}})
+                            
+                            # Convert old targetApps format
+                            target_apps = parsed_data.get('targetApps', [])
+                            if isinstance(target_apps, list):
+                                for app in target_apps:
+                                    software_integrations.append({
+                                        'id': app,
+                                        'name': app,
+                                        'scripting': True,
+                                        'desktop': old_tools.get('desktopControl', False),
+                                        'config': {},
+                                        'trainingStatus': 'configured'
+                                    })
+                            
+                            # Handle legacy single targetApp field
+                            if 'targetApp' in parsed_data and parsed_data['targetApp'] and not target_apps:
+                                software_integrations.append({
+                                    'id': parsed_data['targetApp'],
+                                    'name': parsed_data['targetApp'],
+                                    'scripting': True,
+                                    'desktop': old_tools.get('desktopControl', False),
+                                    'config': {},
+                                    'trainingStatus': 'configured'
+                                })
+                        
                         # Create new agent
                         new_agent = Agent(
                             name=parsed_data['name'],
                             description=parsed_data.get('description', ''),
                             prompt=parsed_data.get('prompt', ''),
-                            tools=parsed_data.get('tools', {}),
-                            target_apps=parsed_data.get('targetApps', [])  # Handle both targetApp (singular) and targetApps (plural)
+                            general_tools=general_tools,
+                            software_integrations=software_integrations
                         )
-                        
-                        # Handle legacy targetApp field (singular) for backward compatibility
-                        if 'targetApp' in parsed_data and parsed_data['targetApp']:
-                            if not new_agent.target_apps:  # Only use if targetApps is empty
-                                new_agent.target_apps = [parsed_data['targetApp']]
                         
                         session.add(new_agent)
                         session.flush()  # Get the agent ID
@@ -320,13 +357,13 @@ def register_agent_handlers(socketio, state_manager, training_agent):
                     
                     # Create complete export data structure
                     export_data = {
-                        'schemaVersion': '1.0.0',
+                        'schemaVersion': '2.0.0',  # Updated schema version for new structure
                         'agentId': agent.agent_id,
                         'name': agent.name,
                         'description': agent.description,
                         'prompt': agent.prompt,
-                        'tools': agent.tools,
-                        'targetApps': agent.target_apps,  # Note: targetApps (plural) for multiple apps
+                        'generalTools': agent.general_tools,
+                        'softwareIntegrations': agent.software_integrations,
                         'createdAt': agent.created_at.isoformat() + 'Z' if agent.created_at else None,
                         'updatedAt': agent.updated_at.isoformat() + 'Z' if agent.updated_at else None,
                         'pagesCount': len(pages),
