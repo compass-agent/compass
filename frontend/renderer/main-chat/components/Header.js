@@ -46,20 +46,9 @@ function Header() {
   const [isInChat, setIsInChat] = useState(true) // Start as true so agent dropdown is read-only by default
   const [thinkingModeEnabled, setThinkingModeEnabled] = useState(true) // Thinking mode enabled by default
 
-  const [selectedAgent, setSelectedAgent] = useState("Structural-Engineer")
+  const [selectedAgent, setSelectedAgent] = useState(null)
   const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
-  const [selectedAgentData, setSelectedAgentData] = useState({
-    name: "Structural-Engineer",
-    targetApp: "SAP2000",
-    tools: {
-      desktopControl: true,
-      commandLine: false,
-      fileEditor: true,
-    },
-    configuration: {
-      sapSetup: true,
-    },
-  })
+  const [selectedAgentData, setSelectedAgentData] = useState(null)
 
   // Listen for agent selection from template training window
   useEffect(() => {
@@ -116,7 +105,6 @@ function Header() {
     { name: "Generic", description: "General purpose agent" },
     { name: "FreeCAD", description: "CAD design specialist" },
     { name: "OpenFoam", description: "Fluid dynamics expert" },
-    { name: "Structural-Engineer", description: "Structural analysis expert" },
   ]
   const modelOptions = [
     {
@@ -269,9 +257,10 @@ function Header() {
 
   // Helper function to format agent names for display
   const formatAgentName = (agentName) => {
+    if (!agentName) {
+      return "No Agent Selected"
+    }
     switch (agentName) {
-      case "structural-engineer":
-        return "Structural-Engineer"
       case "FreeCAD":
         return "FreeCAD"
       case "OpenFoam":
@@ -481,9 +470,7 @@ function Header() {
               </button>
             ) : (
               <button
-                className={`agent-text clickable-agent ${
-                  selectedAgent === "Structural-Engineer" ? "agent-text-3d" : ""
-                }`}
+                className="agent-text clickable-agent"
                 onClick={handleOpenTemplateTraining}
                 style={{
                   color: "#9C9B9F",

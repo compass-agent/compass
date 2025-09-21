@@ -1,27 +1,68 @@
-// Purple Theme Variables
+/* Purple Theme Color Palette - Unified System */
 :root {
-  // Primary purple colors
+  /* Primary Purple Family */
   --primary-purple: #9E61CA;
-  --primary-purple-light: #b884d4;
-  --primary-purple-dark: #7d4ba3;
+  --primary-purple-light: #B47DD8;
+  --primary-purple-dark: #8A4FB8;
+  --primary-purple-transparent: rgba(158, 97, 202, 0.1);
+  --primary-purple-semi: rgba(158, 97, 202, 0.7);
+  --primary-purple-hover: rgba(158, 97, 202, 0.15);
+  --primary-purple-active: rgba(158, 97, 202, 0.25);
   
-  // Purple transparencies
-  --primary-purple-transparent: rgba(158, 97, 202, 0.2);
-  --primary-purple-transparent-light: rgba(158, 97, 202, 0.1);
+  /* Status Colors */
+  --status-success: #9E61CA;
+  --status-warning: #B47DD8;
+  --status-error: #8A4FB8;
+  --status-info: rgba(158, 97, 202, 0.6);
   
-  // Status colors
-  --success-color: #2ecc71;
-  --warning-color: #f39c12;
-  --error-color: #e74c3c;
-  --info-color: #3498db;
+  /* Focus and Selection */
+  --focus-outline: #9E61CA;
+  --focus-shadow: rgba(158, 97, 202, 0.1);
+  --selection-bg: rgba(158, 97, 202, 0.15);
+  --selection-border: #9E61CA;
   
-  // Focus and selection colors
-  --primary-purple-focus: rgba(158, 97, 202, 0.3);
-  --primary-purple-selection: rgba(158, 97, 202, 0.15);
+  /* Shadows and Effects */
+  --purple-shadow: rgba(158, 97, 202, 0.3);
+  --purple-shadow-light: rgba(158, 97, 202, 0.1);
+  --purple-glow: rgba(158, 97, 202, 0.3);
+
+  /* Typography System - Complete Font System */
   
-  // Shadow colors
-  --primary-purple-shadow: rgba(158, 97, 202, 0.25);
-  --primary-purple-shadow-light: rgba(158, 97, 202, 0.15);
+  /* Primary Font Family - Inter (UI, Labels, Text) */
+  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+  
+  /* Monospace Font Family - JetBrains Mono (Code, Technical Data) */
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'SF Mono', monospace;
+  
+  /* System Font Fallback - For cases where custom fonts can't load */
+  --font-family-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Sizes - Consistent Scale */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
 }
 
 // SCSS Variables (for compatibility)
@@ -33,11 +74,30 @@ $success-color: #2ecc71;
 $warning-color: #f39c12;
 $error-color: #e74c3c;
 
-// Font and text - Updated to use centralized font system
+// Font and text - Complete font system using CSS variables
 $font-family-primary: var(--font-family-primary);
-$font-size-base: 14px;
-$font-size-large: 16px;
-$font-size-small: 12px;
+$font-family-mono: var(--font-family-mono);
+$font-family-system: var(--font-family-system);
+
+$font-weight-light: var(--font-weight-light);
+$font-weight-regular: var(--font-weight-regular);
+$font-weight-medium: var(--font-weight-medium);
+$font-weight-semibold: var(--font-weight-semibold);
+$font-weight-bold: var(--font-weight-bold);
+
+$font-size-xs: var(--font-size-xs);
+$font-size-sm: var(--font-size-sm);
+$font-size-base: var(--font-size-base);
+$font-size-md: var(--font-size-md);
+$font-size-lg: var(--font-size-lg);
+$font-size-xl: var(--font-size-xl);
+$font-size-2xl: var(--font-size-2xl);
+$font-size-3xl: var(--font-size-3xl);
+
+$line-height-tight: var(--line-height-tight);
+$line-height-normal: var(--line-height-normal);
+$line-height-relaxed: var(--line-height-relaxed);
+
 $color-text-primary: #ffffff;
 $color-text-secondary: #e0e0e0;
 $color-text-muted: #a0a0a0;

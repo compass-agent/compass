@@ -14,22 +14,14 @@ console.log("TemplateTraining component is rendering")
 
 const TemplateTraining = () => {
   const [currentView, setCurrentView] = useState(VIEW_STATES.AGENT_HUB)
-  const [selectedAgentId, setSelectedAgentId] = useState(
-    "structural-engineer-default"
-  )
+  const [selectedAgentId, setSelectedAgentId] = useState(null)
   const [agentData, setAgentData] = useState({
-    agentId: "structural-engineer-default",
-    name: "Structural-Engineer",
-    description:
-      "Structural analysis expert for engineering calculations and design",
-    prompt:
-      "You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.",
-    generalTools: [
-      { id: 'fileEditor', name: 'File Editor', config: { rootDir: '', restricted: true } }
-    ],
-    softwareIntegrations: [
-      { id: 'SAP2000', name: 'SAP2000', scripting: true, desktop: true, config: {}, trainingStatus: 'configured' }
-    ],
+    agentId: null,
+    name: "",
+    description: "",
+    prompt: "",
+    generalTools: [],
+    softwareIntegrations: [],
     configuration: {},
     pages: [],
   })
@@ -121,52 +113,21 @@ const TemplateTraining = () => {
     }
   }, [])
 
-  // Auto-send default agent data to main window on mount
+  // Load last selected agent from Agent Hub on mount
   useEffect(() => {
-    // Send default agent data to main window when component mounts
-    if (window.electron?.ipcRenderer?.invoke) {
-      const defaultAgentData = {
-        agentId: "structural-engineer-default",
-        name: "Structural-Engineer",
-        description:
-          "Structural analysis expert for engineering calculations and design",
-        prompt:
-          "You are an expert structural engineer assistant specialized in SAP2000, structural analysis, modeling, and design tasks.",
-        generalTools: [
-          { id: 'fileEditor', name: 'File Editor', config: { rootDir: '', restricted: true } }
-        ],
-        softwareIntegrations: [
-          { id: 'SAP2000', name: 'SAP2000', scripting: true, desktop: true, config: {}, trainingStatus: 'configured' }
-        ],
-        configuration: {},
-      }
-
-      console.log(
-        "🚀 Auto-sending default agent data to main window:",
-        defaultAgentData
-      )
-
-      window.electron.ipcRenderer
-        .invoke("agent-selected", defaultAgentData)
-        .then((result) => {
-          console.log("🚀 Auto-send result:", result)
-        })
-        .catch((error) => {
-          console.error("🚀 Auto-send error:", error)
-        })
-    }
+    // Only load if no agent is currently set - avoid overriding user selection
+    console.log(
+      "🚀 TemplateTraining mounted, checking for existing agent selection"
+    )
+    // The agent selection should come from Agent Hub, not be hardcoded here
   }, [])
 
-  // Set default agent data when Agent Hub is first displayed
+  // Monitor view changes for Agent Hub
   useEffect(() => {
-    if (
-      currentView === VIEW_STATES.AGENT_HUB &&
-      agentData.agentId === "structural-engineer-default"
-    ) {
-      // This ensures the default agent is properly set when Agent Hub is first shown
-      console.log("🎯 Agent Hub displayed, default agent data is set")
+    if (currentView === VIEW_STATES.AGENT_HUB) {
+      console.log("🎯 Agent Hub displayed")
     }
-  }, [currentView, agentData.agentId])
+  }, [currentView])
 
   const handleAnalyze = (imageData) => {
     if (!imageData) {
@@ -293,7 +254,8 @@ const TemplateTraining = () => {
                     description: agentNameOrData.description || "",
                     prompt: agentNameOrData.prompt || "",
                     generalTools: agentNameOrData.generalTools || [],
-                    softwareIntegrations: agentNameOrData.softwareIntegrations || [],
+                    softwareIntegrations:
+                      agentNameOrData.softwareIntegrations || [],
                     configuration: agentNameOrData.configuration || {},
                     pages: [],
                   })

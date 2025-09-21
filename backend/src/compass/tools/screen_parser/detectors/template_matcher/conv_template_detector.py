@@ -36,7 +36,7 @@ class ConvTemplateDetector:
             raise RuntimeError("Template matching is not enabled in config")
             
         self.threshold = config.get('threshold', 0.8)
-        self.agent_name = agent_name if agent_name is not None else "structural-engineer"
+        self.agent_name = agent_name
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"Using device: {self.device}")
         

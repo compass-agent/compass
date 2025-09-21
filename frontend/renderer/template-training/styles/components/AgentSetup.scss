@@ -2,6 +2,7 @@
   padding: 2rem;
   height: 100vh;
   overflow-y: auto;
+  font-family: var(--font-family-primary);
   
   // Custom scrollbar styling to match app theme
   &::-webkit-scrollbar {
@@ -36,6 +37,10 @@
     color: #e0e0e0;
     margin-bottom: 2rem;
     text-align: left;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
   }
 
   .form-group {
@@ -45,13 +50,19 @@
       display: block;
       color: #e0e0e0;
       margin-bottom: 0.5rem;
-      font-weight: 500;
+      font-family: var(--font-family-primary);
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-normal);
     }
 
     .info-text {
       color: #9c9b9f;
-      font-size: 0.9rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-regular);
       font-style: italic;
+      line-height: var(--line-height-normal);
       padding: 0.5rem 0;
       margin-bottom: 0.8rem;
     }
@@ -69,7 +80,10 @@
         color: #e0e0e0;
         cursor: pointer;
         box-sizing: border-box;
-        font-size: 0.9rem;
+        font-family: var(--font-family-primary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--line-height-normal);
         transition: all 0.2s ease;
 
         &:hover {
@@ -115,7 +129,10 @@
           margin-right: 0.5rem;
           color: #e0e0e0;
           cursor: pointer;
-          font-weight: 500;
+          font-family: var(--font-family-primary);
+          font-weight: var(--font-weight-medium);
+          font-size: var(--font-size-base);
+          line-height: var(--line-height-normal);
         }
 
         .info-icon {
@@ -130,8 +147,9 @@
             background-color: var(--primary-purple);
             color: white;
             border-radius: 50%;
-            font-size: 10px;
-            font-weight: bold;
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
             cursor: help;
             transition: all 0.2s ease;
             
@@ -150,7 +168,10 @@
             color: #e0e0e0;
             padding: 0.5rem 0.8rem;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-family: var(--font-family-primary);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-regular);
+            line-height: var(--line-height-normal);
             white-space: nowrap;
             opacity: 0;
             visibility: hidden;
@@ -175,7 +196,10 @@
       border: 1px solid #404040;
       border-radius: 4px;
       color: #e0e0e0;
-      font-size: 1rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--line-height-normal);
       box-sizing: border-box;
 
       &:focus {
@@ -202,7 +226,10 @@
 
       .add-button {
         padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
+        font-family: var(--font-family-primary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--line-height-normal);
         border: 1px solid #404040;
         background-color: #3a3a3a;
         color: #e0e0e0;
@@ -214,6 +241,15 @@
           background-color: var(--primary-purple-light);
           border-color: var(--primary-purple);
           color: white;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px var(--purple-shadow);
+        }
+        
+        &:active {
+          background-color: var(--primary-purple-dark);
+          border-color: var(--primary-purple);
+          transform: translateY(0);
+          box-shadow: 0 1px 4px var(--purple-shadow);
         }
       }
 
@@ -232,6 +268,10 @@
           padding: 0.5rem 0.8rem;
           color: #e0e0e0;
           cursor: pointer;
+          font-family: var(--font-family-primary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-regular);
+          line-height: var(--line-height-normal);
           transition: background-color 0.2s;
 
           &:hover {
@@ -262,14 +302,22 @@
       padding: 1.5rem;
       text-align: center;
       color: #9c9b9f;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-regular);
       font-style: italic;
+      line-height: var(--line-height-normal);
     }
 
     .table-header {
       background-color: #262626;
       color: #9c9b9f;
-      font-size: 0.85rem;
-      font-weight: 500;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-wide);
       border-bottom: 1px solid #404040;
     }
 
@@ -284,6 +332,10 @@
       border-bottom: 1px solid #333;
       background-color: #2a2a2a;
       color: #e0e0e0;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-regular);
+      line-height: var(--line-height-normal);
       transition: background-color 0.2s;
       min-height: 40px; // Consistent compact height
       position: relative; // Enable positioning context for dropdowns
@@ -324,17 +376,32 @@
     .col.configuration {
       .config-status {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         gap: 0.5rem;
-        flex-wrap: wrap;
+        position: relative;
+        
+        .action-row {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+        }
+        
+        .status-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
 
         .config-badge {
           padding: 0.2rem 0.5rem;
           font-size: 0.75rem;
           border-radius: 12px;
-          background-color: var(--primary-purple-transparent);
-          color: var(--primary-purple-light);
-          border: 1px solid var(--primary-purple);
+          background-color: rgba(96, 96, 96, 0.2);
+          color: #a0a0a0;
+          border: 1px solid #606060;
+          font-family: var(--font-family-primary);
+          font-weight: var(--font-weight-regular);
 
           &.restricted {
             background-color: rgba(255, 165, 0, 0.2);
@@ -350,17 +417,42 @@
         }
 
         .train-ui-btn {
-          padding: 0.2rem 0.5rem;
+          padding: 0.3rem 0.8rem;
           font-size: 0.75rem;
+          font-family: var(--font-family-primary);
+          font-weight: var(--font-weight-medium);
           border: 1px solid var(--primary-purple);
-          background-color: var(--primary-purple-transparent);
-          color: var(--primary-purple-light);
-          border-radius: 3px;
-
+          background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          box-shadow: 0 2px 4px var(--purple-shadow-light);
+          
+          // Add subtle pulse animation to make it more noticeable
+          animation: subtle-pulse 2s infinite;
+          
           &:hover {
-            background-color: var(--primary-purple-light);
-            color: white;
+            background: linear-gradient(135deg, var(--primary-purple-light) 0%, var(--primary-purple) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--purple-shadow);
+            border-color: var(--primary-purple-light);
+            animation: none; // Stop pulse on hover
           }
+          
+          &:active {
+            background: linear-gradient(135deg, var(--primary-purple-dark) 0%, var(--primary-purple) 100%);
+            transform: translateY(0);
+            box-shadow: 0 1px 3px var(--purple-shadow);
+          }
+        }
+        
+        // Pulse animation for Train UI button
+        @keyframes subtle-pulse {
+          0% { box-shadow: 0 2px 4px var(--purple-shadow-light); }
+          50% { box-shadow: 0 2px 8px var(--purple-shadow); }
+          100% { box-shadow: 0 2px 4px var(--purple-shadow-light); }
         }
       }
     }
@@ -373,17 +465,27 @@
     
     .three-dots {
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: #cfcfcf;
       padding: 0.2rem 0.4rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-regular);
       transition: all 0.2s ease;
 
       &:hover {
         background-color: #404040;
+        border-color: #555;
         color: #e0e0e0;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
       }
     }
 
@@ -403,7 +505,10 @@
         color: #e0e0e0;
         cursor: pointer;
         transition: background-color 0.2s;
-        font-size: 0.85rem;
+        font-family: var(--font-family-primary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-regular);
+        line-height: var(--line-height-normal);
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -442,12 +547,21 @@
     padding: 0.3rem 0.5rem;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
     transition: all 0.2s ease;
 
     &:hover {
       background-color: #404040;
       color: #e0e0e0;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     &.danger {
@@ -457,6 +571,13 @@
       &:hover {
         background-color: #5a3030;
         border-color: #8a5050;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(240, 183, 183, 0.2);
+      }
+      
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(240, 183, 183, 0.3);
       }
     }
   }
@@ -474,8 +595,10 @@
       padding: 0.8rem 2rem;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 1rem;
-      font-weight: 500;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
       transition: all 0.2s ease;
       box-sizing: border-box;
       background-color: var(--primary-purple);
@@ -509,7 +632,10 @@
       padding: 0.8rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 1rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
       transition: background-color 0.2s;
       box-sizing: border-box;
 
@@ -549,7 +675,9 @@
 
   .tooltip-icon {
     color: #9C9B9F;
-    font-size: 12px;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
     cursor: help;
     transition: color 0.3s ease;
     flex-shrink: 0;
@@ -569,8 +697,10 @@
     color: #E0E0E0;
     padding: 8px 12px;
     border-radius: 6px;
-    font-size: 12px;
-    line-height: 1.4;
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
     white-space: normal;
     max-width: 280px;
     width: max-content;
@@ -650,14 +780,19 @@
     h3 {
       margin: 0;
       color: #e0e0e0;
-      font-size: 1.1rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-tight);
     }
 
     .modal-close {
       background: none;
       border: none;
       color: #9c9b9f;
-      font-size: 1.5rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-regular);
       cursor: pointer;
       padding: 0;
       width: 24px;
@@ -997,7 +1132,10 @@
       padding: 0.5rem 1rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-family: var(--font-family-primary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      line-height: var(--line-height-normal);
       transition: all 0.2s ease;
       border: 1px solid;
     }

@@ -56,6 +56,7 @@ const initialState = {
     loading: false,
     selectedAgent: null,
     error: null,
+    successMessage: null,
   },
 }
 
@@ -260,6 +261,15 @@ function appReducer(state, action) {
         },
       }
 
+    case ActionTypes.SHOW_AGENT_HUB_SUCCESS:
+      return {
+        ...state,
+        agentHub: {
+          ...state.agentHub,
+          successMessage: action.payload,
+        },
+      }
+
     default:
       return state
   }
@@ -414,32 +424,47 @@ export function AppProvider({ children }) {
           case "delete":
             if (data.success && data.agentId) {
               console.log("AGENT_HUB: Removing agent:", data.agentId)
-              
-              // Show deletion statistics
+
+              // Show success dialog with deletion statistics
               if (data.message) {
                 console.log("AGENT_HUB: Delete details:", data.message)
-                const statsMessage = `${data.message}\n\nDeleted:\n• Pages: ${data.pagesDeleted || 0}\n• Templates: ${data.templatesDeleted || 0}`
-                alert(statsMessage)
+                dispatch({
+                  type: ActionTypes.SHOW_AGENT_HUB_SUCCESS,
+                  payload: {
+                    agentName: data.message.replace(
+                      " and all training data deleted successfully",
+                      ""
+                    ),
+                    pagesDeleted: data.pagesDeleted || 0,
+                    templatesDeleted: data.templatesDeleted || 0,
+                  },
+                })
               }
-              
+
               dispatch({
                 type: ActionTypes.AGENT_HUB_REMOVE_AGENT,
                 payload: data.agentId,
               })
             } else if (!data.success && data.message) {
               console.error("AGENT_HUB: Delete failed:", data.message)
+              // For errors, we can still use alert or create an error dialog
               alert(`Failed to delete agent: ${data.message}`)
             }
             break
           case "export":
             if (data.success && data.content && data.filename) {
-              console.log("AGENT_HUB: Downloading exported agent:", data.filename)
+              console.log(
+                "AGENT_HUB: Downloading exported agent:",
+                data.filename
+              )
               // Decode base64 content and trigger download
               try {
                 const jsonContent = atob(data.content)
-                const blob = new Blob([jsonContent], { type: "application/json" })
+                const blob = new Blob([jsonContent], {
+                  type: "application/json",
+                })
                 const url = URL.createObjectURL(blob)
-                
+
                 // Create download link
                 const link = document.createElement("a")
                 link.href = url
@@ -448,7 +473,7 @@ export function AppProvider({ children }) {
                 link.click()
                 document.body.removeChild(link)
                 URL.revokeObjectURL(url)
-                
+
                 console.log("AGENT_HUB: Export download completed")
               } catch (error) {
                 console.error("AGENT_HUB: Export download failed:", error)
