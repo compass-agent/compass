@@ -55,7 +55,6 @@ import signal
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
-from datetime import datetime
 
 # Initialize Flask
 app = Flask(__name__)
@@ -88,10 +87,6 @@ state_manager = StateManager(socketio)
 agent_service = AgentService(state_manager)
 workflow_manager = WorkflowManager()
 training_agent = TrainingAgent()
-
-# Register agent handlers
-from compass.handlers.agent_handlers import register_agent_handlers
-register_agent_handlers(socketio, state_manager, training_agent)
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
@@ -166,7 +161,21 @@ def handle_execute_tool_and_generate_action():
 def handle_ping():
     emit('pong')
 
-
+@socketio.on('new_chat')
+def handle_new_chat(data):
+    logger.info('Starting new chat')
+    try:
+        # Update state manager with new agent type
+        agent_name = data.get('agent_name', DEFAULT_AGENT_TYPE)  # Use default from constants if not specified
+        state_manager.update_state({'agentType': agent_name})
+        
+        # Reinitialize just the agent service
+        global agent_service
+        agent_service = AgentService(state_manager)
+        emit('chat_reset', {'status': 'success'})
+    except Exception as e:
+        logger.error(f"Error starting new chat: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
 
 @socketio.on('get_workflows')
 def handle_get_workflows():
@@ -328,7 +337,7 @@ def handle_upload_screenshot(data):
     logger.info('Received upload_screenshot request')
     try:
         image_data = data.get('image')
-        agent_name = data.get('agent_name', None)
+        agent_name = data.get('agent_name', 'structural-engineer')
         
         # Process screenshot using training agent
         result = training_agent.process_screenshot(image_data, agent_name)
@@ -348,7 +357,7 @@ def handle_save_templates(data):
     logger.info('Received save_templates request')
     try:
         image_data = data.get('image')
-        agent_name = data.get('agent_name', None)
+        agent_name = data.get('agent_name', 'structural-engineer')
         page_name = data.get('page_name', '')
         templates = data.get('templates', [])
         
@@ -371,14 +380,27 @@ def handle_save_templates(data):
             'message': str(e)
         })
 
-
+@socketio.on('get_agents')
+def handle_get_agents(data):
+    """Get list of available agents"""
+    logger.info('Received get_agents request')
+    try:
+        agents = training_agent.get_agent_names()
+        
+        emit('agents_list', {
+            'agents': agents,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Error getting agents: {e}", exc_info=True)
+        emit('error', {'message': str(e)})
 
 @socketio.on('get_screenshots')
 def handle_get_screenshots(data):
     """Get screenshots/pages for an agent"""
     logger.info('Received get_screenshots request')
     try:
-        agent_name = data.get('agent_name', None)
+        agent_name = data.get('agent_name', 'structural-engineer')
         
         screenshots = training_agent.get_screenshots(agent_name)
         
@@ -389,10 +411,6 @@ def handle_get_screenshots(data):
     except Exception as e:
         logger.error(f"Error getting screenshots: {e}", exc_info=True)
         emit('error', {'message': str(e)})
-
-
-
-
 
 if __name__ == '__main__':
     try:

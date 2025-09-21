@@ -2,7 +2,7 @@ import os
 
 # Agent constants:
 MAX_ITERATIONS = 20 # Maximum number of iterations for the agent in auto Mode
-DEFAULT_AGENT_TYPE = None  # No default agent - user must select
+DEFAULT_AGENT_TYPE = "structural-engineer"  # Default agent type to use
 
 
 # LLM constants:

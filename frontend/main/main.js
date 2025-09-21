@@ -25,7 +25,7 @@ const WINDOW_CONFIG = {
 }
 
 // Window bounds persistence
-const BOUNDS_FILE = path.join(app.getPath("userData"), "window-bounds.json")
+const BOUNDS_FILE = path.join(app.getPath('userData'), 'window-bounds.json')
 
 function saveWindowBounds() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -37,10 +37,10 @@ function saveWindowBounds() {
 function loadWindowBounds() {
   try {
     if (fs.existsSync(BOUNDS_FILE)) {
-      return JSON.parse(fs.readFileSync(BOUNDS_FILE, "utf8"))
+      return JSON.parse(fs.readFileSync(BOUNDS_FILE, 'utf8'))
     }
   } catch (error) {
-    console.log("Could not load window bounds:", error.message)
+    console.log('Could not load window bounds:', error.message)
   }
   return null
 }
@@ -86,7 +86,7 @@ function createMenu() {
 
 function createWindow() {
   const savedBounds = loadWindowBounds()
-
+  
   mainWindow = new BrowserWindow({
     width: savedBounds?.width || WINDOW_CONFIG.WIDTH,
     height: savedBounds?.height || WINDOW_CONFIG.HEIGHT,
@@ -99,6 +99,7 @@ function createWindow() {
       webSecurity: false,
       enableHardwareAcceleration: true,
     },
+    alwaysOnTop: true,
     frame: false,
     transparent: true, // Enable window transparency
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
@@ -120,19 +121,14 @@ function createWindow() {
     createMenu()
   }
 
-  if (isDev) {
+  if (isDev || true) {
     // Open DevTools in detached mode to preserve window transparency
     mainWindow.webContents.openDevTools({ mode: "detach" })
   }
 
   // Save window bounds when closing
-  mainWindow.on("close", () => {
+  mainWindow.on('close', () => {
     saveWindowBounds()
-
-    // Close template training window if it's open
-    if (templateTrainingWindow && !templateTrainingWindow.isDestroyed()) {
-      templateTrainingWindow.close()
-    }
   })
 
   setupFileHandlers(mainWindow)
@@ -140,23 +136,14 @@ function createWindow() {
 }
 
 function createTemplateTrainingWindow() {
-  const mainBounds = mainWindow
-    ? mainWindow.getBounds()
-    : { x: 100, y: 100, width: 900, height: 700 }
   templateTrainingWindow = new BrowserWindow({
     width: 1024,
     height: 768,
-    x: Math.max(0, (mainBounds.x || 0) + 40),
-    y: Math.max(0, (mainBounds.y || 0) + 40),
-    modal: false,
-    title: "Agent Hub",
-    frame: false,
-    titleBarStyle: "hidden",
     webPreferences: {
-      nodeIntegration: false,
+      nodeIntegration: false, // Changed to false for security
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
-      webSecurity: false,
+      webSecurity: false, // Add this for development
     },
     show: false,
   })
@@ -171,17 +158,13 @@ function createTemplateTrainingWindow() {
   // Remove or comment out these lines
   templateTrainingWindow.webContents.on("did-finish-load", () => {
     console.log("Template training window finished loading")
-    templateTrainingWindow.webContents.openDevTools()
+    // templateTrainingWindow.webContents.openDevTools();  // Remove this line
   })
 
   templateTrainingWindow.once("ready-to-show", () => {
     console.log("Template training window ready to show")
-    try {
-      templateTrainingWindow.show()
-      templateTrainingWindow.focus()
-    } catch {
-      /* noop */
-    }
+    templateTrainingWindow.center()
+    templateTrainingWindow.show()
   })
 
   // Remove or comment out this block
@@ -193,68 +176,6 @@ function createTemplateTrainingWindow() {
     templateTrainingWindow = null
   })
 }
-
-// IPC Handlers
-ipcMain.on("open-template-training", () => {
-  if (!templateTrainingWindow) {
-    createTemplateTrainingWindow()
-  } else {
-    templateTrainingWindow.focus()
-  }
-})
-
-ipcMain.on("close-template-training", () => {
-  if (templateTrainingWindow && !templateTrainingWindow.isDestroyed()) {
-    templateTrainingWindow.close()
-  }
-})
-
-// Handle agent selection from template training window
-ipcMain.handle("agent-selected", async (event, agentData) => {
-  console.log("🔧 Main process received agent-selected:", agentData)
-  console.log("🔧 Agent data type:", typeof agentData)
-  console.log(
-    "🔧 Agent data keys:",
-    agentData ? Object.keys(agentData) : "none"
-  )
-  console.log("🔧 Agent data JSON:", JSON.stringify(agentData, null, 2))
-
-  // Validate agent data
-  if (!agentData || typeof agentData !== "object") {
-    console.error("🔧 Invalid agent data received in main process:", agentData)
-    return { success: false, error: "Invalid agent data" }
-  }
-
-  // Send the selected agent to the main window
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    console.log("🔧 About to send to main window:", agentData)
-    try {
-      // Create a clean copy of the data to avoid any serialization issues
-      const cleanData = {
-        agentId: agentData.agentId,
-        name: agentData.name,
-        description: agentData.description,
-        generalTools: agentData.generalTools,
-        softwareIntegrations: agentData.softwareIntegrations,
-        configuration: agentData.configuration,
-      }
-      console.log("🔧 Clean data to send:", cleanData)
-      console.log("🔧 Clean data JSON:", JSON.stringify(cleanData))
-
-      mainWindow.webContents.send("update-selected-agent", cleanData)
-      console.log("🔧 Successfully sent agent data to main window")
-    } catch (error) {
-      console.error("🔧 Error sending to main window:", error)
-      return { success: false, error: error.message }
-    }
-  } else {
-    console.error("🔧 Main window is not available")
-    return { success: false, error: "Main window not available" }
-  }
-
-  // Return success response
-  return { success: true }
-})
 
 app.whenReady().then(() => {
   if (!isDev) {
@@ -303,5 +224,11 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
+  }
+})
+
+ipcMain.on("open-template-training", () => {
+  if (!templateTrainingWindow) {
+    createTemplateTrainingWindow()
   }
 })
