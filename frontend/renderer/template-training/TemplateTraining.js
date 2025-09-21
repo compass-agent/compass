@@ -5,7 +5,6 @@ import AgentSetup from "./components/AgentSetup"
 import PageEditor from "./components/PageEditor"
 import PagesList from "./components/PagesList"
 import Settings from "./components/Settings"
-import TemplateNavigation from "./components/TemplateNavigation"
 import { VIEW_STATES } from "./constants/viewStates"
 import { useBoxManagement } from "./hooks/useBoxManagement"
 import AgentHubService from "./services/agentHubService"
@@ -14,7 +13,7 @@ import "./styles/TemplateTraining.scss"
 console.log("TemplateTraining component is rendering")
 
 const TemplateTraining = () => {
-  const [currentView, setCurrentView] = useState(VIEW_STATES.SETTINGS)
+  const [currentView, setCurrentView] = useState(VIEW_STATES.AGENT_HUB)
   const [selectedAgentId, setSelectedAgentId] = useState(
     "structural-engineer-default"
   )
@@ -544,18 +543,139 @@ const TemplateTraining = () => {
     }
   }
 
+  // Custom title bar component with integrated navigation
+  const CustomTitleBar = () => {
+    const renderBreadcrumb = () => {
+      // For SETTINGS view, just show Settings
+      if (currentView === VIEW_STATES.SETTINGS) {
+        return <span className="nav-text">Settings</span>
+      }
+
+      // For AGENT_HUB view, just show Agent Hub
+      if (currentView === VIEW_STATES.AGENT_HUB) {
+        return <span className="nav-text">Agent Hub</span>
+      }
+
+      // For other views, show navigation breadcrumb
+      const items = []
+
+      // Agent Hub (clickable to go back)
+      items.push(
+        <span
+          key="hub"
+          className="nav-item"
+          onClick={() => handleNavigate(VIEW_STATES.AGENT_HUB)}
+        >
+          Agent Hub
+        </span>
+      )
+
+      // Add separator and next level
+      if (currentView !== VIEW_STATES.AGENT_HUB) {
+        items.push(
+          <span key="sep1" className="nav-separator">
+            ›
+          </span>
+        )
+
+        // Determine the current page label and navigation
+        if (currentView === VIEW_STATES.SETUP) {
+          const isCreating = getPageTitle() === "Create New Agent"
+          const currentLabel = isCreating
+            ? `Create ${agentData.name || "Agent"}`
+            : `Edit ${agentData.name || "Agent"}`
+          items.push(
+            <span key="current" className="nav-text">
+              {currentLabel}
+            </span>
+          )
+        } else if (currentView === VIEW_STATES.PAGES_LIST) {
+          // Agent Hub > Edit Agent > Pages
+          items.push(
+            <span
+              key="setup"
+              className="nav-item"
+              onClick={() => handleNavigate(VIEW_STATES.SETUP)}
+            >
+              Edit {agentData.name || "Agent"}
+            </span>
+          )
+          items.push(
+            <span key="sep2" className="nav-separator">
+              ›
+            </span>
+          )
+          items.push(
+            <span key="pages" className="nav-text">
+              Pages
+            </span>
+          )
+        } else if (currentView === VIEW_STATES.PAGE_EDITOR) {
+          // Agent Hub > Edit Agent > Pages > Page Name
+          items.push(
+            <span
+              key="setup"
+              className="nav-item"
+              onClick={() => handleNavigate(VIEW_STATES.SETUP)}
+            >
+              Edit {agentData.name || "Agent"}
+            </span>
+          )
+          items.push(
+            <span key="sep2" className="nav-separator">
+              ›
+            </span>
+          )
+          items.push(
+            <span
+              key="pages"
+              className="nav-item"
+              onClick={() => handleNavigate(VIEW_STATES.PAGES_LIST)}
+            >
+              Pages
+            </span>
+          )
+          items.push(
+            <span key="sep3" className="nav-separator">
+              ›
+            </span>
+          )
+          items.push(
+            <span key="page" className="nav-text">
+              {pageName || "New Page"}
+            </span>
+          )
+        }
+      }
+
+      return items
+    }
+
+    return (
+      <div className="custom-title-bar">
+        <div className="title-bar-content">
+          <div className="title-breadcrumb">{renderBreadcrumb()}</div>
+        </div>
+        <div className="title-bar-controls">
+          <button
+            className="title-control close"
+            onClick={() => {
+              // Close only this window, not the main app
+              if (window.electron?.ipcRenderer?.send) {
+                window.electron.ipcRenderer.send("close-template-training")
+              }
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="template-training">
-      {currentView !== VIEW_STATES.SETTINGS && (
-        <TemplateNavigation
-          currentView={currentView}
-          agentName={agentData.name}
-          pageName={pageName}
-          onNavigate={handleNavigate}
-          pageTitle={getPageTitle()}
-          currentScreenshot={currentScreenshot}
-        />
-      )}
+      <CustomTitleBar />
       {saveStatus && (
         <div
           className={`save-status ${

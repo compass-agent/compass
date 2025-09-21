@@ -1,12 +1,14 @@
 import {
   faBoxArchive,
+  faCheck,
+  faEllipsisVertical,
   faFileImport,
   faPen,
   faPlus,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { ActionTypes } from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
 import AgentHubService from "../services/agentHubService"
@@ -17,6 +19,7 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   const { agents, loading, error } = state.agentHub
   const { connected } = state.connection
   const hasAttemptedFetch = useRef(false)
+  const [openDropdown, setOpenDropdown] = useState(null)
 
   // Reset fetch attempt when WebSocket connects
   useEffect(() => {
@@ -27,12 +30,27 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
 
   useEffect(() => {
     // Only fetch if we don't have agents cached, haven't attempted to fetch yet, and WebSocket is connected
-    if (agents.length === 0 && !loading && !error && !hasAttemptedFetch.current && connected) {
+    if (
+      agents.length === 0 &&
+      !loading &&
+      !error &&
+      !hasAttemptedFetch.current &&
+      connected
+    ) {
       hasAttemptedFetch.current = true
       dispatch({ type: ActionTypes.SET_AGENT_HUB_LOADING, payload: true })
       AgentHubService.listAgents()
     }
   }, [agents.length, loading, error, connected])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null)
+    if (openDropdown) {
+      document.addEventListener("click", handleClickOutside)
+      return () => document.removeEventListener("click", handleClickOutside)
+    }
+  }, [openDropdown])
 
   const handleCreate = () => {
     // Navigate to agent setup for creating new agent
@@ -56,10 +74,10 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
         try {
           // Send the complete file content to backend for processing
           const fileContent = e.target.result
-          
+
           // Basic JSON validation
           JSON.parse(fileContent) // This will throw if invalid JSON
-          
+
           // Send to backend for complete import (agent + pages + templates)
           AgentHubService.importAgent(fileContent)
         } catch (error) {
@@ -82,8 +100,14 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
   }
 
   const handleDelete = (agent) => {
-    const confirmMessage = `Delete agent "${agent.name}"?\n\nThis will permanently delete:\n• The agent configuration\n• All training pages (${agent.pagesCount || 0})\n• All UI templates (${agent.templatesCount || 0})\n\nThis action cannot be undone.`
-    
+    const confirmMessage = `Delete agent "${
+      agent.name
+    }"?\n\nThis will permanently delete:\n• The agent configuration\n• All training pages (${
+      agent.pagesCount || 0
+    })\n• All UI templates (${
+      agent.templatesCount || 0
+    })\n\nThis action cannot be undone.`
+
     if (confirm(confirmMessage)) {
       AgentHubService.deleteAgent(agent.agentId)
     }
@@ -134,7 +158,7 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
           <div className="col name">Name</div>
           <div className="col app">Target App</div>
           <div className="col updated">Updated</div>
-          <div className="col actions">Actions</div>
+          <div className="col menu"></div>
         </div>
         <div className="agent-table-body">
           {agents.length === 0 ? (
@@ -194,37 +218,76 @@ const AgentHub = ({ onSelectAgent, selectedAgentId, onAgentSelect }) => {
                     ? new Date(agent.last_modified).toLocaleDateString()
                     : "-"}
                 </div>
-                <div className="col actions">
-                  <button
-                    className="icon-btn"
-                    onClick={(e) => {
-                      e.stopPropagation() // Prevent row selection when clicking edit
-                      onSelectAgent(agent)
-                    }}
-                    title="Edit"
-                  >
-                    <FontAwesomeIcon icon={faPen} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={(e) => {
-                      e.stopPropagation() // Prevent row selection when clicking export
-                      handleExport(agent)
-                    }}
-                    title="Export"
-                  >
-                    <FontAwesomeIcon icon={faBoxArchive} />
-                  </button>
-                  <button
-                    className="icon-btn danger"
-                    onClick={(e) => {
-                      e.stopPropagation() // Prevent row selection when clicking delete
-                      handleDelete(agent)
-                    }}
-                    title="Delete"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                <div className="col menu">
+                  <div className="dropdown-container">
+                    <button
+                      className="menu-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOpenDropdown(
+                          openDropdown === agent.agentId ? null : agent.agentId
+                        )
+                      }}
+                      title="More actions"
+                    >
+                      <FontAwesomeIcon icon={faEllipsisVertical} />
+                    </button>
+                    {openDropdown === agent.agentId && (
+                      <div className="dropdown-menu">
+                        <button
+                          className={`dropdown-item ${
+                            selectedAgentId === agent.agentId ? "selected" : ""
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenDropdown(null)
+                            if (onAgentSelect) {
+                              onAgentSelect(agent)
+                            }
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faCheck} />
+                          {selectedAgentId === agent.agentId
+                            ? "Selected"
+                            : "Select"}
+                        </button>
+                        <div className="dropdown-divider"></div>
+                        <button
+                          className="dropdown-item"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenDropdown(null)
+                            onSelectAgent(agent)
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faPen} />
+                          Edit
+                        </button>
+                        <button
+                          className="dropdown-item"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenDropdown(null)
+                            handleExport(agent)
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faBoxArchive} />
+                          Export
+                        </button>
+                        <button
+                          className="dropdown-item danger"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenDropdown(null)
+                            handleDelete(agent)
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))

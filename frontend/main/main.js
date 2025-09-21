@@ -149,7 +149,9 @@ function createTemplateTrainingWindow() {
     x: Math.max(0, (mainBounds.x || 0) + 40),
     y: Math.max(0, (mainBounds.y || 0) + 40),
     modal: false,
-    title: "Compass - Settings",
+    title: "Agent Hub",
+    frame: false,
+    titleBarStyle: "hidden",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -198,6 +200,12 @@ ipcMain.on("open-template-training", () => {
     createTemplateTrainingWindow()
   } else {
     templateTrainingWindow.focus()
+  }
+})
+
+ipcMain.on("close-template-training", () => {
+  if (templateTrainingWindow && !templateTrainingWindow.isDestroyed()) {
+    templateTrainingWindow.close()
   }
 })
 

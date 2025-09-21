@@ -2,6 +2,7 @@
   padding: 2rem;
   height: 100%;
   overflow-y: auto;
+  overflow-x: visible;
 
   h2 {
     color: #e0e0e0;
@@ -39,12 +40,12 @@
   .agent-table {
     border: 1px solid #404040;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
 
     .agent-table-header,
     .agent-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 1fr 1fr;
+      grid-template-columns: 2fr 1.5fr 1fr 40px;
       gap: 12px;
       align-items: center;
     }
@@ -60,6 +61,8 @@
     }
 
     .agent-table-body {
+      overflow: visible;
+      
       .empty-row {
         padding: 18px;
         color: #777;
@@ -110,18 +113,92 @@
 
         .col { padding: 0 6px; }
         .col.name { cursor: pointer; color: #e0e0e0; }
-        .col.actions { display: flex; gap: 8px; }
+        .col.menu { 
+          display: flex; 
+          justify-content: center; 
+          position: relative;
+        }
 
-        .icon-btn {
+        .dropdown-container {
+          position: relative;
+        }
+
+        .menu-btn {
           background: transparent;
+          border: none;
+          color: #9c9b9f;
+          padding: 6px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          
+          &:hover {
+            background: #3a3a3a;
+            color: #e0e0e0;
+          }
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: #2c2c2c;
           border: 1px solid #404040;
-          color: #cfcfcf;
-          padding: 4px 8px;
           border-radius: 6px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          z-index: 1000;
+          min-width: 120px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+
+        .dropdown-item {
+          width: 100%;
+          background: transparent;
+          border: none;
+          color: #e0e0e0;
+          padding: 8px 12px;
+          text-align: left;
           cursor: pointer;
           font-size: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: #3a3a3a;
+          }
+
+          &.selected {
+            background: rgba(138, 79, 184, 0.2);
+            color: #B47DD8;
+            
+            &:hover {
+              background: rgba(138, 79, 184, 0.3);
+            }
+          }
+
+          &.danger {
+            color: #f0b7b7;
+            
+            &:hover {
+              background: #4a2a2a;
+            }
+          }
+
+          svg {
+            width: 12px;
+            height: 12px;
+          }
         }
-        .icon-btn.danger { border-color: #5a3030; color: #f0b7b7; }
+
+        .dropdown-divider {
+          height: 1px;
+          background: #404040;
+          margin: 4px 0;
+        }
       }
     }
   }

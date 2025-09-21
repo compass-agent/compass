@@ -101,7 +101,6 @@ const Settings = ({ onNavigate }) => {
 
       {/* Content */}
       <div style={{ flex: 1, padding: "16px" }}>
-        <h2 style={{ margin: 0, marginBottom: "8px" }}>Settings</h2>
         <h3 style={{ marginTop: 0 }}>{section}</h3>
         <div style={{ fontSize: "13px", color: "#9C9B9F" }}>
           Placeholder settings for {section}.
