@@ -88,9 +88,9 @@ class Agent(Base):
     description = Column(String, default='')
     prompt = Column(String, default='')  # System prompt for the agent
     
-    # Configuration data
-    tools = Column(JSON, default=dict)  # {"desktopControl": true, "commandLine": false, "fileEditor": true}
-    target_apps = Column(JSON, default=list)  # ["SAP2000", "FreeCAD", "Ansys", ...]
+    # New configuration data structure
+    general_tools = Column(JSON, default=list)  # [{"id": "fileEditor", "name": "File Editor", "config": {...}}]
+    software_integrations = Column(JSON, default=list)  # [{"id": "SAP2000", "name": "SAP2000", "scripting": true, "desktop": true, "config": {...}}]
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -102,8 +102,8 @@ class Agent(Base):
             'name': self.name,
             'description': self.description,
             'prompt': self.prompt,
-            'tools': self.tools,
-            'targetApps': self.target_apps,
+            'generalTools': self.general_tools,
+            'softwareIntegrations': self.software_integrations,
             'pagesCount': self.pages_count,
             'templatesCount': self.templates_count,
             'last_modified': self.updated_at.isoformat() + 'Z' if self.updated_at else None
