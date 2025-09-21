@@ -25,4 +25,42 @@
   --purple-shadow: rgba(158, 97, 202, 0.3);
   --purple-shadow-light: rgba(158, 97, 202, 0.1);
   --purple-glow: rgba(158, 97, 202, 0.3);
+
+  /* Typography System - Option A: Modern Professional */
+  
+  /* Primary Font Family - Inter (UI, Labels, Text) */
+  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+  
+  /* Monospace Font Family - JetBrains Mono (Code, Technical Data) */
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'SF Mono', monospace;
+  
+  /* System Font Fallback - For cases where custom fonts can't load */
+  --font-family-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Sizes - Consistent Scale */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
 } 

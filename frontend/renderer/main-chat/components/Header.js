@@ -656,7 +656,7 @@ function Header() {
           {/* Tools Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-tools-button"
+              className={`header-tools-button ${toolsDropdown ? "active" : ""}`}
               onClick={(e) => toggleDropdown("tools", setToolsDropdown, e)}
             >
               Tools
@@ -724,7 +724,7 @@ function Header() {
           {/* AI Model Dropdown */}
           <div className="header-dropdown-container">
             <button
-              className="header-model-button"
+              className={`header-model-button ${modelDropdown ? "active" : ""}`}
               onClick={(e) => toggleDropdown("model", setModelDropdown, e)}
             >
               Model
@@ -743,7 +743,11 @@ function Header() {
                 {modelOptions.map((model) => {
                   const isSelected = selectedModel === model.name
                   return (
-                    <div key={model.name} className="tool-item">
+                    <div
+                      key={model.name}
+                      className={`tool-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleModelSelect(model.name)}
+                    >
                       <div className="tool-info">
                         <div className="tool-status">
                           <div className="model-info">
@@ -759,14 +763,6 @@ function Header() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        className={`tool-button ${
-                          isSelected ? "selected" : ""
-                        }`}
-                        onClick={() => handleModelSelect(model.name)}
-                      >
-                        {isSelected ? "Selected" : "Select"}
-                      </button>
                     </div>
                   )
                 })}
