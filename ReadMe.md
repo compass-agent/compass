@@ -1,187 +1,77 @@
-# COMPASS DEVELOPMENT GUIDE
+# Compass
 
-This guide will help you set up and run the Compass development environment.
+> Windows desktop app that augments engineering workflows with an AI agent and software integrations.
 
-## PREREQUISITES
-- Node.js and npm (Node Package Manager)
-- Python 3.11 or higher
-- Git
+## Overview
+Compass is a Windows desktop application that acts as an AI co‑pilot for engineering software. It combines an Electron/React UI with a local Python/Flask backend to automate common tasks, operate tools like SAP2000 via COM, and accelerate workflows with screen parsing and specialized agents.
 
-## INITIAL SETUP
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mohammadkazem-sadoughi/compass.git
-   cd compass
-   ```
+## Highlights
+- Windows desktop app with Electron/React frontend and local Flask backend
+- AI agent that can operate engineering software (e.g., SAP2000; Ansys/AutoCAD planned)
+- AgentHub to create, export, and import specialized domain agents
+- Screen parsing with template matching (and optional YOLO) to identify UI elements
+- SAP2000 COM automation for modeling/analysis operations
+- RAG-backed assistance for SAP2000 API (prebuilt vector DB included)
 
-2. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
+## Demo & Screenshots
+See the demo on the project website (Demo section). Add screenshots/GIFs here for quick reference.
 
-3. Set up Python virtual environment:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # This works on MacOS/Linux
-   .\venv\Scripts\Activate.ps1     # This works on Windows
-   pip install -r requirements.txt
-   cd ..
-   ```
+## Quick Start
+Prerequisites: Windows 10/11, Node.js ≥ 16, Python ≥ 3.11
 
-## DEVELOPMENT ENVIRONMENT
-The project consists of two main parts that need to run simultaneously:
-1. Frontend (Electron/React)
-2. Backend (Python/Flask)
-
-To start the development environment:
-
-1. Start the backend server:
-   ```bash
-   cd backend
-   source venv/bin/activate  # This works on MacOS/Linux
-   venv\Scripts\activate     # This works on Windows
-   python src/compass/app.py
-   If Python can not locate the modules, run the following commands:
-   $env:PYTHONPATH = "src"; python src/compass/app.py  # For Windows PowerShell (including IDE(Cursor) terminal)
-   PYTHONPATH=src python src/compass/app.py  # For macOS/Linux
-   set PYTHONPATH=src && python src/compass/app.py  # For Windows Command Prompt
-   ```
-
-2. In a new terminal, start the frontend:
-
-   In one terminal you need to first:
-   ```bash
-   npm run watch
-   ```
-
-   Then in another terminal:
-   ```bash
-   npm run dev
-   ```
-The reason for running `npm run watch` first is because it will watch for changes in the React code and automatically rebuild the application.
-
-The above commands will concurrently run:
-- React build watcher (for hot reloading)
-- Electron application
-
-## USEFUL COMMANDS
-- Start development environment:
-  ```bash
-  npm run dev
-  ```
-
-- Watch for React changes only:
-  ```bash
-  npm run watch
-  ```
-
-- Run Electron app only:
-  ```bash
-  npm start
-  ```
-
-- Package the application:
-  ```bash
-  npm run package-win
-  ```
-
-- Build the backend executable:
-  ```bash
-  cd backend
-  build_app.bat
-  ```
-
-- IDE(Cursor) Tasks (access via `Terminal > Run Task` in the top menu, or press Ctrl+Shift+P and type "Tasks: Run Task"):
-  - `Start Development Environment` - Runs both backend and frontend
-  - `Build Backend Executable` - Builds the Python backend
-  - `Package Electron App` - Packages the Electron app
-  - `Full Build and Package` - Complete build process
-
-- Kill running instances (macOS/Linux):
-  ```bash
-  ps aux | grep -i Compass | awk '{print $2}' | xargs kill -9
-  ```
-
-## PROJECT STRUCTURE
-```
-/src
-  /main          - Electron main process
-  /renderer      - React frontend code
-  /services      - Shared services
-/backend         - Python Flask backend
-  /services      - Backend services
-  /venv          - Python virtual environment
+1) Install frontend deps
+```bash
+npm install
 ```
 
-## CONTRIBUTING
-1. Create a new branch for your feature:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. Make your changes and commit them:
-   ```bash
-   git add .
-   git commit -m "Description of your changes"
-   ```
-
-3. Push to your branch:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-## Running the Backend Server
-
-### Windows (Optimized Performance)
-For better performance on Windows systems, run the backend server using:
+2) Create venv and install deps
 ```powershell
-cd backend
-$env:EVENTLET_NO_GREENDNS="yes"; $env:EVENTLET_THREADPOOL_SIZE="20"; $env:EVENTLET_WEBSOCKET="false"; $env:PYTHONPATH="src"; ./venv/Scripts/python.exe src/compass/app.py
+python -m venv .venv
+\.\.venv\Scripts\Activate.ps1
+pip install -r backend\requirements.txt
+```
+Optional: If you prefer the venv under backend instead, use:
+```powershell
+cd backend; python -m venv venv; .\venv\Scripts\Activate.ps1; pip install -r requirements.txt; cd ..
 ```
 
-This command includes optimizations for Windows systems to improve startup time and overall performance.
+3) Run
+```powershell
+# Backend (in one terminal)
+python backend/src/compass/app.py
 
-## BUILDING THE EXECUTABLE AND PACKAGING
+# Frontend (in another terminal)
+npm run watch
+npm run dev
+```
 
-There are two ways to build and package the application:
+4) Set LLM API keys
+Create `backend/src/compass/key.py` with your keys:
+```python
+# backend/src/compass/key.py
+ANTHROPIC_API_KEY = "your_anthropic_api_key"
+GOOGLE_API_KEY = "your_gemini_api_key"
+OPENAI_API_KEY = "your_openai_api_key"  # used by SAP API RAG
+```
+Provider selection is configured in `backend/src/compass/constants.py` via `LLM_PROVIDER` ("anthropic" or "google").
 
-### Option 1: Using IDE(Cursor) Tasks
+Troubleshooting
+- If `webpack` or `cross-env` is not recognized, run `npm install` in the repo root.
+- If imports fail when running the backend, ensure `PYTHONPATH` includes `backend/src` (the debug config sets this automatically).
 
-1. Open the project in IDE(Cursor)
-2. Access tasks in one of these ways:
-   - **Method A**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) to open the Command Palette, then type "Tasks: Run Task" and select it
-   - **Method B**: Click on `Terminal` in the top menu bar, then select `Run Task` from the dropdown menu
-   - **Method C**: Press `Alt` key to show the top menu if it's hidden, then navigate to `Terminal > Run Task`
+## Requirements & Integrations
+- Windows-only runtime; designed and tested for Windows 10/11
+- SAP2000 (licensed and installed) required for SAP-specific features
+- Prebuilt Chroma vector database included for SAP2000 API RAG; regeneration instructions in docs
 
-3. Choose one of the following tasks:
-   - `Build Backend Executable` - Builds only the Python backend
-   - `Package Electron App` - Packages only the Electron frontend
+## Architecture at a Glance
+Electron/React frontend communicates with a local Flask backend via Socket.IO. The backend exposes tools for screen parsing, SAP2000 COM automation, and agent workflows; optional RAG enhances API assistance. See the architecture diagram in docs.
 
-### Option 2: Using the Command Line
+## Documentation
+See the project website for the Demo and overview. Detailed docs will live on the repo's GitHub Pages site.
 
-1. Build the backend executable:
-   ```bash
-   cd backend
-   build_app.bat
-   ```
-   This will create the `compass_backend.exe` file in the appropriate directory.
+## Contributing
+Contributions are welcome. Please open an issue to discuss major changes before submitting a PR.
 
-2. Package the entire application for Windows:
-   ```bash
-   cd ..
-   npm run package-win
-   ```
-
-Note: node >= 16
-   
-The build process will:
-1. Build the backend executable using PyInstaller
-2. Package the Electron application with the backend executable included
-3. Create an installer in the `dist` folder
-
-The final packaged application will include all necessary dependencies and can be distributed to users.
-
-
-
-
+## License
+MIT License (recommended). You may use, modify, and distribute this software provided you include the original copyright and license notice.
