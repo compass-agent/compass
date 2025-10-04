@@ -401,26 +401,6 @@ function ChatHistory({ onEditorWidthChange }) {
     )
   }
 
-  const ThinkingBlock = ({ content }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
-
-    return (
-      <div className="thinking-block">
-        <button
-          className="thinking-toggle"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <FontAwesomeIcon icon={isExpanded ? faChevronDown : faChevronRight} />
-          Reasoning {isExpanded ? "(hide)" : "(show)"}
-        </button>
-        {isExpanded && (
-          <div className="thinking-content">
-            <ReactMarkdown>{normalizeMarkdown(content)}</ReactMarkdown>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const renderMessage = (msg, agentState) => {
     console.log("renderMessage - Full message object:", msg)
@@ -459,12 +439,8 @@ function ChatHistory({ onEditorWidthChange }) {
         )
 
       case MESSAGE_TYPES.AI_THINKING:
-        if (!msg.content) return null
-        return (
-          <div className="message ai-thinking-message">
-            <ThinkingBlock content={msg.content} />
-          </div>
-        )
+        // Reasoning/thinking blocks are disabled
+        return null
 
       case MESSAGE_TYPES.AI_RESPONSE_STREAM:
         // Don't render individual stream messages

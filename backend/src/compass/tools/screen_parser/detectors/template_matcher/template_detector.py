@@ -12,22 +12,6 @@ from compass.database.models import Session, Template
 
 logger = logging.getLogger(__name__)
 
-def helper_func_to_save(result: ScreenData):
-    # Convert base64 image back to cv2 format
-    img_bytes = base64.b64decode(result.image_data)
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-    # Draw rectangles for each detected icon
-    for icon in result.icon_elements:
-        x1, y1, x2, y2 = map(int, icon.bbox)  # Convert float coords to int
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Draw green rectangle
-        # Optionally add caption
-        cv2.putText(img, icon.caption, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2) # type: ignore
-
-    # Save the image
-    cv2.imwrite('debug_output.png', img)
-
 class TemplateDetector:
     @staticmethod
     def load_config() -> dict:

@@ -1,5 +1,6 @@
 # Node modules
 node_modules/
+
 # Logs
 logs/
 *.log
@@ -12,6 +13,14 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+
+# Test and experimental files
+**/test_*.py
+**/*_test.py
+experiments/
+experiment/
+frames.json
+frames*.json
 
 # Mac system files
 .DS_Store
@@ -41,11 +50,21 @@ out/
 *.exe
 *.out
 *.app
+
+# Media and archive files
+*.zip
+*.mp3
+*.mp4
+*.wav
+*.avi
+*.mov
+*.drp
 davinci/*
 # Coverage directory used by tools like istanbul
 coverage/
 venv/
 backend/venv/
+.venv/
 # IDE directories and files
 .idea/
 .vscode/
@@ -81,6 +100,14 @@ __pycache__/
 backend/env/
 .env
 
+# Database files (except specific ones we want to keep)
+*.db-journal
+*_backup*.db
+template_backups/
+
+# CSV data files
+**/data/**/*.csv
+
 # Screen parser data
 backend/src/compass/tools/screen_parser/data/**/*.pt
 backend/src/compass/tools/screen_parser/data/**/*.safetensors
@@ -106,11 +133,14 @@ backend/src/compass/training_agent/data/**/*.bin
 # Key file
 backend/src/compass/key.py
 !config/
-experiments/
-experiment/
-
 # SAP models and configuration files
 models/
 
+# Database temp files
+*.db-shm
+*.db-wal
 
+# Temporary and backup files
 next_steps.md
+**/migrations/*_migration.py
+!**/migrations/__init__.py

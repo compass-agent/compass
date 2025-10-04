@@ -85,8 +85,6 @@ class SAPComTool(BaseTool):
             if self.sap_model is None:
                 self._connection_status = "DISCONNECTED"
                 raise Exception("Failed to connect to SAP2000.")
-            # FIXME: this is a temporary path and hardcoded. Needs to be updated!! Perhaps comginf from Config!
-            self.model_path = r"C:\Users\mksad\Projects\sap-projects\steel-frame-001\models\model.sdb"
             
             # Get program info from the custom model (it forwards to the raw model)
             info = self.sap_model.GetProgramInfo()
