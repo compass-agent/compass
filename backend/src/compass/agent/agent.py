@@ -185,6 +185,13 @@ class AgentService:
             workflow_name=self._current_workflow
         )
         
+        # FIXME: Remove this hardcoded demo thinking and implement proper Claude thinking mode
+        # This is a temporary solution for demo purposes while Claude thinking API issues are resolved
+        self.state_manager.emit_response({
+            "type": "ai_thinking",
+            "content": "Let me think...",
+        })
+        
         response = self.llm.stream_call(system_message, manual_mode=self.state_manager.mode == AgentMode.MANUAL)
         thinking_content = []
         text_response_content = []
@@ -201,7 +208,7 @@ class AgentService:
                 logger.info(f"AI response stream: {chunk}")
             elif isinstance(chunk, ThinkingBlock):
                 thinking_content.append(chunk.content)
-                # Emit thinking content separately
+                # Note: This won't actually happen since thinking is disabled, but keeping for completeness
                 self.state_manager.emit_response({
                     "type": "ai_thinking",
                     "content": chunk.content,
@@ -232,6 +239,7 @@ class AgentService:
             self.state_manager.emit_response(tool_use_group)
         
         self.memory_manager.add_message(AIMessage(content="".join(text_response_content)))
+        
         return tool_calls
     
 

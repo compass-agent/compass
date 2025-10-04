@@ -62,8 +62,6 @@ const initialState = {
 
 // Reducer
 function appReducer(state, action) {
-  console.log("AppReducer - Action:", action.type, "Payload:", action.payload)
-
   switch (action.type) {
     case ActionTypes.SET_CONNECTION_STATUS:
       return {
@@ -144,7 +142,6 @@ function appReducer(state, action) {
       }
 
     case ActionTypes.SET_SCALING_FACTORS:
-      console.log("AppContext: Setting scaling factors:", action.payload)
       return {
         ...state,
         scaling: {
@@ -287,8 +284,6 @@ export function AppProvider({ children }) {
           type: ActionTypes.SET_CONNECTION_STATUS,
           payload: { connected: true, error: null },
         })
-        // Fetch workflows after connection is established
-        // WebSocketService.getWorkflows()  // Commented out to disable automatic workflow fetching
       },
 
       onDisconnect: () =>
@@ -308,7 +303,6 @@ export function AppProvider({ children }) {
       },
 
       onStateUpdate: (data) => {
-        console.log("Received state update:", data)
         dispatch({
           type: ActionTypes.SET_AGENT_STATE,
           payload: data,
@@ -316,7 +310,6 @@ export function AppProvider({ children }) {
       },
 
       onCompassWindowState: (actionString) => {
-        console.log("Received Compass window state:", actionString)
         dispatch({
           type: ActionTypes.SET_COMPASS_WINDOW_STATE,
           payload: actionString,
@@ -343,7 +336,6 @@ export function AppProvider({ children }) {
       },
 
       onWorkflowsList: (data) => {
-        console.log("📦 Received workflows list:", data)
         dispatch({
           type: ActionTypes.SET_WORKFLOWS,
           payload: data.workflows,
@@ -351,7 +343,6 @@ export function AppProvider({ children }) {
       },
 
       onSAPConnectionStatus: (data) => {
-        console.log("Received SAP connection status:", data)
         dispatch({
           type: ActionTypes.SET_SAP_CONNECTION_STATUS,
           payload: data,
@@ -359,7 +350,6 @@ export function AppProvider({ children }) {
       },
 
       onDesktopConnectionStatus: (data) => {
-        console.log("Received Desktop connection status:", data)
         dispatch({
           type: ActionTypes.SET_DESKTOP_CONNECTION_STATUS,
           payload: data,
@@ -368,27 +358,19 @@ export function AppProvider({ children }) {
 
       // Agent Hub handlers
       onAgentHub: (data) => {
-        console.log("AGENT_HUB: Received event:", data?.action, data?.success)
         if (!data) return
 
         switch (data.action) {
           case "list":
             if (data.success && Array.isArray(data.agents)) {
-              console.log(
-                "AGENT_HUB: Setting agents list, count:",
-                data.agents.length
-              )
               dispatch({
                 type: ActionTypes.SET_AGENT_HUB_AGENTS,
                 payload: data.agents,
               })
-            } else {
-              console.warn("AGENT_HUB: Invalid list response", data)
             }
             break
           case "create":
             if (data.success && data.agent) {
-              console.log("AGENT_HUB: Adding agent:", data.agent.name)
               dispatch({
                 type: ActionTypes.AGENT_HUB_ADD_AGENT,
                 payload: data.agent,
@@ -397,23 +379,16 @@ export function AppProvider({ children }) {
             break
           case "import":
             if (data.success && data.agent) {
-              console.log("AGENT_HUB: Imported agent:", data.agent.name)
-              if (data.message) {
-                console.log("AGENT_HUB: Import details:", data.message)
-                // Could show a success toast/notification here
-              }
               dispatch({
                 type: ActionTypes.AGENT_HUB_ADD_AGENT,
                 payload: data.agent,
               })
             } else if (!data.success && data.message) {
-              console.error("AGENT_HUB: Import failed:", data.message)
               alert(`Import failed: ${data.message}`)
             }
             break
           case "update":
             if (data.success && data.agent) {
-              console.log("AGENT_HUB: Updating agent:", data.agent.name)
               dispatch({
                 type: ActionTypes.AGENT_HUB_UPDATE_AGENT,
                 payload: data.agent,
@@ -423,11 +398,8 @@ export function AppProvider({ children }) {
 
           case "delete":
             if (data.success && data.agentId) {
-              console.log("AGENT_HUB: Removing agent:", data.agentId)
-
               // Show success dialog with deletion statistics
               if (data.message) {
-                console.log("AGENT_HUB: Delete details:", data.message)
                 dispatch({
                   type: ActionTypes.SHOW_AGENT_HUB_SUCCESS,
                   payload: {
@@ -446,17 +418,11 @@ export function AppProvider({ children }) {
                 payload: data.agentId,
               })
             } else if (!data.success && data.message) {
-              console.error("AGENT_HUB: Delete failed:", data.message)
-              // For errors, we can still use alert or create an error dialog
               alert(`Failed to delete agent: ${data.message}`)
             }
             break
           case "export":
             if (data.success && data.content && data.filename) {
-              console.log(
-                "AGENT_HUB: Downloading exported agent:",
-                data.filename
-              )
               // Decode base64 content and trigger download
               try {
                 const jsonContent = atob(data.content)
@@ -473,14 +439,11 @@ export function AppProvider({ children }) {
                 link.click()
                 document.body.removeChild(link)
                 URL.revokeObjectURL(url)
-
-                console.log("AGENT_HUB: Export download completed")
               } catch (error) {
                 console.error("AGENT_HUB: Export download failed:", error)
               }
             } else if (!data.success && data.message) {
               console.error("AGENT_HUB: Export failed:", data.message)
-              // Could dispatch an error action here if needed
             }
             break
           default:

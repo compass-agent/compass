@@ -64,6 +64,7 @@ davinci/*
 coverage/
 venv/
 backend/venv/
+.venv/
 # IDE directories and files
 .idea/
 .vscode/
@@ -134,6 +135,10 @@ backend/src/compass/key.py
 !config/
 # SAP models and configuration files
 models/
+
+# Database temp files
+*.db-shm
+*.db-wal
 
 # Temporary and backup files
 next_steps.md

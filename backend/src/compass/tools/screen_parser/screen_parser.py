@@ -10,7 +10,7 @@ from compass.utils.utility import log_execution_time
 logger = logging.getLogger(__name__)
 
 class ScreenParser:
-    def __init__(self, agent_name: str = "structural-engineer"):
+    def __init__(self, agent_name: str = None):
         """
         Initialize ScreenParser with OpenCV-based template detector
         

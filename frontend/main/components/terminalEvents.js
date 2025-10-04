@@ -1,35 +1,33 @@
-const { spawn } = require("child_process");
-require("dotenv").config();
+const { spawn } = require("child_process")
+require("dotenv").config()
 
 // Known PowerShell startup messages to filter out
 const startupMessages = [
   "Windows PowerShell",
   "Copyright (C) Microsoft Corporation. All rights reserved.",
   "Try the new cross-platform PowerShell https://aka.ms/pscore6",
-];
+]
 
 const shellPromptMessages = {
   win32: startupMessages,
   darwin: [], // Mac doesn't need to filter startup messages
-  linux: []
-};
+  linux: [],
+}
 
-const currentPlatformMessages = shellPromptMessages[process.platform] || [];
+const currentPlatformMessages = shellPromptMessages[process.platform] || []
 
 // Store terminal instances and logs
-let terminals = {}; // Store terminal instances by ID
-const lastOutputs = {};
-const shell = process.platform === "win32" 
-  ? "powershell.exe" 
-  : process.env.SHELL || "/bin/zsh"; // Prefer user's default shell, fallback to zsh
+let terminals = {} // Store terminal instances by ID
+const lastOutputs = {}
+const shell =
+  process.platform === "win32"
+    ? "powershell.exe"
+    : process.env.SHELL || "/bin/zsh" // Prefer user's default shell, fallback to zsh
 function handleTerminalEvents(ipcMain) {
-
   // Handle terminal creation
   ipcMain.handle("terminal.create", (event, { id, command }) => {
-    // TODO: The command should be removed
-    console.log("Main Terminal: terminal.create: command: ", command);
     if (terminals[id]) {
-      terminals[id].kill();
+      terminals[id].kill()
     }
 
     const terminalProcess = spawn(shell, [], {
@@ -37,109 +35,94 @@ function handleTerminalEvents(ipcMain) {
       env: process.env,
       cwd: process.cwd(),
       windowsHide: true,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
+      stdio: ["pipe", "pipe", "pipe"],
+    })
 
-    terminals[id] = terminalProcess; // Store the terminal instance
+    terminals[id] = terminalProcess // Store the terminal instance
 
     // Send terminal output to the renderer
     terminalProcess.stdout.on("data", (data) => {
-      const output = data.toString();
-      console.log(`Main Terminal: terminal.create raw output: ${output}`);
-      
+      const output = data.toString()
+
       if (
         output.length === 0 ||
         output === lastOutputs[id] ||
         currentPlatformMessages.some((msg) => output.includes(msg))
-      ) return;
-      
-      lastOutputs[id] = output;
-      event.sender.send(`terminal.output.${id}`, output);
-    });
+      )
+        return
+
+      lastOutputs[id] = output
+      event.sender.send(`terminal.output.${id}`, output)
+    })
 
     terminalProcess.stderr.on("data", (data) => {
-      const errorOutput = data.toString().trim();
-      if (errorOutput.length === 0) return;
-      console.log(`Main Terminal: terminal.stderr output  ${errorOutput}`);
-      event.sender.send(`terminal.error.${id}`, errorOutput);
-    });
+      const errorOutput = data.toString().trim()
+      if (errorOutput.length === 0) return
+      event.sender.send(`terminal.error.${id}`, errorOutput)
+    })
 
-    // terminalProcess.on("close", () => {
-    //   console.log("Main Terminal: close");
-    //   delete terminals[id];
-    //   delete lastOutputs[id]; 
-    // });
-
-    return { success: true };
-  });
+    return { success: true }
+  })
 
   // Handle user input from renderer
   ipcMain.handle("terminal.input", (event, { id, input }) => {
-    console.log(`Main Terminal: received input -> ${input} for ${id}`);
-    const terminalProcess = terminals[id];
+    const terminalProcess = terminals[id]
     if (!terminalProcess) {
-      console.error(`Terminal ${id} not found.`);
-      return { success: false, error: "Terminal not found" };
+      return { success: false, error: "Terminal not found" }
     }
     if (input.trim()) {
-      terminalProcess.stdin.write(input + "\n");
-      console.log(`Main Terminal: write -> ${input}`);
-      return { success: true };
+      terminalProcess.stdin.write(input + "\n")
+      return { success: true }
     } else {
-      console.error(`Received empty input for terminal ${id}`);
-      return { success: false, error: "Empty input" };
+      return { success: false, error: "Empty input" }
     }
-  });
+  })
 
   //Handle terminal closing
   ipcMain.handle("terminal.close", (event, id) => {
-    console.log("Main Terminal: close");
-    const terminalProcess = terminals[id];
+    const terminalProcess = terminals[id]
     if (terminalProcess) {
-      terminalProcess.kill();
-      delete terminals[id];
-      delete lastOutputs[id];
+      terminalProcess.kill()
+      delete terminals[id]
+      delete lastOutputs[id]
 
-      return { success: true };
+      return { success: true }
     }
-    return { success: false };
-  });
+    return { success: false }
+  })
 
   ipcMain.handle("terminal.sendSignal", (event, { id, signal }) => {
-    console.log(`Main Terminal: sending signal -> ${signal} to terminal ${id}`);
-    const terminalProcess = terminals[id];
+    const terminalProcess = terminals[id]
     if (terminalProcess) {
-      terminalProcess.kill(signal);
-      if (signal === 'SIGINT') {
-        event.sender.send(`terminal.output.${id}`, `PS ${process.cwd()}>`);
+      terminalProcess.kill(signal)
+      if (signal === "SIGINT") {
+        event.sender.send(`terminal.output.${id}`, `PS ${process.cwd()}>`)
       }
-      return { success: true };
+      return { success: true }
     }
-    return { success: false, error: "Terminal not found" };
-  });
+    return { success: false, error: "Terminal not found" }
+  })
 
   ipcMain.handle("terminal.kill", (event, id) => {
-    console.log(`Killing terminal process ${id}`);
-    const terminalProcess = terminals[id];
+    const terminalProcess = terminals[id]
     if (terminalProcess) {
       try {
         if (process.platform === "win32") {
           // Windows: Use `taskkill` to stop the process
-          spawn("taskkill", ["/PID", terminalProcess.pid, "/F"]);
+          spawn("taskkill", ["/PID", terminalProcess.pid, "/F"])
         } else {
           // macOS & Linux: Send SIGINT (Ctrl+C equivalent)
-          terminalProcess.kill("SIGINT");
+          terminalProcess.kill("SIGINT")
         }
-        delete terminals[id];
-        delete lastOutputs[id];
-        return { success: true };
+        delete terminals[id]
+        delete lastOutputs[id]
+        return { success: true }
       } catch (error) {
-        console.error(`Error killing terminal ${id}:`, error);
-        return { success: false, error };
+        return { success: false, error }
       }
     }
-    return { success: false, error: "Terminal not found" };
-  });
+    return { success: false, error: "Terminal not found" }
+  })
 }
 
-module.exports = { handleTerminalEvents };
+module.exports = { handleTerminalEvents }

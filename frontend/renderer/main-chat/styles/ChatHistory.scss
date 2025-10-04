@@ -75,17 +75,14 @@
     &.ai-message {
       display: flex;
       align-items: flex-start;
-      //background-color: rgba(45, 45, 55, 0.85);
       padding: 10px;
-      //border: 1px solid #3a3a45;
       border-radius: 12px;
       margin-right: auto;
       color: white;
-      max-width: 80%;
+      max-width: 95%;
       word-wrap: break-word;
 
       .markdown-content {
-        /* Add spacing control for first/last elements */
         > *:first-child {
           margin-top: 0;
         }
@@ -417,70 +414,3 @@
   }
 }
 
-// Thinking block styles
-.thinking-block {
-  margin: 8px 0;
-  border-left: 3px solid #666;
-  padding-left: 12px;
-  
-  .thinking-toggle {
-    background: none;
-    border: none;
-    color: #666;
-    font-style: italic;
-    font-size: 0.9em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-    
-    &:hover {
-      color: #888;
-    }
-    
-    svg {
-      font-size: 0.8em;
-    }
-  }
-  
-  .thinking-content {
-    margin-top: 8px;
-    font-style: italic;
-    color: #aaa;
-    font-size: 0.9em;
-    background: rgba(40, 40, 40, 0.6);
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #444;
-    
-    // Apply similar markdown styling but more subdued
-    h1, h2, h3, h4, h5, h6 {
-      color: #999;
-      margin: 0.5em 0 0.2em 0;
-    }
-    
-    p {
-      margin: 0.3em 0;
-    }
-    
-    code {
-      background-color: rgba(20, 20, 20, 0.6);
-      color: #ccc;
-    }
-    
-    pre {
-      background-color: rgba(20, 20, 20, 0.6);
-      border: 1px solid #333;
-    }
-  }
-}
-
-.ai-thinking-message {
-  display: flex;
-  align-items: flex-start;
-  padding: 5px 10px;
-  margin-right: auto;
-  max-width: 80%;
-  word-wrap: break-word;
-}

@@ -6,7 +6,7 @@ const { handleTerminalEvents } = require("./components/terminalEvents")
 const setupFileHandlers = require("./components/fileHandlers")
 const setupWindowHandlers = require("./components/windowHandler")
 require("dotenv").config()
-const { startBackend, logToFile } = require("./backendManager")
+const { logToFile } = require("./backendManager")
 
 if (process.platform === "darwin") {
   app.setName("Compass")
@@ -25,7 +25,7 @@ const WINDOW_CONFIG = {
 }
 
 // Window bounds persistence
-const BOUNDS_FILE = path.join(app.getPath('userData'), 'window-bounds.json')
+const BOUNDS_FILE = path.join(app.getPath("userData"), "window-bounds.json")
 
 function saveWindowBounds() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -37,10 +37,33 @@ function saveWindowBounds() {
 function loadWindowBounds() {
   try {
     if (fs.existsSync(BOUNDS_FILE)) {
-      return JSON.parse(fs.readFileSync(BOUNDS_FILE, 'utf8'))
+      return JSON.parse(fs.readFileSync(BOUNDS_FILE, "utf8"))
     }
   } catch (error) {
-    console.log('Could not load window bounds:', error.message)
+    console.log("Could not load window bounds:", error.message)
+  }
+  return null
+}
+
+// Agent persistence
+const AGENT_FILE = path.join(app.getPath("userData"), "last-agent.json")
+
+function saveLastAgent(agentData) {
+  try {
+    fs.writeFileSync(AGENT_FILE, JSON.stringify(agentData))
+  } catch (error) {
+    console.error("Failed to save last agent:", error.message)
+  }
+}
+
+function loadLastAgent() {
+  try {
+    if (fs.existsSync(AGENT_FILE)) {
+      const agentData = JSON.parse(fs.readFileSync(AGENT_FILE, "utf8"))
+      return agentData
+    }
+  } catch (error) {
+    console.error("Could not load last agent:", error.message)
   }
   return null
 }
@@ -86,7 +109,7 @@ function createMenu() {
 
 function createWindow() {
   const savedBounds = loadWindowBounds()
-  
+
   mainWindow = new BrowserWindow({
     width: savedBounds?.width || WINDOW_CONFIG.WIDTH,
     height: savedBounds?.height || WINDOW_CONFIG.HEIGHT,
@@ -99,7 +122,6 @@ function createWindow() {
       webSecurity: false,
       enableHardwareAcceleration: true,
     },
-    alwaysOnTop: true,
     frame: false,
     transparent: true, // Enable window transparency
     trafficLightPosition: { x: 10, y: 10 }, // Position of the window control buttons (close, minimize, and maximize) in macOS
@@ -121,14 +143,14 @@ function createWindow() {
     createMenu()
   }
 
-  if (isDev || true) {
-    // Open DevTools in detached mode to preserve window transparency
-    mainWindow.webContents.openDevTools({ mode: "detach" })
-  }
-
   // Save window bounds when closing
-  mainWindow.on('close', () => {
+  mainWindow.on("close", () => {
     saveWindowBounds()
+
+    // Close template training window if it's open
+    if (templateTrainingWindow && !templateTrainingWindow.isDestroyed()) {
+      templateTrainingWindow.close()
+    }
   })
 
   setupFileHandlers(mainWindow)
@@ -136,14 +158,23 @@ function createWindow() {
 }
 
 function createTemplateTrainingWindow() {
+  const mainBounds = mainWindow
+    ? mainWindow.getBounds()
+    : { x: 100, y: 100, width: 900, height: 700 }
   templateTrainingWindow = new BrowserWindow({
     width: 1024,
     height: 768,
+    x: Math.max(0, (mainBounds.x || 0) + 40),
+    y: Math.max(0, (mainBounds.y || 0) + 40),
+    modal: false,
+    title: "Agent Hub",
+    frame: false,
+    titleBarStyle: "hidden",
     webPreferences: {
-      nodeIntegration: false, // Changed to false for security
+      nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
-      webSecurity: false, // Add this for development
+      webSecurity: false,
     },
     show: false,
   })
@@ -152,57 +183,89 @@ function createTemplateTrainingWindow() {
     __dirname,
     "../renderer/template-training/index.html"
   )
-  console.log("Loading template training from:", templateTrainingPath)
   templateTrainingWindow.loadFile(templateTrainingPath)
 
-  // Remove or comment out these lines
-  templateTrainingWindow.webContents.on("did-finish-load", () => {
-    console.log("Template training window finished loading")
-    // templateTrainingWindow.webContents.openDevTools();  // Remove this line
-  })
-
   templateTrainingWindow.once("ready-to-show", () => {
-    console.log("Template training window ready to show")
-    templateTrainingWindow.center()
-    templateTrainingWindow.show()
+    try {
+      templateTrainingWindow.show()
+      templateTrainingWindow.focus()
+    } catch {
+      /* noop */
+    }
   })
-
-  // Remove or comment out this block
-  // if (process.env.NODE_ENV === 'development') {
-  //   templateTrainingWindow.webContents.openDevTools();
-  // }
 
   templateTrainingWindow.on("closed", () => {
     templateTrainingWindow = null
   })
 }
 
-app.whenReady().then(() => {
-  if (!isDev) {
-    // Start the Python backend in production
-    try {
-      logToFile("Starting backend process...")
-      backendProcess = startBackend()
-
-      // Make sure to terminate the backend process when the app quits
-      app.on("quit", () => {
-        saveWindowBounds()
-        logToFile("Application quitting, terminating backend process")
-        if (backendProcess) {
-          backendProcess.kill()
-        }
-      })
-    } catch (error) {
-      logToFile(`Error starting backend: ${error.message}`)
-      console.error("Failed to start backend:", error)
-
-      // Show error dialog to user
-      dialog.showErrorBox(
-        "Backend Error",
-        `Failed to start the backend process: ${error.message}\n\nPlease check the logs for more details.`
-      )
-    }
+// IPC Handlers
+ipcMain.on("open-template-training", () => {
+  if (!templateTrainingWindow) {
+    createTemplateTrainingWindow()
+  } else {
+    templateTrainingWindow.focus()
   }
+})
+
+ipcMain.on("close-template-training", () => {
+  if (templateTrainingWindow && !templateTrainingWindow.isDestroyed()) {
+    templateTrainingWindow.close()
+  }
+})
+
+// Handle agent selection from template training window
+ipcMain.handle("agent-selected", async (event, agentData) => {
+  // Validate agent data
+  if (!agentData || typeof agentData !== "object") {
+    console.error("Invalid agent data received in main process:", agentData)
+    return { success: false, error: "Invalid agent data" }
+  }
+
+  // Save the selected agent for persistence
+  saveLastAgent(agentData)
+
+  // Send the selected agent to the main window
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      // Create a clean copy of the data to avoid any serialization issues
+      const cleanData = {
+        agentId: agentData.agentId,
+        name: agentData.name,
+        description: agentData.description,
+        generalTools: agentData.generalTools,
+        softwareIntegrations: agentData.softwareIntegrations,
+        configuration: agentData.configuration,
+      }
+
+      mainWindow.webContents.send("update-selected-agent", cleanData)
+    } catch (error) {
+      console.error("Error sending to main window:", error)
+      return { success: false, error: error.message }
+    }
+  } else {
+    console.error("Main window is not available")
+    return { success: false, error: "Main window not available" }
+  }
+
+  // Return success response
+  return { success: true }
+})
+
+// Handle loading last agent on startup
+ipcMain.handle("load-last-agent", async () => {
+  return loadLastAgent()
+})
+
+app.whenReady().then(() => {
+  // Backend is started manually in development
+  // In production, backend would be bundled separately
+  
+  // Save window bounds on quit
+  app.on("quit", () => {
+    saveWindowBounds()
+    logToFile("Application quitting")
+  })
 
   if (process.platform === "darwin") {
     app.name = "Compass"
@@ -224,11 +287,5 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
-  }
-})
-
-ipcMain.on("open-template-training", () => {
-  if (!templateTrainingWindow) {
-    createTemplateTrainingWindow()
   }
 })
