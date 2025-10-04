@@ -623,7 +623,7 @@
                   className:
                     "w-4/5 rounded-lg overflow-hidden border border-gray-700 bg-[#0C1A2D]",
                   children: (0, r.jsx)("video", {
-                    src: "/images/anim/Compass-HeroPage.mov",
+                    src: "/compass/images/anim/Compass-HeroPage.mov",
                     title: "Compass Demo Video",
                     className: "w-full aspect-video",
                     controls: !0,
@@ -634,7 +634,7 @@
                       children: [
                         "Your browser does not support the video tag.",
                         (0, r.jsx)("a", {
-                          href: "/images/anim/Compass-HeroPage.mov",
+                          href: "/compass/images/anim/Compass-HeroPage.mov",
                           className: "text-[#9b8fff] hover:underline ml-1",
                           children: "Download the video instead.",
                         }),
