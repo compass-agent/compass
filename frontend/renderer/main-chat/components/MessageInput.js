@@ -52,15 +52,21 @@ function MessageInput() {
         console.log("checkSapConfigExists: Built absolute path:", absolutePath)
 
         // Use read-file API to check if file exists
-        const result = await window.electron.ipcRenderer.invoke(
-          "read-file",
-          absolutePath
-        )
+        try {
+          const result = await window.electron.ipcRenderer.invoke(
+            "read-file",
+            absolutePath
+          )
 
-        // If read-file succeeds, the file exists
-        const fileExists = result.success || false
-        console.log("checkSapConfigExists: Returning fileExists =", fileExists)
-        return fileExists
+          // If read-file succeeds, the file exists
+          const fileExists = result.success || false
+          console.log("checkSapConfigExists: Returning fileExists =", fileExists)
+          return fileExists
+        } catch (error) {
+          // File doesn't exist or can't be read - this is normal on first run
+          console.log("checkSapConfigExists: Config file not found (normal on first run)")
+          return false
+        }
       } catch (error) {
         console.log("Error checking if SAP config file exists:", error)
         return false

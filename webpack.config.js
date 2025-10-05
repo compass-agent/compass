@@ -51,7 +51,19 @@ module.exports = {
       },
       {
         test: /\.scss$/,
-        use: ["style-loader", "css-loader", "sass-loader"],
+        use: [
+          "style-loader", 
+          "css-loader", 
+          {
+            loader: "sass-loader",
+            options: {
+              sassOptions: {
+                silenceDeprecations: ['legacy-js-api'],
+                quietDeps: true
+              }
+            }
+          }
+        ],
       },
     ],
   },
@@ -59,4 +71,7 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js", ".jsx"],
   },
   devtool: "source-map",
+  stats: {
+    warningsFilter: [/Sass @import rules are deprecated/]
+  },
 };

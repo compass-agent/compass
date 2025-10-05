@@ -39,12 +39,20 @@ module.exports = (mainWindow) => {
       if (!path.isAbsolute(normalizedPath)) {
         return { success: false, error: "File path is relative" }
       }
+      // Check if file exists first
+      if (!fs.existsSync(normalizedPath)) {
+        return { success: false, error: "File not found" }
+      }
+
       // Read file content
       const content = fs.readFileSync(normalizedPath, "utf-8")
 
       return { success: true, content }
     } catch (error) {
-      console.error("Main Process: Failed to read file:", error)
+      // Don't log ENOENT errors (file not found) as they're normal
+      if (error.code !== 'ENOENT') {
+        console.error("Main Process: Failed to read file:", error)
+      }
       return { success: false, error: error.message }
     }
   })
