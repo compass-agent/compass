@@ -5,17 +5,16 @@ import sys
 import tempfile
 import traceback
 from io import StringIO
-from typing import Literal, Dict, Any, Optional, List, Union
-import comtypes.client
+from typing import Any, Dict, List, Literal, Optional, Union
 
-helper = comtypes.client.CreateObject('SAP2000v1.Helper')
+import comtypes.client
 from anthropic.types.beta import BetaToolUnionParam
 from compass.tools.base import BaseTool
-from compass.types.agent import ToolResult
-from compass.tools.sap2000.sap_model_info import SAPModelInfo
-from compass.tools.sap2000.sap_api_query import SAPAPIQuery
 from compass.tools.sap2000.core import CustomSAP2000Model
 from compass.tools.sap2000.core.config_manager import ModelConfig
+from compass.tools.sap2000.sap_api_query import SAPAPIQuery
+from compass.tools.sap2000.sap_model_info import SAPModelInfo
+from compass.types.agent import ToolResult
 
 logger = logging.getLogger(__name__)
 
