@@ -46,6 +46,7 @@ davinci/*
 coverage/
 venv/
 backend/venv/
+.venv/
 # IDE directories and files
 .idea/
 .vscode/
@@ -112,5 +113,8 @@ experiment/
 # SAP models and configuration files
 models/
 
+# Database temp files
+*.db-shm
+*.db-wal
 
 next_steps.md
