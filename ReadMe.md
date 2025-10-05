@@ -3,45 +3,38 @@
 > Windows desktop app that augments engineering workflows with an AI agent and software integrations.
 
 ## Overview
-Compass is a Windows desktop application that acts as an AI co‑pilot for engineering software. It combines an Electron/React UI with a local Python/Flask backend to automate common tasks, operate tools like SAP2000 via COM, and accelerate workflows with screen parsing and specialized agents.
+Compass is a Windows desktop application that acts as an AI co‑pilot for engineering software. It automates common tasks, reduces learning curves, and accelerates engineering workflows.
 
 ## Highlights
-- Windows desktop app with Electron/React frontend and local Flask backend
-- AI agent that can operate engineering software (e.g., SAP2000; Ansys/AutoCAD planned)
+- Windows desktop app with AI agent that operates engineering software
 - AgentHub to create, export, and import specialized domain agents
-- Screen parsing with template matching (and optional YOLO) to identify UI elements
-- SAP2000 COM automation for modeling/analysis operations
-- RAG-backed assistance for SAP2000 API (prebuilt vector DB included)
+- Integrated with SAP2000 as the first application through COM scripting and UI control
 
-## Demo & Screenshots
-See the demo on the project website (Demo section). Add screenshots/GIFs here for quick reference.
+## Demo
+See the demo and overview at: [https://compass-agent.github.io/compass](https://compass-agent.github.io/compass)
 
 ## Quick Start
-Prerequisites: Windows 10/11, Node.js ≥ 16, Python ≥ 3.11
 
-1) Install frontend deps
+> **Prerequisites:** Windows 10/11, [Node.js](https://nodejs.org/) ≥ 16, [Python](https://python.org/downloads/) ≥ 3.11
+
+**Option 1: One-command setup and run**
 ```bash
-npm install
+# First time setup (creates venv, installs all dependencies)
+npm run setup
+
+# Daily development (starts both backend + frontend)
+npm run dev
 ```
 
-2) Create venv and install deps
+**Option 2: Manual setup**
 ```powershell
+# Setup
 python -m venv .venv
-\.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 pip install -r backend\requirements.txt
-```
-Optional: If you prefer the venv under backend instead, use:
-```powershell
-cd backend; python -m venv venv; .\venv\Scripts\Activate.ps1; pip install -r requirements.txt; cd ..
-```
+npm install
 
-3) Run
-```powershell
-# Backend (in one terminal)
-python backend/src/compass/app.py
-
-# Frontend (in another terminal)
-npm run watch
+# Run
 npm run dev
 ```
 
@@ -59,19 +52,11 @@ Troubleshooting
 - If `webpack` or `cross-env` is not recognized, run `npm install` in the repo root.
 - If imports fail when running the backend, ensure `PYTHONPATH` includes `backend/src` (the debug config sets this automatically).
 
-## Requirements & Integrations
-- Windows-only runtime; designed and tested for Windows 10/11
-- SAP2000 (licensed and installed) required for SAP-specific features
-- Prebuilt Chroma vector database included for SAP2000 API RAG; regeneration instructions in docs
-
 ## Architecture at a Glance
-Electron/React frontend communicates with a local Flask backend via Socket.IO. The backend exposes tools for screen parsing, SAP2000 COM automation, and agent workflows; optional RAG enhances API assistance. See the architecture diagram in docs.
-
-## Documentation
-See the project website for the Demo and overview. Detailed docs will live on the repo's GitHub Pages site.
+Electron desktop app with React frontend and Flask backend. The two communicate via Socket.IO for real-time interaction.
 
 ## Contributing
 Contributions are welcome. Please open an issue to discuss major changes before submitting a PR.
 
 ## License
-MIT License (recommended). You may use, modify, and distribute this software provided you include the original copyright and license notice.
+MIT License. You may use, modify, and distribute this software provided you include the original copyright and license notice.
