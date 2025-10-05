@@ -51,7 +51,6 @@ const AGENT_FILE = path.join(app.getPath("userData"), "last-agent.json")
 function saveLastAgent(agentData) {
   try {
     fs.writeFileSync(AGENT_FILE, JSON.stringify(agentData))
-    console.log("Last agent saved:", agentData)
   } catch (error) {
     console.error("Failed to save last agent:", error.message)
   }
@@ -61,13 +60,10 @@ function loadLastAgent() {
   try {
     if (fs.existsSync(AGENT_FILE)) {
       const agentData = JSON.parse(fs.readFileSync(AGENT_FILE, "utf8"))
-      console.log("Last agent loaded:", agentData)
       return agentData
-    } else {
-      console.log("No saved agent found")
     }
   } catch (error) {
-    console.log("Could not load last agent:", error.message)
+    console.error("Could not load last agent:", error.message)
   }
   return null
 }
@@ -147,11 +143,6 @@ function createWindow() {
     createMenu()
   }
 
-  if (isDev) {
-    // Open DevTools in detached mode to preserve window transparency
-    // mainWindow.webContents.openDevTools({ mode: "detach" })
-  }
-
   // Save window bounds when closing
   mainWindow.on("close", () => {
     saveWindowBounds()
@@ -192,17 +183,9 @@ function createTemplateTrainingWindow() {
     __dirname,
     "../renderer/template-training/index.html"
   )
-  console.log("Loading template training from:", templateTrainingPath)
   templateTrainingWindow.loadFile(templateTrainingPath)
 
-  // Remove or comment out these lines
-  templateTrainingWindow.webContents.on("did-finish-load", () => {
-    console.log("Template training window finished loading")
-    // templateTrainingWindow.webContents.openDevTools()
-  })
-
   templateTrainingWindow.once("ready-to-show", () => {
-    console.log("Template training window ready to show")
     try {
       templateTrainingWindow.show()
       templateTrainingWindow.focus()
@@ -210,11 +193,6 @@ function createTemplateTrainingWindow() {
       /* noop */
     }
   })
-
-  // Remove or comment out this block
-  // if (process.env.NODE_ENV === 'development') {
-  //   templateTrainingWindow.webContents.openDevTools();
-  // }
 
   templateTrainingWindow.on("closed", () => {
     templateTrainingWindow = null
@@ -238,17 +216,9 @@ ipcMain.on("close-template-training", () => {
 
 // Handle agent selection from template training window
 ipcMain.handle("agent-selected", async (event, agentData) => {
-  console.log("🔧 Main process received agent-selected:", agentData)
-  console.log("🔧 Agent data type:", typeof agentData)
-  console.log(
-    "🔧 Agent data keys:",
-    agentData ? Object.keys(agentData) : "none"
-  )
-  console.log("🔧 Agent data JSON:", JSON.stringify(agentData, null, 2))
-
   // Validate agent data
   if (!agentData || typeof agentData !== "object") {
-    console.error("🔧 Invalid agent data received in main process:", agentData)
+    console.error("Invalid agent data received in main process:", agentData)
     return { success: false, error: "Invalid agent data" }
   }
 
@@ -257,7 +227,6 @@ ipcMain.handle("agent-selected", async (event, agentData) => {
 
   // Send the selected agent to the main window
   if (mainWindow && !mainWindow.isDestroyed()) {
-    console.log("🔧 About to send to main window:", agentData)
     try {
       // Create a clean copy of the data to avoid any serialization issues
       const cleanData = {
@@ -268,17 +237,14 @@ ipcMain.handle("agent-selected", async (event, agentData) => {
         softwareIntegrations: agentData.softwareIntegrations,
         configuration: agentData.configuration,
       }
-      console.log("🔧 Clean data to send:", cleanData)
-      console.log("🔧 Clean data JSON:", JSON.stringify(cleanData))
 
       mainWindow.webContents.send("update-selected-agent", cleanData)
-      console.log("🔧 Successfully sent agent data to main window")
     } catch (error) {
-      console.error("🔧 Error sending to main window:", error)
+      console.error("Error sending to main window:", error)
       return { success: false, error: error.message }
     }
   } else {
-    console.error("🔧 Main window is not available")
+    console.error("Main window is not available")
     return { success: false, error: "Main window not available" }
   }
 

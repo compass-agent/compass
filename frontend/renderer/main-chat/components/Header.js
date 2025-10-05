@@ -55,7 +55,9 @@ function Header() {
     const loadLastAgent = async () => {
       if (window.electron?.ipcRenderer?.invoke) {
         try {
-          const lastAgent = await window.electron.ipcRenderer.invoke("load-last-agent")
+          const lastAgent = await window.electron.ipcRenderer.invoke(
+            "load-last-agent"
+          )
           if (lastAgent && (lastAgent.name || lastAgent.agentId)) {
             console.log("🎯 Loading last selected agent:", lastAgent)
             setSelectedAgent(lastAgent.name || "Unknown Agent")
@@ -174,12 +176,15 @@ function Header() {
 
   // Tool definitions with descriptions - filtered based on selected agent
   const getToolOptions = () => {
-    console.log("🔧 getToolOptions called with selectedAgentData:", selectedAgentData)
+    console.log(
+      "🔧 getToolOptions called with selectedAgentData:",
+      selectedAgentData
+    )
 
     const allTools = []
 
     // Add software integrations (SAP2000, OpenFOAM, FreeCAD, etc.)
-    selectedAgentData?.softwareIntegrations?.forEach(integration => {
+    selectedAgentData?.softwareIntegrations?.forEach((integration) => {
       // Add scripting tool for the software
       switch (integration.id) {
         case "SAP2000":
@@ -189,7 +194,8 @@ function Header() {
               description: "Control SAP2000 through scripting",
               status: getConnectionStatusColor(),
               isEnabled: true,
-              isConnected: sap.connectionStatus === SAPConnectionStatus.CONNECTED,
+              isConnected:
+                sap.connectionStatus === SAPConnectionStatus.CONNECTED,
               connectAction: handleConnectToSAP,
               toolKey: "sap",
             })
@@ -203,7 +209,8 @@ function Header() {
               status: "gray",
               isEnabled: true,
               isConnected: false,
-              connectAction: () => console.log("OpenFOAM connection not implemented yet"),
+              connectAction: () =>
+                console.log("OpenFOAM connection not implemented yet"),
               toolKey: "openfoam",
             })
           }
@@ -216,7 +223,8 @@ function Header() {
               status: "gray",
               isEnabled: true,
               isConnected: false,
-              connectAction: () => console.log("FreeCAD connection not implemented yet"),
+              connectAction: () =>
+                console.log("FreeCAD connection not implemented yet"),
               toolKey: "freecad",
             })
           }
@@ -227,10 +235,13 @@ function Header() {
       if (integration.desktop) {
         allTools.push({
           name: "SAP2000 UI Interaction",
-          description: `Control ${integration.name || integration.id} through desktop interface`,
+          description: `Control ${
+            integration.name || integration.id
+          } through desktop interface`,
           status: getDesktopConnectionStatusColor(),
           isEnabled: true,
-          isConnected: desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
+          isConnected:
+            desktop.connectionStatus === DesktopConnectionStatus.CONNECTED,
           connectAction: handleConnectToDesktop,
           toolKey: "desktop",
         })
@@ -238,7 +249,7 @@ function Header() {
     })
 
     // Add general tools (file editor, command line, etc.)
-    selectedAgentData?.generalTools?.forEach(tool => {
+    selectedAgentData?.generalTools?.forEach((tool) => {
       switch (tool.id) {
         case "fileEditor":
           allTools.push({
@@ -261,7 +272,10 @@ function Header() {
       }
     })
 
-    console.log("🔧 Built tools dynamically:", allTools.map(t => t.name))
+    console.log(
+      "🔧 Built tools dynamically:",
+      allTools.map((t) => t.name)
+    )
     return allTools
   }
 
@@ -350,20 +364,6 @@ function Header() {
   // Proceed directly with new chat using current agent (no selection dialog)
   const handleConfirmNewChat = () => {
     setShowConfirmation(false)
-    WebSocketService.handleNewChat(selectedAgent)
-  }
-
-  // Cancel agent selection
-  const handleCancelAgentSelection = () => {
-    // setShowAgentSelection(false) // This state is removed
-    setIsInChat(true) // Return to read-only state
-  }
-
-  // Proceed with new chat after agent selection
-  const handleFinalConfirmNewChat = (selectedAgent) => {
-    // setShowAgentSelection(false) // This state is removed
-    setSelectedAgent(selectedAgent)
-    setIsInChat(true) // Return to read-only state after selection
     WebSocketService.handleNewChat(selectedAgent)
   }
 

@@ -54,13 +54,11 @@ class WebSocketService {
     })
 
     this.socket.on("connect", () => {
-      console.log("WebSocket connected with ID:", this.socket.id)
       this.reconnectAttempts = 0
       this.stateHandlers.onConnect.forEach((handler) => handler())
     })
 
     this.socket.on("disconnect", (reason) => {
-      console.log("WebSocket disconnected. Reason:", reason)
       this.stateHandlers.onDisconnect.forEach((handler) => handler(reason))
 
       if (reason === "io server disconnect") {
@@ -71,13 +69,8 @@ class WebSocketService {
 
     this.socket.on("connect_error", (error) => {
       this.reconnectAttempts++
-      console.log(
-        `WebSocket connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}):`,
-        error
-      )
 
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.log("Max reconnection attempts reached, stopping reconnection")
         this.socket.disconnect()
       }
 
@@ -95,29 +88,23 @@ class WebSocketService {
       }
     }, 25000)
 
-    this.socket.on("pong", () => {
-      console.log("Received pong from server")
-    })
+    this.socket.on("pong", () => {})
 
     this.socket.on("state_update", (data) => {
-      console.log("WebSocket received state update:", data)
       this.stateHandlers.onStateUpdate.forEach((handler) => handler(data))
     })
 
     this.socket.on("response", (data) => {
-      console.log("WebSocket received response:", data)
       this.stateHandlers.onResponse.forEach((handler) => handler(data))
     })
 
     this.socket.on("minimize-window", (data) => {
-      console.log("WebSocket received Windows minimize action:", data)
       this.stateHandlers.onCompassWindowState.forEach((handler) =>
         handler(data)
       )
     })
 
     this.socket.on("restore-window", (data) => {
-      console.log("WebSocket received Windows restore action:", data)
       this.stateHandlers.onCompassWindowState.forEach((handler) =>
         handler(data)
       )
@@ -129,23 +116,14 @@ class WebSocketService {
     })
 
     this.socket.on("detection_result", (data) => {
-      console.log("WebSocket received detection result:", data)
       this.stateHandlers?.onDetectionResult?.(data)
     })
 
     this.socket.on("template_saved", (data) => {
-      console.log("WebSocket template saved:", data)
       this.stateHandlers?.onTemplateSaved?.(data)
     })
 
     this.socket.on("scaling_factors", (data) => {
-      console.log("WebSocket: Raw scaling factors data received:", data)
-      console.log(
-        "WebSocket: x_factor =",
-        data.x_factor,
-        "y_factor =",
-        data.y_factor
-      )
       this.stateHandlers.onScalingFactors.forEach((handler) => handler(data))
     })
 
@@ -155,47 +133,41 @@ class WebSocketService {
     })
 
     this.socket.on("screenshots_list", (data) => {
-      console.log("WebSocket received screenshots list:", data)
       this.stateHandlers?.onScreenshotsList?.forEach((handler) => handler(data))
     })
 
     this.socket.on("workflows_list", (data) => {
-      console.log("📦 WebSocket: Received workflows_list event:", data)
       this.stateHandlers.onWorkflowsList.forEach((handler) => handler(data))
     })
 
     this.socket.on("agents_list", (data) => {
-      console.log("WebSocket received agents list:", data)
       this.stateHandlers?.onAgentsList?.forEach((handler) => handler(data))
     })
 
     this.socket.on("agent_hub_result", (data) => {
-      console.log("WebSocket received agent_hub_result:", data)
       this.stateHandlers.onAgentHub.forEach((handler) => handler(data))
     })
 
     this.socket.on("delete_page_result", (data) => {
-      console.log("WebSocket received delete_page_result:", data)
       if (this.stateHandlers.onDeletePageResult) {
-        this.stateHandlers.onDeletePageResult.forEach((handler) => handler(data))
+        this.stateHandlers.onDeletePageResult.forEach((handler) =>
+          handler(data)
+        )
       }
     })
 
     this.socket.on("templates_saved", (data) => {
-      console.log("WebSocket templates saved response:", data)
       this.stateHandlers?.onTemplatesSaved?.(data)
     })
 
     // Add SAP connection status event handler
     this.socket.on("sap_connection_status", (data) => {
-      console.log("WebSocket received SAP connection status:", data)
       this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
         handler(data)
       )
     })
 
     this.socket.on("sap_config_status", (data) => {
-      console.log("WebSocket received SAP config status:", data)
       // We can use the same handler for config status updates
       this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
         handler({
@@ -206,7 +178,6 @@ class WebSocketService {
 
     // Add Desktop connection status event handler
     this.socket.on("desktop_connection_status", (data) => {
-      console.log("WebSocket received Desktop connection status:", data)
       this.stateHandlers.onDesktopConnectionStatus.forEach((handler) =>
         handler(data)
       )
@@ -244,14 +215,12 @@ class WebSocketService {
 
   executeToolAndGenerateAction() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending execute_tool_and_generate_action")
       this.socket.emit("execute_tool_and_generate_action")
     }
   }
 
   uploadScreenshot(imageData, agentName) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending upload_screenshot")
       this.socket.emit("upload_screenshot", {
         image: imageData,
         agent_name: agentName,
@@ -261,7 +230,6 @@ class WebSocketService {
 
   getScreenshots(agentName) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending get_screenshots")
       this.socket.emit("get_screenshots", {
         agent_name: agentName,
       })
@@ -278,83 +246,56 @@ class WebSocketService {
 
   getWorkflows() {
     if (this.socket?.connected) {
-      console.log("🔍 WebSocket sending get_workflows request")
       this.socket.emit("get_workflows")
-    } else {
-      console.warn("Cannot get workflows - socket not connected")
     }
   }
 
   handleNewChat(agentName) {
     if (this.socket?.connected) {
-      console.log("Starting new chat with agent:", agentName)
       this.socket.emit("new_chat", { agent_name: agentName })
     }
   }
 
   getAgents() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending get_agents request")
       this.socket.emit("get_agents")
-    } else {
-      console.warn("Cannot get agents - socket not connected")
     }
   }
 
   saveTemplates(data) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending save_templates request with data:", data)
       this.socket.emit("save_templates", data)
-    } else {
-      console.warn("Cannot save templates - socket not connected")
     }
   }
 
   // New methods for SAP connection
   connectToSAP() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending connect_to_sap request")
       this.socket.emit("connect_to_sap")
-    } else {
-      console.warn("Cannot connect to SAP - socket not connected")
     }
   }
 
   loadSAPConfig(configPath) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending load_sap_config request")
       this.socket.emit("load_sap_config", { config_path: configPath })
-    } else {
-      console.warn("Cannot load SAP config - socket not connected")
     }
   }
 
   getSAPConnectionStatus() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending get_sap_connection_status request")
       this.socket.emit("get_sap_connection_status")
-    } else {
-      console.warn("Cannot get SAP connection status - socket not connected")
     }
   }
   // New methods for Desktop connection
   connectToDesktop() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending connect_to_desktop request")
       this.socket.emit("connect_to_desktop")
-    } else {
-      console.warn("Cannot connect to Desktop - socket not connected")
     }
   }
 
   getDesktopConnectionStatus() {
     if (this.socket?.connected) {
-      console.log("WebSocket sending get_desktop_connection_status request")
       this.socket.emit("get_desktop_connection_status")
-    } else {
-      console.warn(
-        "Cannot get Desktop connection status - socket not connected"
-      )
     }
   }
 
@@ -362,18 +303,13 @@ class WebSocketService {
   agentHub(action, payload = {}) {
     if (this.socket?.connected) {
       this.socket.emit("agent_hub", { action, ...payload })
-    } else {
-      console.warn("Cannot send agent_hub action - socket not connected")
     }
   }
 
   // Page management
   deletePage(pageId) {
     if (this.socket?.connected) {
-      console.log("WebSocket sending delete_page request for ID:", pageId)
       this.socket.emit("delete_page", { pageId })
-    } else {
-      console.warn("Cannot delete page - socket not connected")
     }
   }
 }

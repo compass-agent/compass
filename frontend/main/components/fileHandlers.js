@@ -5,17 +5,12 @@ const path = require("path")
 module.exports = (mainWindow) => {
   ipcMain.handle("save-file", async (event, { filePath, content }) => {
     try {
-      console.log("Main Process: Save file request received:", {
-        filePath,
-        content,
-      })
       if (!filePath) {
         throw new Error("File path is undefined")
       }
 
       // Normalize path for Windows
       const normalizedPath = path.normalize(filePath)
-      console.log("Normalized path:", normalizedPath)
 
       // Ensure directory exists
       const directory = path.dirname(normalizedPath)
@@ -24,26 +19,21 @@ module.exports = (mainWindow) => {
       }
 
       fs.writeFileSync(filePath, content || "", "utf-8")
-      console.log("Main Process: File saved successfully at:", normalizedPath)
 
       return { success: true, path: normalizedPath }
     } catch (error) {
-      console.error("Main Process: Failed to save file:", error)
       return { success: false, error: error.message }
     }
   })
 
   ipcMain.handle("read-file", async (event, filePath) => {
     try {
-      console.log("Main Process: Read file request received:", filePath)
       if (!filePath) {
-        console.log("File path is undefined")
         return { success: false, error: "File path is undefined" }
       }
 
       // Normalize path for Windows
       const normalizedPath = path.normalize(filePath)
-      console.log("Normalized path:", normalizedPath)
 
       // Check if path is absolute
       if (!path.isAbsolute(normalizedPath)) {
@@ -51,7 +41,6 @@ module.exports = (mainWindow) => {
       }
       // Read file content
       const content = fs.readFileSync(normalizedPath, "utf-8")
-      console.log("Main Process: File read successfully")
 
       return { success: true, content }
     } catch (error) {

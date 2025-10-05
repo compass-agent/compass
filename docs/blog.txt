@@ -1,0 +1,137 @@
+1:"$Sreact.fragment"
+2:I[5244,[],""]
+3:I[3866,[],""]
+4:I[4547,[],"ClientSegmentRoot"]
+5:I[5013,["173","static/chunks/173-2e396ccff2dce645.js","750","static/chunks/app/(site)/layout-b947d6d61fcb795a.js"],"default"]
+8:I[6213,[],"OutletBoundary"]
+a:I[6213,[],"MetadataBoundary"]
+c:I[6213,[],"ViewportBoundary"]
+e:I[4835,[],""]
+:HL["/_next/static/css/4aa949012a736748.css","style"]
+0:{"P":null,"b":"ogAMUVU_YI3QRufmwmoUw","p":"","c":["","blog"],"i":false,"f":[[["",{"children":["(site)",{"children":["blog",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true]}],["",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[],[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]]],"forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["(site)",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/4aa949012a736748.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","$L4",null,{"Component":"$5","slots":{"children":["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children","(site)","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[],[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":"$0:f:0:1:1:props:children:1:props:notFound:1:1:props:style","children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":"$0:f:0:1:1:props:children:1:props:notFound:1:1:props:children:props:children:1:props:style","children":404}],["$","div",null,{"style":"$0:f:0:1:1:props:children:1:props:notFound:1:1:props:children:props:children:2:props:style","children":["$","h2",null,{"style":"$0:f:0:1:1:props:children:1:props:notFound:1:1:props:children:props:children:2:props:children:props:style","children":"This page could not be found."}]}]]}]}]]],"forbidden":"$undefined","unauthorized":"$undefined"}]},"params":{},"promise":"$@6"}]]}],{"children":["blog",["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","segmentPath":["children","(site)","children","blog","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":["$L7",null,["$","$L8",null,{"children":"$L9"}]]}],{},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,["$","$1","ByAjaKBj5748iVHuezUbW",{"children":[["$","$La",null,{"children":"$Lb"}],["$","$Lc",null,{"children":"$Ld"}],null]}]]}],false]],"m":"$undefined","G":["$e","$undefined"],"s":false,"S":true}
+f:I[3760,["970","static/chunks/970-a864ac5e8fd21d8d.js","173","static/chunks/173-2e396ccff2dce645.js","813","static/chunks/813-1bff9d8da080a110.js","34","static/chunks/app/(site)/blog/page-4088f90f2800f246.js"],"default"]
+10:I[3074,["970","static/chunks/970-a864ac5e8fd21d8d.js","173","static/chunks/173-2e396ccff2dce645.js","813","static/chunks/813-1bff9d8da080a110.js","34","static/chunks/app/(site)/blog/page-4088f90f2800f246.js"],"default"]
+6:{}
+11:T1068,I've been designing steel-frame buildings long enough to know that the real battle isn't the math—it's the clock. On a typical residential project my team gets three to five weeks to turn an architect's concept into a stamped structural set. Every day a drawing lingers, cranes sit idle and the GC's schedule slips—at roughly $600–700 per day on a mid-size build. So we race, often trading elegance for speed.
+Below are the pain points that keep most of us up at night—and why a thin AI Agent like Compass feels less like shiny tech and more like the wrench we've been missing.
+
+**Repetition That Eats 20 % of the Week**
+Load cases, floor diaphragms, member labeling, sheet tagging—none of it is hard, but it's all mandatory. Industry surveys show 50 % of engineers burn two or more hours a day on tasks that could be scripted. That's time I can't bill and time I can't spend on real engineering.
+
+**How Compass Helps**
+Compass watches my screen, recognizes the pattern ("Ah, another load combination dialog"), and offers to fill or execute it. In pilot runs the overlay shaved our model-prep time from days to hours.
+
+**Optimization Gets Pushed to "Version 2.0"**
+With the schedule breathing down my neck—and the architect still nudging columns—the first pass is usually over-conservative. We add steel because recalculating lighter members isn't worth the all-nighter. Material optimization could trim 5-15 % off the tonnage, but only if we had the bandwidth.
+
+**How Compass Helps**
+Once the baseline model is stable, I can fire a single prompt: "Optimize beam sizes for 1 % drift limit." The Agent iterates sections autonomously and highlights any cost-saving swaps, all while I review connections.
+
+**Learning Curves That Never Flatten**
+Tools like SAP2000 and ETABS are powerful, but every intern needs a season to get productive—and every code update moves the cheese again. Yet the project clock doesn't pause for onboarding.
+
+**How Compass Helps**
+Because it sits on top of the software, Compass acts like a senior sitting over the junior's shoulder, guiding them step-by-step or executing commands outright. The intern ramps faster, the senior reviews instead of hand-holding.
+
+**Integration Risk Kills Good Ideas**
+IT hears "new software" and sees months of license reviews, training sessions, and API spaghetti. That's why most firms limp along with dated macros; swapping core systems is too risky.
+
+**How Compass Helps**
+The Agent overlay is purely UI-level—no database hooks, no forced upgrades. Install, point it at the model window, and it simply works. If we hate it, we uninstall. That low commitment is often what gets our CIO to say yes.
+
+**Trust, Not Replacement**
+Most black-box "AI engineering" demos promise to design the whole building for you. No thanks. I'm liable for what I stamp. What I want is a co-pilot that speeds the grunt work, then steps aside when judgment matters.
+
+**How Compass Helps**
+Everything Compass does is traceable: suggested loads, member swaps, calc snapshots. I approve or tweak, and my seal stays meaningful. It's AI that augments, not replaces, my signature.
+
+**A 30-Minute Design That Used to Take Three Weeks**
+In our latest pilot Compass reduced a 24-unit steel deck building from 21 calendar days to under 30 minutes for the first complete structural pass—analysis, load combos, and preliminary member schedule. The follow-up optimization dropped steel tonnage by ≈10 %, a direct materials-cost win for the developer. We didn't rewrite a single line of code in SAP2000; Compass simply drove the interface faster than any of us could click.
+
+**Where This Leaves the Profession**
+Structural engineering will always need human judgment—we carry the liability, the ethics, the ingenuity. But the profession no longer has to accept wasted days on UI gymnastics and half-finished optimizations. An Agent that respects existing workflows, preserves control, and delivers measurable ROI in the first week feels less like hype and more like an inevitability.
+
+For those of us racing the schedule, Compass isn't "AI for AI's sake." It's steel saved, headaches avoided, and evenings reclaimed. That's a technology worth stamping.12:Teb2,Structural engineers sit at the fulcrum of every building project. Their calculations determine whether a design soars elegantly skyward or fails to meet code, schedule, or budget. Yet behind the high-stakes responsibility lies a day-to-day workflow burdened by legacy software, tight timelines, and razor-thin margins.
+
+1. Racing the Clock
+For a typical mid-rise residential project, engineers are allotted three to five weeks from receiving the architect's drawings to issuing stamped structural plans. Any delay stalls site prep and can cost a contractor $600–700 per day in idle labor and equipment. Under that pressure, engineers often prioritize speed over optimization—accepting heavier steel sections simply to keep construction moving.
+
+2. Repetition Overload
+Industry surveys show that over 50 % of engineers spend two or more hours per day on repetitive digital tasks: defining load cases, assigning member properties, exporting drawings, and re-formatting reports to meet client templates. These hours are non-billable on fixed-fee contracts, directly eroding project margins.
+
+3. Onboarding and Usability Gaps
+Tools like SAP2000 and ETABS are powerful but notoriously complex. New hires can take several months to reach full productivity, and every major software update triggers another learning cycle. 91 % of engineers report frustration with enterprise UX, and 20 % of the workweek can vanish to searching menus or re-creating lost macros.
+
+4. Lost Optimization
+Because optimization studies require iterative modeling—running dozens of what-if scenarios—teams under deadline often skip them. The result is widespread over-design: beams sized safely but conservatively, foundations cast larger than necessary, and developers paying for material the building doesn't need. Studies estimate 5–15 % of structural steel cost could be saved via systematic optimization, but the time just isn't there.
+
+Market Size: An Underserved $70M–$500M Opportunity in the U.S. Alone
+60,000 licensed structural engineers work in the United States.
+
+At a conservative $1,200 per engineer per year for productivity software, the immediate structural-engineering spending potential is ~$72 million annually.
+
+Broaden to all AEC professionals—civil, mechanical, and electrical engineers who face similar workflow pain—and the U.S. opportunity exceeds $500 million per year.
+
+Global demand pushes that number easily into the billions, particularly as emerging markets adopt stricter building codes and digital design standards.
+
+Despite the size of this spend, most dollars still flow to decades-old point solutions that focus on analysis, not the meta-workflow that drains so much engineering capacity.
+
+Enter Compass: An AI Overlay Built for the Real Workflow
+Compass tackles the bottlenecks where they hurt most:
+
+Time Compression – By overlaying existing tools, Compass drives SAP2000 or ETABS through a single prompt, trimming design cycles from weeks to minutes.
+
+Repetitive Task Automation – Screen-level AI completes load combos, sheet tagging, and report formatting automatically, reclaiming the two hours engineers lose each day.
+
+In-Context Optimization – After the baseline design is done, Compass iterates beam and column sizes in the background, routinely delivering 5–15 % material savings without manual what-ifs.
+
+Zero Integration Risk – Installs as a desktop EXE; no APIs, no data leaving the machine—meaning IT buys in quickly and engineers keep the tools they know.
+
+In short, Compass removes the hidden friction points that have quietly capped structural-engineering productivity for decades. The profession doesn't need a brand-new platform; it needs an intelligent layer that lets engineers focus on engineering again.13:T10ef,## A Day in Steel and Stress-Lines: Mapping the User Journey of a Structural Engineer
+
+### 1. Morning Sync—Wading Through Inputs
+
+At 8 a.m. the engineer opens three things in rapid succession: the architect's overnight model update, yesterday's comments from the civil team, and a fresh stack of municipality mark-ups. None arrive in the same format. A Revit file, PDF redlines, and an email thread must be reconciled before any structural modeling happens. The user experience here is mental triage: decide what changed, what matters, and how to translate it into the primary analysis tool.
+
+### 2. Model Construction—From Sketch to Digital Skeleton
+
+Next comes "modeling hour," which rarely stays an hour. The engineer builds or edits the analytical skeleton—members, releases, diaphragms. Keyboard shortcuts, custom scripts, and a personalized library of section templates keep work humming, but each new project introduces fringe cases: an angled column that breaks the macro, or a composite deck profile missing from the database. User flow is a patchwork of speed bursts and abrupt stalls.
+
+### 3. First Pass Analysis—Numbers Over Aesthetics
+
+A button click launches a finite-element crunch. While the solver runs, the engineer toggles over to Slack or Teams, fielding quick clarifications from the architect and answering "is it safe to push this shear wall 18 inches?" The analysis finishes; modal shapes look reasonable. Now the engineer sifts through thousands of force results, cherry-picks governing combinations, and copies them into a spreadsheet for sanity checks.
+
+### 4. Coordination Loop—The Real Work Happens in Meetings
+
+By early afternoon the engineer joins a virtual room with MEP, architect, and contractor. Screenshare battles ensue: which floor plan, which timestamp, whose change wins? The structural engineer's UX here is less about software and more about live negotiation—balancing deflection limits against ceiling plenum space and budget constraints. Action items pile up, ready for another modeling round.
+
+### 5. Documentation—Where Speed Meets Precision
+
+After coordination, the engineer shifts to drawing production. Plans, elevations, details—all must be annotated, dimensioned, and cross-referenced. This phase is equal parts drafting and clerical work: renaming sheets, updating revision clouds, exporting PDFs. The friction comes from context-switching: a minute in CAD, a moment in the analysis tool, back to the drawing index spreadsheet.
+
+### 6. Quality Assurance—Peer Review Under the Clock
+
+A senior reviewer opens the model, hunts for red flags, and leaves comments—often in yet another platform. The junior engineer must decipher cryptic markup bubbles, cross-link them to load combos, and justify every atypical member. The emotional UX here is tension; mistakes correlate directly with professional liability.
+
+### 7. Project Handoff—But the Journey Continues
+
+Stamp date arrives. The engineer packages IFC models, calculation books, and drawing sets and uploads them to the project portal. Relief is short-lived. RFIs and shop drawings start arriving within days, triggering another cycle of quick checks and design tweaks. Even during construction, the structural engineer remains on call, ensuring field changes stay within allowable assumptions.
+
+---
+
+### Where the Experience Breaks
+
+1. **Fragmented data handoffs** force repeated manual translations.
+2. **Context switching** between analysis, drafting, and communication drains focus.
+3. **Visualization gaps** make it hard to see errors until late in the process.
+4. **Meeting-driven coordination** interrupts deep work and dilutes design continuity.
+5. **Linear toolchains** struggle to accommodate iterative changes from other disciplines.
+
+### A Glimpse at a Better Flow
+
+Imagine if iterative changes flowed instantly into the analytical model; if load combinations and governing cases surfaced automatically; if documentation updated in tandem with design moves. A lightweight AI overlay could ride atop existing tools, orchestrating these transitions without forcing engineers to abandon trusted software—reshaping the journey from fragmented sprints into a continuous, intelligent loop.
+
+Structural engineers don't need more software; they need smoother passage across the ones they already live in.7:["$","section",null,{"className":"py-20 lg:py-25 xl:py-30","children":[["$","div",null,{"className":"mx-auto max-w-c-1315 px-4 md:px-8 xl:px-0","children":["$","div",null,{"className":"mx-auto text-center","children":["$","$Lf",null,{"headerInfo":{"title":"NEWS & BLOGS","subtitle":"Latest News & Blogs","description":""}}]}]}],["$","div",null,{"className":"mx-auto mt-15 max-w-c-1280 px-4 md:px-8 xl:mt-20 xl:px-0","children":["$","div",null,{"className":"grid grid-cols-1 gap-7.5 md:grid-cols-2 lg:grid-cols-3 xl:gap-10","children":[["$","$L10","0",{"blog":{"_id":1,"slug":"the-daily-realities-of-a-structural-engineer","mainImage":"/images/blog/blog-01.png","title":"The Daily Realities of a Structural Engineer—And How an AI Agent Can Help","metadata":"Explore the everyday challenges faced by structural engineers and discover how AI agents can streamline workflows, reduce errors, and boost productivity.","content":"$11","author":{"name":"Ali Nahvi","image":""}}}],["$","$L10","1",{"blog":{"_id":2,"slug":"the-hidden-friction-in-structural-engineering","mainImage":"/images/blog/blog-02.png","title":"The Hidden Friction in Structural Engineering—and Why the Market Is Ripe for Change","metadata":"Explore the day-to-day workflow burdens in structural engineering and discover why the market is ready for innovative solutions like Compass.","content":"$12","author":{"name":"Pourya Bazargani","image":""}}}],["$","$L10","2",{"blog":{"_id":3,"slug":"a-day-in-steel-and-stress-lines","mainImage":"/images/blog/blog-03.png","title":"A Day in Steel and Stress-Lines: Mapping the User Journey of a Structural Engineer","metadata":"Mapping the daily challenges and workflow of a structural engineer, from morning sync to project handoff, and identifying points of friction.","content":"$13","author":{"name":"Kazem Sadoughi","image":""}}}]]}]}]]}]
+d:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+b:[["$","meta","0",{"charSet":"utf-8"}],["$","title","1",{"children":"Blog - Compass"}],["$","meta","2",{"name":"description","content":"Latest insights and updates from the Compass team on structural engineering and AI automation."}],["$","link","3",{"rel":"icon","href":"/favicon.ico","type":"image/x-icon","sizes":"16x16"}]]
+9:null

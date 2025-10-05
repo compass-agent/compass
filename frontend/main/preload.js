@@ -93,9 +93,6 @@ contextBridge.exposeInMainWorld("electron", {
     kill: (id) => ipcRenderer.invoke("terminal.kill", id),
     onOutput: (id, callback) => {
       if (typeof callback !== "function") {
-        console.error(
-          `Invalid callback provided to onOutput for terminal ${id}`
-        )
         return
       }
       ipcRenderer.on(`terminal.output.${id}`, (event, data) => callback(data))

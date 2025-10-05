@@ -4,7 +4,6 @@
   100% { opacity: 1; }
 }
 
-// .control-button[title="Stopping"]
 .control-button.stopping {
   animation: pulse 1s infinite;
   background-color: rgba(255, 243, 230, 0.8);
@@ -110,7 +109,6 @@
   &.active {
     background: #36353A;
     color: #9C9B9F;
-    //box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   &:hover:not(.active) {

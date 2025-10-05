@@ -75,9 +75,7 @@
     &.ai-message {
       display: flex;
       align-items: flex-start;
-      //background-color: rgba(45, 45, 55, 0.85);
       padding: 10px;
-      //border: 1px solid #3a3a45;
       border-radius: 12px;
       margin-right: auto;
       color: white;
@@ -85,7 +83,6 @@
       word-wrap: break-word;
 
       .markdown-content {
-        /* Add spacing control for first/last elements */
         > *:first-child {
           margin-top: 0;
         }

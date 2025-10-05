@@ -125,16 +125,6 @@ function ControlPanel() {
     })
   }
 
-  // const getModeIcon = () => {
-  //   if (mode === MODES.MANUAL.mode) {
-  //     return faUser
-  //   } else if (mode === MODES.SEMI_AUTO.mode) {
-  //     return faBolt
-  //   } else if (mode === MODES.AUTO.mode) {
-  //     return faMagicWandSparkles
-  //   }
-  // }
-
   const isAgentStatePlaying = agentState.status !== AgentStatus.STOPPED
 
   const getButtonConfig = () => {
@@ -176,25 +166,6 @@ function ControlPanel() {
   }
 
   const playButtonConfig = getButtonConfig()
-
-  // const handleMode = () => {
-  //   console.log(
-  //     `ControlPanel: handleMode: current mode ${mode} - Agent state: ${JSON.stringify(
-  //       agentState
-  //     )}`
-  //   )
-  //   if (mode === MODES.MANUAL.mode) {
-  //     setMode(MODES.SEMI_AUTO.mode)
-  //     setAgentMode(AgentMode.SEMI_AUTO)
-  //   } else if (mode === MODES.SEMI_AUTO.mode) {
-  //     setMode(MODES.AUTO.mode)
-  //     setAgentMode(AgentMode.AUTO)
-  //   } else if (MODES.AUTO.mode) {
-  //     setMode(MODES.MANUAL.mode)
-  //     setAgentMode(AgentMode.MANUAL)
-  //   }
-  //   console.log("ControlPanel: handleMode: - mode: ", mode)
-  // }
 
   const setAgentMode = (mode) => {
     WebSocketService.updateControlState({
