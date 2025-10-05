@@ -44,7 +44,6 @@ DOCKER_WORKING_DIR = "/home/openfoam/run"
 # Get the current user's home directory
 HOME_DIR = os.path.expanduser("~")
 HOST_WORKING_DIR = os.path.join(HOME_DIR, "openfoam", "run")
-# HOST_WORKING_DIR = "/Users/kazem/openfoam/run/"
 # Screenshot configuration
 
 # Define tool configurations for different agents
