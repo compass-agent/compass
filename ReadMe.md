@@ -8,7 +8,6 @@
 ## Overview
 Compass is a Windows desktop application that acts as an AI co‑pilot for engineering software. It automates common tasks, reduces learning curves, and accelerates engineering workflows.
 
-**🎓 Learning Resource**: This repository demonstrates production-ready implementation of RAG, agentic AI, and computer vision for desktop automation. See [ARCHITECTURE.md](./ARCHITECTURE.md) for technical deep-dive.
 
 ## Highlights
 - Windows desktop app with AI agent that operates engineering software
@@ -19,17 +18,6 @@ Compass is a Windows desktop application that acts as an AI co‑pilot for engin
 ## Demo
 See the demo and overview at: [https://compass-agent.github.io/compass](https://compass-agent.github.io/compass)
 
-## 🏗️ Architecture
-
-Compass combines multiple AI technologies to create a practical agentic system:
-
-- **🤖 Multi-Agent System**: Orchestrator + specialist agents
-- **📚 RAG (Retrieval-Augmented Generation)**: ChromaDB + embeddings for engineering docs
-- **👁️ Computer Vision**: Object detection for UI understanding
-- **🖱️ Desktop Control**: Mouse, keyboard, screen automation
-- **🔧 Tool System**: Software APIs + file operations
-
-**[→ Read Full Architecture Documentation](./ARCHITECTURE.md)**
 
 ## Quick Start
 
@@ -56,19 +44,16 @@ npm install
 npm run dev
 ```
 
-4) Set LLM API keys
+**Set LLM API Keys**
+
 Create `backend/src/compass/key.py` with your keys:
 ```python
 # backend/src/compass/key.py
 ANTHROPIC_API_KEY = "your_anthropic_api_key"
-GOOGLE_API_KEY = "your_gemini_api_key"
-OPENAI_API_KEY = "your_openai_api_key"  # used by SAP API RAG
 ```
-Provider selection is configured in `backend/src/compass/constants.py` via `LLM_PROVIDER` ("anthropic" or "google").
 
-Troubleshooting
-- If `webpack` or `cross-env` is not recognized, run `npm install` in the repo root.
-- If imports fail when running the backend, ensure `PYTHONPATH` includes `backend/src` (the debug config sets this automatically).
+> **Note**: Currently, the stable version of this repo only accepts the Anthropic Claude model. We are working on stabilizing the Google and OpenAI frontier models as well. 
+
 
 ## Architecture at a Glance
 Electron desktop app with React frontend and Flask backend. The two communicate via Socket.IO for real-time interaction.
