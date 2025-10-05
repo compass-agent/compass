@@ -6,7 +6,7 @@ const { handleTerminalEvents } = require("./components/terminalEvents")
 const setupFileHandlers = require("./components/fileHandlers")
 const setupWindowHandlers = require("./components/windowHandler")
 require("dotenv").config()
-const { startBackend, logToFile } = require("./backendManager")
+const { logToFile } = require("./backendManager")
 
 if (process.platform === "darwin") {
   app.setName("Compass")
@@ -258,31 +258,14 @@ ipcMain.handle("load-last-agent", async () => {
 })
 
 app.whenReady().then(() => {
-  if (!isDev) {
-    // Start the Python backend in production
-    try {
-      logToFile("Starting backend process...")
-      backendProcess = startBackend()
-
-      // Make sure to terminate the backend process when the app quits
-      app.on("quit", () => {
-        saveWindowBounds()
-        logToFile("Application quitting, terminating backend process")
-        if (backendProcess) {
-          backendProcess.kill()
-        }
-      })
-    } catch (error) {
-      logToFile(`Error starting backend: ${error.message}`)
-      console.error("Failed to start backend:", error)
-
-      // Show error dialog to user
-      dialog.showErrorBox(
-        "Backend Error",
-        `Failed to start the backend process: ${error.message}\n\nPlease check the logs for more details.`
-      )
-    }
-  }
+  // Backend is started manually in development
+  // In production, backend would be bundled separately
+  
+  // Save window bounds on quit
+  app.on("quit", () => {
+    saveWindowBounds()
+    logToFile("Application quitting")
+  })
 
   if (process.platform === "darwin") {
     app.name = "Compass"
