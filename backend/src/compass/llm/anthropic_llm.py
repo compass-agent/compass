@@ -17,7 +17,11 @@ from compass.constants import (
     ENABLE_EXTENDED_THINKING,
     THINKING_BUDGET_TOKENS
 )
-from compass.key import ANTHROPIC_API_KEY
+# Safe import of Anthropic API key
+try:
+    from compass.key import ANTHROPIC_API_KEY
+except ImportError:
+    ANTHROPIC_API_KEY = None
 from compass.utils.utility import log_execution_time
 from compass.utils.utility import TokenTracker
 
@@ -32,6 +36,9 @@ class AnthropicLLM(BaseLLMInterface):
                  tools_params: List[Dict[str, Any]], 
                  manual_system_message: SystemMessage,
                  auto_system_message: SystemMessage):
+        if not ANTHROPIC_API_KEY:
+            raise ValueError("ANTHROPIC_API_KEY is not available. Please check your compass.key configuration.")
+        
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY, max_retries=4)
         self.token_tracker = TokenTracker()
         # Filter tools while keeping required parameters

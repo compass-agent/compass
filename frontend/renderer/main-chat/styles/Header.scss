@@ -352,7 +352,7 @@
             padding: 8px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
             
             &:last-child {
               border-bottom: none;
@@ -365,6 +365,20 @@
             &.selected {
               background-color: var(--selection-bg);
               border-color: var(--selection-border);
+            }
+            
+            &.disabled {
+              cursor: not-allowed;
+              opacity: 0.4;
+              pointer-events: none;
+              
+              .model-name {
+                color: #666 !important;
+              }
+              
+              &:hover {
+                background-color: transparent;
+              }
             }
             
             .tool-info {
