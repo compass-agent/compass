@@ -5,19 +5,19 @@ import logging
 import time
 
 from compass.tools.screen_parser.models import ScreenData
-from compass.tools.screen_parser.detectors.template_matcher.conv_template_detector import ConvTemplateDetector
+from compass.tools.screen_parser.detectors.template_matcher.template_detector import TemplateDetector
 from compass.utils.utility import log_execution_time
 logger = logging.getLogger(__name__)
 
 class ScreenParser:
     def __init__(self, agent_name: str = "structural-engineer"):
         """
-        Initialize ScreenParser with convolution-based template detector
+        Initialize ScreenParser with OpenCV-based template detector
         
         Args:
             agent_name: Name of the agent for template filtering
         """           
-        logger.info("ScreenParser initialized with convolution-based template matching")
+        logger.info("ScreenParser initialized with OpenCV template matching")
         
         # Load config
         config_path = Path(__file__).parent / 'config.yaml'
@@ -27,18 +27,18 @@ class ScreenParser:
         # Get settings from config
         self.include_text_in_description = self.config['general']['screen_descriptor']['include_text']
         
-        # Initialize convolution-based template detector
-        self.template_detector = ConvTemplateDetector(agent_name=agent_name)
+        # Initialize OpenCV-based template detector
+        self.template_detector = TemplateDetector(agent_name=agent_name)
 
     @log_execution_time(logger)
     def parse(self, screen_data: ScreenData) -> ScreenData:
-        """Parse a screen using convolution-based template matching"""
+        """Parse a screen using OpenCV template matching"""
         return self.light_parse(screen_data)
     
     @log_execution_time(logger)
     def light_parse(self, screen_data: ScreenData, x_scaling_factor: float = 1.0, y_scaling_factor: float = 1.0) -> ScreenData:
         """
-        Fast parsing using convolution-based template matching
+        Fast parsing using OpenCV template matching
         
         Args:
             screen_data (ScreenData): The screen data to parse
@@ -46,10 +46,10 @@ class ScreenParser:
             y_scaling_factor (float): Factor to scale y coordinates
         """
         
-        # Run convolution-based template detection
+        # Run OpenCV template detection
         detection_start = time.time()
         detected_screen = self.template_detector.detect(screen_data)
-        logger.info(f"Convolution template detection took {time.time() - detection_start:.2f} seconds")
+        logger.info(f"Template detection took {time.time() - detection_start:.2f} seconds")
         
         # Generate and add screen description with scaling factors
         description = self.screen_descriptor(detected_screen, x_scaling_factor, y_scaling_factor)
