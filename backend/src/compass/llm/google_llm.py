@@ -11,7 +11,11 @@ from compass.utils.utility import log_execution_time
 from compass.constants import (
     MAX_TOKENS
 )
-from compass.key import GOOGLE_API_KEY
+# Safe import of Google API key
+try:
+    from compass.key import GOOGLE_API_KEY
+except ImportError:
+    GOOGLE_API_KEY = None
 from compass.constants import GOOGLE_MODEL_NAME
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,9 @@ class GoogleLLM(BaseLLMInterface):
                  tools_params: List[Dict[str, Any]], 
                  manual_system_message: SystemMessage,
                  auto_system_message: SystemMessage):
+        if not GOOGLE_API_KEY:
+            raise ValueError("GOOGLE_API_KEY is not available. Please check your compass.key configuration.")
+        
         genai.configure(api_key=GOOGLE_API_KEY)
         self.model = genai.GenerativeModel(
             GOOGLE_MODEL_NAME,

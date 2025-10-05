@@ -12,7 +12,6 @@ import sys
 from typing import List, Dict, Any, Optional
 import chromadb
 from openai import OpenAI
-from compass.key import OPENAI_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +54,9 @@ class SAPAPIQuery:
         self.collection_name = collection_name
         self.embedding_model = embedding_model
         
-        # Initialize OpenAI client with API key from compass/key.py
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        # OpenAI client will be initialized lazily when needed
+        self.client = None
+        self._api_key_checked = False
         
         # Ensure the database directory exists
         os.makedirs(self.db_path, exist_ok=True)
@@ -83,6 +83,41 @@ class SAPAPIQuery:
             logger.error(f"Failed to initialize vector database: {e}")
             raise
     
+    def _get_openai_client(self) -> Optional[OpenAI]:
+        """
+        Get the OpenAI client, initializing it lazily if needed.
+        
+        Returns:
+            OpenAI client if API key is available, None otherwise
+        """
+        if self.client is not None:
+            return self.client
+            
+        if self._api_key_checked:
+            # We already tried and failed to get the API key
+            return None
+            
+        # Try to get the API key
+        try:
+            from compass.key import OPENAI_API_KEY
+            if OPENAI_API_KEY:
+                self.client = OpenAI(api_key=OPENAI_API_KEY)
+                logger.info("Successfully initialized OpenAI client for SAP API queries")
+                self._api_key_checked = True
+                return self.client
+            else:
+                logger.warning("OPENAI_API_KEY is empty - SAP API documentation queries will not be available")
+                self._api_key_checked = True
+                return None
+        except (ImportError, AttributeError) as e:
+            logger.warning(f"OPENAI_API_KEY not found in compass.key - SAP API documentation queries will not be available: {e}")
+            self._api_key_checked = True
+            return None
+        except Exception as e:
+            logger.error(f"Error initializing OpenAI client: {e}")
+            self._api_key_checked = True
+            return None
+    
     def get_embedding_for_query(self, query_text: str) -> Optional[List[float]]:
         """
         Generate an embedding vector for the given query text.
@@ -96,9 +131,15 @@ class SAPAPIQuery:
         if not query_text:
             logger.warning("Empty query text provided")
             return None
+        
+        # Get the OpenAI client (lazy initialization)
+        client = self._get_openai_client()
+        if client is None:
+            logger.warning("OpenAI client not available - cannot generate embeddings")
+            return None
             
         try:
-            response = self.client.embeddings.create(
+            response = client.embeddings.create(
                 input=[query_text],
                 model=self.embedding_model
             )
@@ -182,7 +223,8 @@ class SAPAPIQuery:
         query_embedding = self.get_embedding_for_query(query)
         if not query_embedding:
             return {
-                "error": "Failed to generate embedding for query",
+                "query": query,
+                "error": "Failed to generate embedding for query - OpenAI API key may not be available",
                 "results": []
             }
         
