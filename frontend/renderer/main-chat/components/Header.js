@@ -47,7 +47,7 @@ function Header() {
   const [thinkingModeEnabled, setThinkingModeEnabled] = useState(true) // Thinking mode enabled by default
 
   const [selectedAgent, setSelectedAgent] = useState(null)
-  const [selectedModel, setSelectedModel] = useState("Claude Sonnet 3.5")
+  const [selectedModel, setSelectedModel] = useState("Claude Sonnet 4.5")
   const [selectedAgentData, setSelectedAgentData] = useState(null)
 
   // Load last selected agent on startup
@@ -130,19 +130,22 @@ function Header() {
   ]
   const modelOptions = [
     {
-      name: "Claude Sonnet 4.0",
+      name: "Claude Sonnet 4.5",
       description:
         "Advanced reasoning with extended thinking capabilities, excels at complex analysis and problem-solving with enhanced emotional intelligence",
+      enabled: true,
     },
     {
       name: "OpenAI GPT-5",
       description:
         "Next-generation model with unified architecture, combining powerful reasoning and multimodal processing for sophisticated AI interactions",
+      enabled: false,
     },
     {
       name: "Google Gemini 2.5",
       description:
         "Price-performance champion with configurable thinking budgets, multimodal processing, and cost-efficient deployment at scale",
+      enabled: false,
     },
   ]
 
@@ -741,11 +744,12 @@ function Header() {
               <div className="header-dropdown-menu chatgpt-style models-menu">
                 {modelOptions.map((model) => {
                   const isSelected = selectedModel === model.name
+                  const isDisabled = !model.enabled
                   return (
                     <div
                       key={model.name}
-                      className={`tool-item ${isSelected ? "selected" : ""}`}
-                      onClick={() => handleModelSelect(model.name)}
+                      className={`tool-item ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
+                      onClick={() => model.enabled && handleModelSelect(model.name)}
                     >
                       <div className="tool-info">
                         <div className="tool-status">
