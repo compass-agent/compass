@@ -4,7 +4,6 @@ import AgentHub from "./components/AgentHub"
 import AgentSetup from "./components/AgentSetup"
 import PageEditor from "./components/PageEditor"
 import PagesList from "./components/PagesList"
-import Settings from "./components/Settings"
 import { VIEW_STATES } from "./constants/viewStates"
 import { useBoxManagement } from "./hooks/useBoxManagement"
 import AgentHubService from "./services/agentHubService"
@@ -520,8 +519,6 @@ const TemplateTraining = () => {
             handleAutoCaption={handleAutoCaption}
           />
         )
-      case VIEW_STATES.SETTINGS:
-        return <Settings onNavigate={setCurrentView} />
       default:
         return null
     }
