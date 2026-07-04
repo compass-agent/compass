@@ -13,19 +13,13 @@ from typing import List, Dict, Any, Optional
 import chromadb
 from openai import OpenAI
 
+from compass.key import get_openai_api_key
+from compass.runtime_paths import get_rag_db_dir
+
 logger = logging.getLogger(__name__)
 
 # Configuration
-# Determine if we're running in a frozen executable (production) or not (development)
-if getattr(sys, 'frozen', False):
-    # Running as a frozen executable (production)
-    # Use a path in AppData for the database
-    appdata_dir = os.environ.get('APPDATA', '.')
-    DEFAULT_DB_PATH = os.path.join(appdata_dir, 'Compass', 'database', 'sap2000_api')
-else:
-    # Running in development mode
-    # Use relative path from the workspace
-    DEFAULT_DB_PATH = os.path.abspath(os.path.join("src", "compass", "database", "sap2000_api"))
+DEFAULT_DB_PATH = str(get_rag_db_dir())
 
 DEFAULT_COLLECTION_NAME = "sap2000_api"
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
@@ -70,17 +64,23 @@ class SAPAPIQuery:
         """Initialize connection to the vector database"""
         try:
             self.db_client = chromadb.PersistentClient(path=self.db_path)
-            
-            # Check if collection exists
+
+            # Check if collection exists. Catch broadly: the specific
+            # exception class differs across chromadb versions.
             try:
                 self.collection = self.db_client.get_collection(self.collection_name)
                 logger.info(f"Connected to existing collection '{self.collection_name}'")
-            except chromadb.errors.InvalidCollectionException: # type: ignore
-                logger.warning(f"Collection '{self.collection_name}' does not exist in the database")
-                raise ValueError(f"Collection '{self.collection_name}' not found. Please ensure the database is properly initialized.")
-                
+            except Exception as e:
+                logger.warning(
+                    f"Collection '{self.collection_name}' not available: {e}",
+                    exc_info=True,
+                )
+                raise ValueError(
+                    f"Collection '{self.collection_name}' not found. Please ensure the database is properly initialized."
+                ) from e
+
         except Exception as e:
-            logger.error(f"Failed to initialize vector database: {e}")
+            logger.error(f"Failed to initialize vector database: {e}", exc_info=True)
             raise
     
     def _get_openai_client(self) -> Optional[OpenAI]:
@@ -92,30 +92,21 @@ class SAPAPIQuery:
         """
         if self.client is not None:
             return self.client
-            
-        if self._api_key_checked:
-            # We already tried and failed to get the API key
-            return None
-            
-        # Try to get the API key
+
+        # Re-check the key on every attempt so a key saved via the settings
+        # UI becomes usable without restarting the backend.
         try:
-            from compass.key import OPENAI_API_KEY
-            if OPENAI_API_KEY:
-                self.client = OpenAI(api_key=OPENAI_API_KEY)
+            api_key = get_openai_api_key()
+            if api_key:
+                self.client = OpenAI(api_key=api_key)
                 logger.info("Successfully initialized OpenAI client for SAP API queries")
-                self._api_key_checked = True
                 return self.client
-            else:
-                logger.warning("OPENAI_API_KEY is empty - SAP API documentation queries will not be available")
+            if not self._api_key_checked:
+                logger.warning("OpenAI API key not configured - SAP API documentation queries will not be available")
                 self._api_key_checked = True
-                return None
-        except (ImportError, AttributeError) as e:
-            logger.warning(f"OPENAI_API_KEY not found in compass.key - SAP API documentation queries will not be available: {e}")
-            self._api_key_checked = True
             return None
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {e}")
-            self._api_key_checked = True
             return None
     
     def get_embedding_for_query(self, query_text: str) -> Optional[List[float]]:
