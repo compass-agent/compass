@@ -10,29 +10,40 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && set PYTHONPATH=src && ..\\.venv\\Scripts\\python.exe src\\compass\\app.py",
     "dev:frontend": "concurrently \"npm run watch\" \"npm run start\"",
-    "start": "electron .",
+    "start": "cross-env ELECTRON_RUN_AS_NODE= electron .",
     "watch": "npx webpack --watch",
     "build": "webpack --mode production",
     "clean": "rimraf dist/ build/",
-    "package": "npm run build && electron-builder build --mac",
+    "build:backend": ".venv\\Scripts\\python.exe -m PyInstaller --clean --noconfirm backend\\compass_backend.spec --distpath backend\\dist --workpath backend\\build",
+    "package-win": "npm run clean && npm run build && electron-builder build --win",
+    "dist:win": "npm run build:backend && npm run package-win",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepackage-win": "npm run clean && node build-config.js && copy .env.production .env",
-    "set-prod": "cross-env NODE_ENV=production",
-    "package-win": "npm run set-prod && npm run build && electron-builder build --win",
-    "postpackage-win": "copy .env.development .env",
     "postinstall": "electron-builder install-app-deps"
   },
-  "keywords": [],
+  "keywords": [
+    "desktop-agent",
+    "sap2000",
+    "computer-use",
+    "engineering-software",
+    "electron"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "Compass application with integrated frontend and backend",
+  "license": "MIT",
+  "description": "Open-source Windows desktop AI agent for GUI-heavy engineering and professional software.",
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-react": "^7.25.9",
     "@electron/remote": "^2.1.2",
+    "@fortawesome/fontawesome-svg-core": "^6.7.1",
+    "@fortawesome/free-regular-svg-icons": "^6.7.1",
+    "@fortawesome/free-solid-svg-icons": "^6.7.1",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@headlessui/react": "^2.2.0",
+    "@monaco-editor/react": "^4.6.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@xterm/xterm": "^5.5.0",
     "babel-loader": "^9.2.1",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
@@ -40,25 +51,6 @@
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "electron-devtools-installer": "^3.2.1",
-    "rimraf": "^6.0.1",
-    "sass": "^1.83.0",
-    "sass-loader": "^16.0.4",
-    "style-loader": "^4.0.0",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.7.2",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
-  },
-  "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.7.1",
-    "@fortawesome/free-regular-svg-icons": "^6.7.1",
-    "@fortawesome/free-solid-svg-icons": "^6.7.1",
-    "@fortawesome/react-fontawesome": "^0.2.2",
-    "@headlessui/react": "^2.2.0",
-    "@monaco-editor/react": "^4.6.0",
-    "@xterm/xterm": "^5.5.0",
-    "dotenv": "^16.4.7",
     "js-yaml": "^4.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -69,9 +61,21 @@
     "react-rnd": "^10.4.14",
     "react-router-dom": "^7.1.1",
     "react-tabs": "^6.1.0",
+    "rimraf": "^6.0.1",
+    "sass": "^1.83.0",
+    "sass-loader": "^16.0.4",
     "socket.io-client": "^4.8.1",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.7.2",
     "uuid": "^11.0.5",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0",
     "xterm": "^5.3.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -79,33 +83,29 @@
   "build": {
     "appId": "com.compass.app",
     "productName": "Compass",
-    "mac": {
-      "category": "public.app-category.utilities"
-    },
     "files": [
       "frontend/**/*",
       "package.json",
+      "!frontend/renderer/dist/**/*.map",
       "!**/node_modules/**/{test,__tests__,tests,powered-test,example,examples}",
       "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
     ],
     "extraResources": [
       {
-        "from": "backend/dist/compass_backend.exe",
-        "to": "backend/compass_backend.exe"
-      },
-      {
-        "from": "resources",
-        "to": "."
+        "from": "backend/dist/compass_backend",
+        "to": "backend/compass_backend"
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "resources/compass.ico"
+      "icon": "resources/compass.ico",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "artifactName": "Compass-Setup-${version}.${ext}"
     }
   }
 }
