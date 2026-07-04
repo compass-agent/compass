@@ -63,11 +63,16 @@ def log_execution_time(logger):
     return decorator
 
 class HistoryLogger:
-    def __init__(self, log_dir='logs'):
+    def __init__(self, log_dir=None):
+        if log_dir is None:
+            # Writable location in production (Program Files is read-only),
+            # backend/logs in development as before.
+            from compass.runtime_paths import get_logs_dir
+            log_dir = get_logs_dir()
         timestamp = datetime.now().strftime('%Y%m%d-%H%M')
         random_suffix = ''.join(random.choices(string.digits, k=4))
         self.session_id = f"{timestamp}-{random_suffix}"
-        
+
         self.log_dir = Path(log_dir) / self.session_id
         self.screenshots_dir = self.log_dir / 'screenshots'
         self.prompts_dir = self.log_dir / 'llm_prompt'
