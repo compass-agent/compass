@@ -104,6 +104,7 @@ function appReducer(state, action) {
       return {
         ...state,
         chat: { ...state.chat, error: action.payload },
+        connection: { ...state.connection, error: action.payload },
       }
 
     case ActionTypes.START_PROCESSING:
@@ -178,8 +179,12 @@ function appReducer(state, action) {
         sap: {
           ...state.sap,
           connectionStatus: action.payload.status || state.sap.connectionStatus,
-          message: action.payload.message || state.sap.message,
-          configStatus: action.payload.configStatus || state.sap.configStatus,
+          message: Object.prototype.hasOwnProperty.call(action.payload, "message")
+            ? action.payload.message
+            : state.sap.message,
+          configStatus: Object.prototype.hasOwnProperty.call(action.payload, "configStatus")
+            ? action.payload.configStatus
+            : state.sap.configStatus,
         },
       }
 

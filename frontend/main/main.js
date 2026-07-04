@@ -6,7 +6,26 @@ const { handleTerminalEvents } = require("./components/terminalEvents")
 const setupFileHandlers = require("./components/fileHandlers")
 const setupWindowHandlers = require("./components/windowHandler")
 require("dotenv").config()
-const { logToFile } = require("./backendManager")
+const {
+  startBackend,
+  stopBackend,
+  restartBackend,
+  killOrphanedBackends,
+  getWorkspaceDir,
+  logToFile,
+} = require("./backendManager")
+const {
+  getSettings,
+  saveSettings,
+  getSettingsForRenderer,
+} = require("./settingsManager")
+
+// Only one instance of the app may run: a second instance would fight over
+// the backend port (5001).
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+}
 
 if (process.platform === "darwin") {
   app.setName("Compass")
@@ -137,6 +156,17 @@ function createWindow() {
 
   const indexPath = path.join(__dirname, "../renderer/main-chat/index.html")
   mainWindow.loadFile(indexPath)
+  mainWindow.webContents.on("console-message", (event, level, message) => {
+    logToFile(`Renderer console[${level}]: ${message}`)
+  })
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription, validatedURL) => {
+      logToFile(
+        `Renderer failed to load ${validatedURL}: ${errorCode} ${errorDescription}`
+      )
+    }
+  )
   Menu.setApplicationMenu(null)
   // Instead of Menu.setApplicationMenu(null), call createMenu
   if (process.platform === "darwin") {
@@ -257,10 +287,75 @@ ipcMain.handle("load-last-agent", async () => {
   return loadLastAgent()
 })
 
-app.whenReady().then(() => {
-  // Backend is started manually in development
-  // In production, backend would be bundled separately
-  
+// Settings and backend lifecycle IPC (used by the onboarding/settings UI)
+ipcMain.handle("get-settings", async () => {
+  return getSettingsForRenderer()
+})
+
+ipcMain.handle("save-settings", async (event, patch) => {
+  try {
+    const allowedKeys = [
+      "anthropicApiKey",
+      "openaiApiKey",
+      "googleApiKey",
+      "onboardingCompleted",
+    ]
+    const sanitized = {}
+    for (const key of allowedKeys) {
+      if (patch && patch[key] !== undefined) {
+        sanitized[key] = patch[key]
+      }
+    }
+    saveSettings(sanitized)
+    logToFile("Settings saved")
+    return { success: true, settings: getSettingsForRenderer() }
+  } catch (error) {
+    logToFile(`Failed to save settings: ${error.message}`)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle("restart-backend", async () => {
+  try {
+    await restartBackend()
+    return { success: true }
+  } catch (error) {
+    logToFile(`Failed to restart backend: ${error.message}`)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle("get-paths", async () => {
+  const workspaceDir = getWorkspaceDir()
+  const modelsDir = path.join(workspaceDir, "models")
+  return {
+    workspaceDir,
+    modelsDir,
+    sapConfigPath: path.join(modelsDir, ".sapConfig.yml"),
+    userDataDir: app.getPath("userData"),
+    documentsDir: app.getPath("documents"),
+  }
+})
+
+app.whenReady().then(async () => {
+  // In production, launch the bundled Python backend. In development the
+  // backend runs separately via `npm run dev`.
+  if (app.isPackaged) {
+    try {
+      await killOrphanedBackends()
+      startBackend()
+    } catch (error) {
+      logToFile(`Failed to start backend: ${error.message}`)
+      dialog.showErrorBox(
+        "Compass backend failed to start",
+        `${error.message}\n\nCheck the log at:\n${path.join(
+          app.getPath("userData"),
+          "logs"
+        )}`
+      )
+    }
+  }
+
   // Save window bounds on quit
   app.on("quit", () => {
     saveWindowBounds()
@@ -282,6 +377,10 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit()
   }
+})
+
+app.on("will-quit", () => {
+  stopBackend()
 })
 
 app.on("activate", () => {

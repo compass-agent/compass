@@ -8,6 +8,7 @@ import ChatHistory from "./main-chat/components/ChatHistory"
 import ControlPanel from "./main-chat/components/ControlPanel"
 import Header from "./main-chat/components/Header"
 import MessageInput from "./main-chat/components/MessageInput"
+import SettingsModal from "./main-chat/components/SettingsModal"
 import useScrollToBottom from "./main-chat/hooks/useScrollToBottom"
 import useUpdateContainerHeight from "./main-chat/hooks/useUpdateContainerHeight"
 import "./main-chat/styles/App.scss"
@@ -25,6 +26,34 @@ function AppContent() {
   const isAutoMode = agent.mode === AgentMode.AUTO
   const isMinimalView = false // isAutoMode && agent.status !== AgentStatus.STOPPED
   const isCompassReady = connection.connected //&& agent.status === AgentStatus.STOPPED
+
+  // Settings / first-run onboarding
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [isFirstRun, setIsFirstRun] = useState(false)
+
+  useEffect(() => {
+    // Open onboarding automatically when no Anthropic key is configured yet
+    if (window.electron?.settings?.get) {
+      window.electron.settings
+        .get()
+        .then((s) => {
+          if (!s.anthropicKeySet && !s.onboardingCompleted) {
+            setIsFirstRun(true)
+            setSettingsOpen(true)
+          }
+        })
+        .catch(() => {})
+    }
+
+    // Allow other components (e.g. the Header gear icon) to open settings
+    const openSettings = () => {
+      setIsFirstRun(false)
+      setSettingsOpen(true)
+    }
+    window.addEventListener("open-compass-settings", openSettings)
+    return () =>
+      window.removeEventListener("open-compass-settings", openSettings)
+  }, [])
 
   useEffect(() => {
     if (window.electron.minimalWindow) {
@@ -44,6 +73,12 @@ function AppContent() {
 
   return (
     <div className="app">
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        isFirstRun={isFirstRun}
+        connected={connection.connected}
+      />
       <div className="header-wrapper">
         <Header />
       </div>
