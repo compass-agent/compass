@@ -11,8 +11,9 @@ MAX_TOKENS = 16384  # Increased to accommodate thinking budget
 
 # Anthropic Provider:
 PROMPT_CACHING = True
-ANTHROPIC_MODEL_NAME_MANUAL = "claude-sonnet-4-20250514" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
-ANTHROPIC_MODEL_NAME_AUTO = "claude-sonnet-4-20250514" # claude-3-7-sonnet-20250219 "claude-3-5-sonnet-latest"
+ANTHROPIC_DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL_NAME", "claude-sonnet-5")
+ANTHROPIC_MODEL_NAME_MANUAL = os.environ.get("ANTHROPIC_MODEL_NAME_MANUAL", ANTHROPIC_DEFAULT_MODEL)
+ANTHROPIC_MODEL_NAME_AUTO = os.environ.get("ANTHROPIC_MODEL_NAME_AUTO", ANTHROPIC_DEFAULT_MODEL)
 
 # Thinking mode configuration
 ENABLE_EXTENDED_THINKING = False

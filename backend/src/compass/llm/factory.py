@@ -36,4 +36,6 @@ class LLMFactory:
             )
         except ValueError as e:
             logger.error(f"Failed to initialize {LLM_PROVIDER} LLM: {e}")
-            raise RuntimeError(f"Cannot initialize LLM provider '{LLM_PROVIDER}'. Please check your API key configuration in compass.key") from e 
+            raise RuntimeError(
+                f"Cannot initialize LLM provider '{LLM_PROVIDER}': {e}"
+            ) from e
