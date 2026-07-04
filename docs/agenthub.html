@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentHub - Create agents for your engineering software</title>
+<meta name="description" content="AgentHub helps teams, vendors, and expert users teach Compass new engineering software workflows and share specialized agents.">
+<link rel="icon" type="image/svg+xml" href="images/logo/compass.svg">
+<link rel="alternate icon" type="image/png" href="images/logo/favicon-32.png">
+<style>
+  :root {
+    --bg: #0c0e12;
+    --bg-soft: #10151c;
+    --panel: #171d25;
+    --line: #2a3441;
+    --line-soft: rgba(255, 255, 255, 0.1);
+    --text: #f7f8fa;
+    --muted: #bac3cf;
+    --faint: #818b98;
+    --violet: #a873e8;
+    --violet-strong: #9255d7;
+    --teal: #35d5c4;
+    --green: #80d88a;
+    --radius: 8px;
+    --max: 1100px;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--text);
+    background: var(--bg);
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img, video, svg { display: block; max-width: 100%; }
+  .container { width: min(var(--max), calc(100% - 48px)); margin: 0 auto; }
+
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: rgba(12, 14, 18, 0.88);
+    border-bottom: 1px solid var(--line-soft);
+    backdrop-filter: blur(14px);
+  }
+  .nav-inner {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 750;
+    white-space: nowrap;
+  }
+  .brand:hover { text-decoration: none; }
+  .brand-mark { width: 28px; height: 28px; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .github-link img {
+    width: 18px;
+    height: 18px;
+    filter: invert(1);
+    opacity: 0.86;
+  }
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 104px 0 84px;
+    border-bottom: 1px solid var(--line-soft);
+    background:
+      linear-gradient(120deg, rgba(168, 115, 232, 0.13), rgba(53, 213, 196, 0.04) 46%, rgba(12, 14, 18, 0) 78%),
+      var(--bg);
+  }
+  .hero-inner { max-width: 880px; }
+  .eyebrow {
+    display: inline-flex;
+    margin-bottom: 20px;
+    color: var(--teal);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  h1, h2, h3, p { margin-top: 0; }
+  h1 {
+    max-width: 850px;
+    margin-bottom: 24px;
+    font-size: 62px;
+    line-height: 1.04;
+    letter-spacing: 0;
+  }
+  .lead {
+    max-width: 790px;
+    margin-bottom: 30px;
+    color: #dce3eb;
+    font-size: 20px;
+    line-height: 1.58;
+  }
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .btn {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1;
+  }
+  .btn:hover { text-decoration: none; }
+  .btn-primary { background: var(--violet-strong); }
+  .btn-primary:hover { background: #a568e6; }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .section { padding: 78px 0; }
+  .section.alt {
+    background: var(--bg-soft);
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .section-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 52px;
+    align-items: start;
+  }
+  .kicker {
+    margin-bottom: 10px;
+    color: var(--teal);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  h2 {
+    margin-bottom: 14px;
+    font-size: 38px;
+    line-height: 1.18;
+    letter-spacing: 0;
+  }
+  h3 {
+    margin-bottom: 8px;
+    font-size: 20px;
+    line-height: 1.3;
+  }
+  .muted, .section-grid p { color: var(--muted); }
+
+  .audience-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .audience-item {
+    min-height: 190px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .audience-item p { margin-bottom: 0; }
+
+  .teach-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .teach-item {
+    min-height: 190px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .teach-item p { margin-bottom: 0; }
+
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+  }
+  .flow-step {
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .flow-step span {
+    display: block;
+    margin-bottom: 10px;
+    color: #d7bdff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .flow-step p { margin-bottom: 0; }
+
+  .media-frame {
+    overflow: hidden;
+    margin-top: 34px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #050608;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+  }
+  .media-frame video {
+    width: 100%;
+    height: auto;
+    background: #050608;
+  }
+
+  .contact {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .contact h2 { margin-bottom: 14px; }
+  .contact p {
+    margin-bottom: 26px;
+    color: var(--muted);
+  }
+  .contact-details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .pill {
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .footer {
+    padding: 34px 0 42px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--faint);
+    font-size: 13px;
+  }
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .footer .brand { color: var(--muted); font-size: 15px; }
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  @media (max-width: 920px) {
+    h1 { font-size: 46px; }
+    h2 { font-size: 31px; }
+    .section-grid, .flow { grid-template-columns: 1fr; gap: 30px; }
+    .audience-list, .teach-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .container { width: min(100% - 32px, var(--max)); }
+    .nav-inner { min-height: 58px; }
+    .nav-links { gap: 14px; }
+    .nav-links .optional { display: none; }
+    .hero { padding: 66px 0 58px; }
+    h1 { font-size: 38px; }
+    .lead { font-size: 17px; }
+    .section { padding: 60px 0; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Primary navigation">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html" aria-label="Compass home">
+      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+        <defs><mask id="nav-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
+        <circle cx="50" cy="50" r="33" fill="none" stroke="#f7f8fa" stroke-width="8" mask="url(#nav-gap)"></circle>
+        <circle cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+      </svg>
+      Compass
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="agenthub.html">AgentHub</a>
+      <a class="github-link" href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" aria-label="Compass on GitHub">
+        <img src="images/logo/github-mark.svg" width="18" height="18" alt="">
+        <span class="optional">GitHub</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <header class="hero">
+    <div class="container hero-inner">
+      <h1>AgentHub creates specialized agents for your own software.</h1>
+      <p class="lead">
+        The general Compass agent does not automatically know the details of every engineering
+        application, company standard, or workflow. With AgentHub, you can create that missing
+        knowledge for your own case, save it, and share it with your team or anyone who needs
+        an agent that understands the software the way an expert user does.
+      </p>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container section-grid">
+      <div>
+        <h2>Who should build specialized agents?</h2>
+        <p class="muted">
+          The best agents start with people who already know the work: what the software is used for,
+          which steps matter, where mistakes happen, and what a good result looks like.
+        </p>
+      </div>
+      <div class="audience-list">
+        <div class="audience-item">
+          <h3>Software vendors</h3>
+          <p>Give users an assistant that understands the workflows inside your product instead of leaving them with generic help text and long manuals.</p>
+        </div>
+        <div class="audience-item">
+          <h3>Engineering teams</h3>
+          <p>Package internal methods, project standards, and repeated tool sequences so engineers spend less time retracing the same setup steps.</p>
+        </div>
+        <div class="audience-item">
+          <h3>Expert users</h3>
+          <p>Turn hard-earned knowledge of a niche application into an agent that can guide others through the same software with more confidence.</p>
+        </div>
+        <div class="audience-item">
+          <h3>Consultants</h3>
+          <p>Carry repeatable workflows across projects, clients, and specialized desktop tools without starting from scratch each time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container section-grid">
+      <div>
+        <h2>What information do you teach the agent?</h2>
+        <p class="muted">
+          AgentHub is not about training a new foundation model from scratch. It is about giving
+          Compass the software-specific context it needs: what to look at, what steps to follow,
+          what language to understand, and which automation paths are available.
+        </p>
+      </div>
+      <div class="teach-grid">
+        <div class="teach-item">
+          <h3>Important screens and controls</h3>
+          <p>Menus, dialogs, buttons, panels, and visual states that matter for the workflow. The agent learns where the work happens and what the screen means.</p>
+        </div>
+        <div class="teach-item">
+          <h3>Repeated task sequences</h3>
+          <p>The steps experts perform again and again inside the application. These examples become reusable operating knowledge instead of one-off instructions.</p>
+        </div>
+        <div class="teach-item">
+          <h3>Domain vocabulary</h3>
+          <p>Terms, documents, naming conventions, and project language the agent should understand for that tool and discipline.</p>
+        </div>
+        <div class="teach-item">
+          <h3>Automation hooks</h3>
+          <p>Optional scripts, APIs, file formats, or command paths when the software exposes them. This lets Compass combine screen operation with faster direct automation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-grid">
+        <div>
+          <h2>How it works.</h2>
+        </div>
+        <div>
+          <p class="muted">
+            You show AgentHub the workflow, package the knowledge around that workflow, and share
+            the resulting agent. The goal is simple: one expert teaches once, then other users can
+            import that agent and benefit from the same software-specific knowledge.
+          </p>
+        </div>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <h3>Capture examples</h3>
+          <p>Record the screens, controls, files, and examples that define how the task is done in the real application.</p>
+        </div>
+        <div class="flow-step">
+          <h3>Package context</h3>
+          <p>Save UI templates, workflow examples, documentation, prompts, and optional automation hooks that guide the agent.</p>
+        </div>
+        <div class="flow-step">
+          <h3>Share and reuse</h3>
+          <p>Export the agent so teammates, customers, or other experts can import it and work with the same specialized knowledge.</p>
+        </div>
+      </div>
+      <div class="media-frame">
+        <video controls preload="none" poster="images/thumbnail/agenthub-thumbnail.jpg">
+          <source src="images/anim/compass-agenthub.mov">
+          Your browser cannot play this video. <a href="images/anim/compass-agenthub.mov">Download the AgentHub demo instead.</a>
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container contact">
+      <h2>Still hard to know how to do it?</h2>
+      <p>
+        Do not worry. Bring your domain knowledge, and we can bring the agentic system and
+        implementation experience. Together we can tune Compass for your software, your workflow,
+        and the way your users actually work.
+      </p>
+      <div class="cta-row" style="justify-content:center">
+        <a class="btn btn-primary" href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener">Contact us</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+        <defs><mask id="footer-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
+        <circle cx="50" cy="50" r="33" fill="none" stroke="#bac3cf" stroke-width="8" mask="url(#footer-gap)"></circle>
+        <circle cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+      </svg>
+      Compass
+    </a>
+    <div class="footer-links">
+      <span>Copyright <span id="year"></span> Compass</span>
+      <a href="https://github.com/compass-agent/compass/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

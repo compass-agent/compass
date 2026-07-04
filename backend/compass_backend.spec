@@ -1,64 +1,50 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_submodules
+# PyInstaller spec for the Compass Python backend.
+#
+# Build (from the repo root):
+#   .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm backend\compass_backend.spec
+#
+# Produces a onedir bundle at backend/dist/compass_backend/ containing
+# compass_backend.exe plus its _internal folder. onedir (instead of onefile)
+# avoids the multi-hundred-MB self-extraction on every launch and is far more
+# reliable for apps of this size.
 
+import os
+
+from PyInstaller.utils.hooks import collect_submodules
 
 block_cipher = None
 
+spec_dir = os.path.abspath(SPECPATH)
+src_dir = os.path.join(spec_dir, 'src')
+
+# Bundle the compass package's data files (prompts, configs, RAG database
+# seed, section tables) next to the executable under _internal/compass.
+# Excludes: bytecode caches and the YOLO model weights - icon detection via
+# torch/ultralytics is intentionally not part of the packaged app.
+compass_data = Tree(
+    os.path.join(src_dir, 'compass'),
+    prefix='compass',
+    excludes=['__pycache__', '*.pyc', '*.pt', '*.pth', '*.safetensors'],
+)
 
 a = Analysis(
-    ['src\\compass\\app.py'],
-    pathex=['src'],
+    [os.path.join(src_dir, 'compass', 'app.py')],
+    pathex=[src_dir],
     binaries=[],
-    datas=[
-        ('src/compass', 'compass'),
-        # Add data files for torch and easyocr
-    ],
+    datas=[],
     hiddenimports=[
-        'eventlet.hubs.epolls', 
-        'eventlet.hubs.kqueue', 
-        'eventlet.hubs.selects', 
-        'engineio.async_drivers.eventlet', 
-        'flask_socketio', 
-        'eventlet.hubs.poll', 
-        'eventlet.hubs.hub', 
-        'socketio', 
-        'socketio.server', 
-        'compass.config.config', 
-        'compass.agent.agent', 
-        'compass.services.state_manager', 
-        'compass.utils.utility', 
-        'compass.training_agent.training_agent', 
-        'compass.services.workflow_manager',
-        # Add torch and easyocr related imports
-        'torch',
-        'torch._C',
-        # 'torch._numpy._ufuncs',
-        'torch.nn',
-        'torch.nn.functional',
-        'torch.nn.modules',
-        'torch.nn.parallel',
-        'torch.utils.data',
-        'torchvision',
-        'torchvision.transforms',
-        'torchvision.models',
-        'torchvision.ops',
-        'easyocr',
-        'easyocr.recognition',
-        'easyocr.detection',
-        'easyocr.utils',
-        'PIL',
-        'cv2',
-        'numpy',
-        'inspect',  # Added to help with inspect module errors
-        # Add scipy modules
-        'scipy',
-        'scipy.ndimage',
-        'scipy._lib',
-        'scipy._lib.array_api_compat',
-        'scipy._lib.array_api_compat.numpy',
-        'scipy._lib.array_api_compat.numpy.fft',
-        'scipy.ndimage._support_alternative_backends',
-        # Add DNS modules that were previously excluded
+        # eventlet / socket.io async plumbing (imported dynamically)
+        'eventlet.hubs.epolls',
+        'eventlet.hubs.kqueue',
+        'eventlet.hubs.selects',
+        'eventlet.hubs.poll',
+        'eventlet.hubs.hub',
+        'engineio.async_drivers.eventlet',
+        'flask_socketio',
+        'socketio',
+        'socketio.server',
+        # dns (used by eventlet unless greendns disabled; keep for safety)
         'dns',
         'dns.resolver',
         'dns.asyncquery',
@@ -66,45 +52,70 @@ a = Analysis(
         'dns.asyncbackend',
         'dns.versioned',
         'dns.rdtypes',
-        'tokenizers',
-        # FIX for chromadb missing ONNX model
-        'chromadb.utils.embedding_functions.onnx',
-        #'chromadb.utils.embedding_functions.onnx.ONNXMiniLM_L6_V2',
-     ] + collect_submodules('chromadb'),
-    hookspath=[],  # Removed custom hooks path
+        # compass modules referenced via config strings / dynamic imports
+        'compass.config.config',
+        'compass.agent.agent',
+        'compass.services.state_manager',
+        'compass.services.workflow_manager',
+        'compass.utils.utility',
+        'compass.training_agent.training_agent',
+    ] + collect_submodules('chromadb'),
+    hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],  # Removed runtime hooks
+    runtime_hooks=[],
     excludes=[
+        # Heavy ML stack: only used by the optional YOLO icon detector and
+        # experimental captioners, all of which degrade gracefully when
+        # missing (see training_agent.py). Excluding keeps the bundle small.
+        'torch',
+        'torchvision',
+        'torchaudio',
+        'ultralytics',
+        'easyocr',
         'transformers',
-        'torch._numpy',  # <- Exclude the entire torch._numpy module
-        'torch._numpy._ufuncs',  # Exclude the problematic module
-        'torch._dynamo',  # Exclude torch dynamo which uses the ufuncs module
+        'sklearn',
+        'scipy',
+        'matplotlib',
+        # Not used by the backend at runtime
+        'gevent',
+        'IPython',
+        'jupyter',
+        'pytest',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='compass_backend',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
+    upx=False,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-) 
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    compass_data,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name='compass_backend',
+)

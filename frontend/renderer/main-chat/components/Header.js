@@ -2,6 +2,7 @@ import { faSquare } from "@fortawesome/free-regular-svg-icons"
 import {
   faCheck,
   faChevronDown,
+  faGear,
   faInfoCircle,
   faMinus,
   faWindowMinimize,
@@ -11,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useEffect, useState } from "react"
 import {
   DesktopConnectionStatus,
+  ActionTypes,
   SAPConnectionStatus,
 } from "../../common/constants"
 import { useAppState } from "../../common/context/AppContext"
@@ -34,6 +36,22 @@ const ToolTooltip = ({ text, children }) => {
   )
 }
 
+const DEFAULT_AGENT_DATA = {
+  name: "structural-engineer",
+  description: "Structural engineering assistant with SAP2000 integration",
+  generalTools: [],
+  softwareIntegrations: [
+    {
+      id: "SAP2000",
+      name: "SAP2000",
+      scripting: true,
+      desktop: false,
+      config: {},
+    },
+  ],
+  configuration: {},
+}
+
 function Header() {
   const { state, dispatch } = useAppState()
   const { compassWindow, sap, desktop } = state
@@ -46,9 +64,9 @@ function Header() {
   const [isInChat, setIsInChat] = useState(true) // Start as true so agent dropdown is read-only by default
   const [thinkingModeEnabled, setThinkingModeEnabled] = useState(true) // Thinking mode enabled by default
 
-  const [selectedAgent, setSelectedAgent] = useState(null)
+  const [selectedAgent, setSelectedAgent] = useState(DEFAULT_AGENT_DATA.name)
   const [selectedModel, setSelectedModel] = useState("Claude Sonnet 4.5")
-  const [selectedAgentData, setSelectedAgentData] = useState(null)
+  const [selectedAgentData, setSelectedAgentData] = useState(DEFAULT_AGENT_DATA)
 
   // Load last selected agent on startup
   useEffect(() => {
@@ -124,6 +142,10 @@ function Header() {
 
   // Available options with descriptions
   const agentOptions = [
+    {
+      name: "structural-engineer",
+      description: "SAP2000 structural engineering assistant",
+    },
     { name: "Generic", description: "General purpose agent" },
     { name: "FreeCAD", description: "CAD design specialist" },
     { name: "OpenFoam", description: "Fluid dynamics expert" },
@@ -199,6 +221,9 @@ function Header() {
               isEnabled: true,
               isConnected:
                 sap.connectionStatus === SAPConnectionStatus.CONNECTED,
+              isConnecting:
+                sap.connectionStatus === SAPConnectionStatus.CONNECTING,
+              message: sap.message,
               connectAction: handleConnectToSAP,
               toolKey: "sap",
             })
@@ -296,6 +321,8 @@ function Header() {
         return "OpenFoam"
       case "Generic":
         return "Generic"
+      case "structural-engineer":
+        return "Structural Engineer"
       default:
         return agentName
     }
@@ -337,6 +364,13 @@ function Header() {
   function handleConnectToSAP(e) {
     if (e) e.stopPropagation() // Prevent dropdown from closing
     console.log("Connect to SAP button clicked")
+    dispatch({
+      type: ActionTypes.SET_SAP_CONNECTION_STATUS,
+      payload: {
+        status: SAPConnectionStatus.CONNECTING,
+        message: "Connecting to SAP2000...",
+      },
+    })
     WebSocketService.connectToSAP()
   }
 
@@ -445,7 +479,7 @@ function Header() {
             }}
           >
             <img
-              src="../../../resources/compass.png"
+              src="../assets/compass.png"
               alt="Compass"
               style={{
                 height: "22px",
@@ -704,15 +738,27 @@ function Header() {
                               />
                             </ToolTooltip>
                           </div>
+                          {tool.message && (
+                            <div className="tool-message" title={tool.message}>
+                              {tool.message}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                     {tool.isEnabled ? (
                       <button
-                        className="tool-button"
+                        className={`tool-button ${tool.isConnected ? "connected" : ""} ${
+                          tool.isConnecting ? "disabled" : ""
+                        }`}
                         onClick={tool.connectAction}
+                        disabled={tool.isConnecting}
                       >
-                        {tool.isConnected ? "Reconnect" : "Connect"}
+                        {tool.isConnecting
+                          ? "Connecting..."
+                          : tool.isConnected
+                          ? "Reconnect"
+                          : "Connect"}
                       </button>
                     ) : (
                       <button className="tool-button disabled">Connect</button>
@@ -807,6 +853,23 @@ function Header() {
             title="New Chat"
           >
             New Chat
+          </button>
+          <button
+            className="header-settings-button"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("open-compass-settings"))
+            }
+            title="Settings (API keys)"
+            style={{
+              background: "none",
+              border: "none",
+              color: "#9C9B9F",
+              cursor: "pointer",
+              fontSize: "14px",
+              padding: "4px 6px",
+            }}
+          >
+            <FontAwesomeIcon icon={faGear} />
           </button>
         </div>
       </div>

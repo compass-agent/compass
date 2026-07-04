@@ -33,6 +33,7 @@ frames*.json
 # Icon files
 *.icns
 *.ico
+!resources/compass.ico
 
 # Electron build files
 build/
@@ -130,8 +131,6 @@ backend/src/compass/training_agent/data/**/*.bin
 **/data/**/*.onnx
 **/data/**/*.bin
 
-# Key file
-backend/src/compass/key.py
 !config/
 # SAP models and configuration files
 models/
@@ -142,5 +141,7 @@ models/
 
 # Temporary and backup files
 next_steps.md
+temp_webpage_notes.m
+temp_*.m
 **/migrations/*_migration.py
 !**/migrations/__init__.py

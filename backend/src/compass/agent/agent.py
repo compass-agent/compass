@@ -56,6 +56,17 @@ class AgentService:
             auto_system_message=auto_system_message
         )
 
+    def _report_processing_error(self, error: Exception) -> None:
+        message = f"Compass could not complete that request: {error}"
+        self.state_manager.emit_error(message)
+        self.state_manager.emit_response({
+            "type": "ai_response",
+            "content": message,
+        })
+
+    @staticmethod
+    def _safe_for_log(value: Any) -> str:
+        return str(value).encode("unicode_escape", errors="replace").decode("ascii")[:1000]
 
     async def process_message(self, message: Union[str, dict]) -> None:
         """Process message with iteration loop based on auto mode"""
@@ -102,6 +113,7 @@ class AgentService:
             logger.info(f"Pending tool queue: {self.pending_tool_queue}")
         except Exception as e: # FIXME: handle this better
             logger.error(f"Error in _process_message_single_mode: {e}")
+            self._report_processing_error(e)
         finally:
             logger.info(
                 "Setting status to STOPPED, clearing stop event, and cleaning up task"
@@ -133,6 +145,7 @@ class AgentService:
             raise
         except Exception as e:
             logger.error(f"Error in message processing loop: {e}")
+            self._report_processing_error(e)
         finally:
             self.state_manager.set_status(AgentStatus.STOPPED)
             self.stop_event.clear()
@@ -205,7 +218,7 @@ class AgentService:
                 #     "content": chunk,
                 #     "is_final": False
                 # })
-                logger.info(f"AI response stream: {chunk}")
+                logger.info("AI response stream: %s", self._safe_for_log(chunk))
             elif isinstance(chunk, ThinkingBlock):
                 thinking_content.append(chunk.content)
                 # Note: This won't actually happen since thinking is disabled, but keeping for completeness

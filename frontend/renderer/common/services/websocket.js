@@ -16,50 +16,80 @@ class WebSocketService {
       onAgentsList: new Set(),
       onScreenshotsList: new Set(),
       onDetectionResult: null,
+      onTemplateSaved: null,
       onTemplatesSaved: null,
       onSAPConnectionStatus: new Set(),
       onDesktopConnectionStatus: new Set(),
       onAgentHub: new Set(),
       onDeletePageResult: new Set(),
+      onBackendStatus: new Set(),
+      onApiKeyValidation: new Set(),
     }
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 10
+    this.heartbeatInterval = null
+    // Generous ceiling: in production the packaged backend can take a while
+    // to boot on first run (database seeding), and we must outlast it.
+    this.maxReconnectAttempts = 60
   }
 
   addHandler(event, handler) {
-    if (this.stateHandlers[event]) {
-      this.stateHandlers[event].add(handler)
+    const current = this.stateHandlers[event]
+    if (current instanceof Set) {
+      current.add(handler)
+    } else if (Object.prototype.hasOwnProperty.call(this.stateHandlers, event)) {
+      this.stateHandlers[event] = handler
     }
   }
 
   removeHandler(event, handler) {
-    if (this.stateHandlers[event]) {
-      this.stateHandlers[event].delete(handler)
+    const current = this.stateHandlers[event]
+    if (current instanceof Set) {
+      current.delete(handler)
+    } else if (current === handler) {
+      this.stateHandlers[event] = null
+    }
+  }
+
+  emitToHandlers(event, data) {
+    const handlers = this.stateHandlers[event]
+    if (handlers instanceof Set) {
+      handlers.forEach((handler) => handler(data))
+    } else if (typeof handlers === "function") {
+      handlers(data)
     }
   }
 
   connect() {
+    console.log("WebSocketService: connecting to Compass backend")
     if (this.socket) {
       this.socket.disconnect()
     }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
 
-    this.socket = io("http://localhost:5001", {
+    this.socket = io("http://127.0.0.1:5001", {
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 2000000,
-      transports: ["websocket"],
+      timeout: 5000,
+      transports: ["polling", "websocket"],
       forceNew: true,
     })
 
     this.socket.on("connect", () => {
+      console.log(
+        `WebSocketService: connected via ${this.socket.io.engine.transport.name}`
+      )
       this.reconnectAttempts = 0
-      this.stateHandlers.onConnect.forEach((handler) => handler())
+      this.emitToHandlers("onConnect")
     })
 
     this.socket.on("disconnect", (reason) => {
-      this.stateHandlers.onDisconnect.forEach((handler) => handler(reason))
+      console.log(`WebSocketService: disconnected (${reason})`)
+      this.emitToHandlers("onDisconnect", reason)
 
       if (reason === "io server disconnect") {
         // Server initiated disconnect, try reconnecting
@@ -69,20 +99,21 @@ class WebSocketService {
 
     this.socket.on("connect_error", (error) => {
       this.reconnectAttempts++
+      console.log(
+        `WebSocketService: connect_error ${this.reconnectAttempts}/${this.maxReconnectAttempts}: ${error.message}`
+      )
 
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         this.socket.disconnect()
       }
 
-      this.stateHandlers.onError.forEach((handler) =>
-        handler({
-          message: `Connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}). ${error.message}`,
-        })
-      )
+      this.emitToHandlers("onError", {
+        message: `Connection failed (Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}). ${error.message}`,
+      })
     })
 
     // Add heartbeat to check connection
-    setInterval(() => {
+    this.heartbeatInterval = setInterval(() => {
       if (this.socket?.connected) {
         this.socket.emit("ping")
       }
@@ -91,100 +122,99 @@ class WebSocketService {
     this.socket.on("pong", () => {})
 
     this.socket.on("state_update", (data) => {
-      this.stateHandlers.onStateUpdate.forEach((handler) => handler(data))
+      this.emitToHandlers("onStateUpdate", data)
     })
 
     this.socket.on("response", (data) => {
-      this.stateHandlers.onResponse.forEach((handler) => handler(data))
+      this.emitToHandlers("onResponse", data)
     })
 
     this.socket.on("minimize-window", (data) => {
-      this.stateHandlers.onCompassWindowState.forEach((handler) =>
-        handler(data)
-      )
+      this.emitToHandlers("onCompassWindowState", data)
     })
 
     this.socket.on("restore-window", (data) => {
-      this.stateHandlers.onCompassWindowState.forEach((handler) =>
-        handler(data)
-      )
+      this.emitToHandlers("onCompassWindowState", data)
     })
 
     this.socket.on("error", (error) => {
       console.error("WebSocket error:", error)
-      this.stateHandlers.onError.forEach((handler) => handler(error))
+      this.emitToHandlers("onError", error)
     })
 
     this.socket.on("detection_result", (data) => {
-      this.stateHandlers?.onDetectionResult?.(data)
+      this.emitToHandlers("onDetectionResult", data)
     })
 
     this.socket.on("template_saved", (data) => {
-      this.stateHandlers?.onTemplateSaved?.(data)
+      this.emitToHandlers("onTemplateSaved", data)
     })
 
     this.socket.on("scaling_factors", (data) => {
-      this.stateHandlers.onScalingFactors.forEach((handler) => handler(data))
+      this.emitToHandlers("onScalingFactors", data)
     })
 
     this.socket.on("chat_reset", () => {
-      if (this.stateHandlers?.onChatReset)
-        this.stateHandlers.onChatReset.forEach((handler) => handler())
+      this.emitToHandlers("onChatReset")
     })
 
     this.socket.on("screenshots_list", (data) => {
-      this.stateHandlers?.onScreenshotsList?.forEach((handler) => handler(data))
+      this.emitToHandlers("onScreenshotsList", data)
     })
 
     this.socket.on("workflows_list", (data) => {
-      this.stateHandlers.onWorkflowsList.forEach((handler) => handler(data))
+      this.emitToHandlers("onWorkflowsList", data)
     })
 
     this.socket.on("agents_list", (data) => {
-      this.stateHandlers?.onAgentsList?.forEach((handler) => handler(data))
+      this.emitToHandlers("onAgentsList", data)
     })
 
     this.socket.on("agent_hub_result", (data) => {
-      this.stateHandlers.onAgentHub.forEach((handler) => handler(data))
+      this.emitToHandlers("onAgentHub", data)
     })
 
     this.socket.on("delete_page_result", (data) => {
-      if (this.stateHandlers.onDeletePageResult) {
-        this.stateHandlers.onDeletePageResult.forEach((handler) =>
-          handler(data)
-        )
-      }
+      this.emitToHandlers("onDeletePageResult", data)
     })
 
     this.socket.on("templates_saved", (data) => {
-      this.stateHandlers?.onTemplatesSaved?.(data)
+      this.emitToHandlers("onTemplatesSaved", data)
     })
 
     // Add SAP connection status event handler
     this.socket.on("sap_connection_status", (data) => {
-      this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
-        handler(data)
-      )
+      this.emitToHandlers("onSAPConnectionStatus", data)
     })
 
     this.socket.on("sap_config_status", (data) => {
       // We can use the same handler for config status updates
-      this.stateHandlers.onSAPConnectionStatus.forEach((handler) =>
-        handler({
-          configStatus: data,
-        })
-      )
+      this.emitToHandlers("onSAPConnectionStatus", {
+        configStatus: data,
+      })
     })
 
     // Add Desktop connection status event handler
     this.socket.on("desktop_connection_status", (data) => {
-      this.stateHandlers.onDesktopConnectionStatus.forEach((handler) =>
-        handler(data)
-      )
+      this.emitToHandlers("onDesktopConnectionStatus", data)
+    })
+
+    // Backend readiness (LLM configured or not)
+    this.socket.on("backend_status", (data) => {
+      this.emitToHandlers("onBackendStatus", data)
+    })
+
+    // API key validation result (used by the settings/onboarding UI)
+    this.socket.on("api_key_validation", (data) => {
+      this.emitToHandlers("onApiKeyValidation", data)
     })
   }
 
   disconnect() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
     if (this.socket) {
       this.socket.disconnect()
       this.socket = null
@@ -296,6 +326,25 @@ class WebSocketService {
   getDesktopConnectionStatus() {
     if (this.socket?.connected) {
       this.socket.emit("get_desktop_connection_status")
+    }
+  }
+
+  // Backend readiness / API key management
+  getBackendStatus() {
+    if (this.socket?.connected) {
+      this.socket.emit("get_backend_status")
+    }
+  }
+
+  validateApiKey(provider, apiKey) {
+    if (this.socket?.connected) {
+      this.socket.emit("validate_api_key", { provider, api_key: apiKey })
+    }
+  }
+
+  initializeAgent() {
+    if (this.socket?.connected) {
+      this.socket.emit("initialize_agent")
     }
   }
 

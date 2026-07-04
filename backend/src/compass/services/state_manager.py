@@ -65,6 +65,10 @@ class StateManager:
     def emit_response(self, response: Dict[str, Any]) -> None:
         """Emit agent response"""
         self._socketio.emit('response', response)
+
+    def emit_error(self, message: str) -> None:
+        """Emit an error that should be visible in the renderer."""
+        self._socketio.emit('error', {'message': message})
         
     def emit_window_minimize(self, action: str) -> None:
         """Minimize Compass app window"""
@@ -102,4 +106,3 @@ class StateManager:
     @property
     def agent_type(self) -> str:
         return self._state.agent_type
-  

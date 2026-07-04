@@ -58,6 +58,10 @@ contextBridge.exposeInMainWorld("electron", {
         "terminal.close",
         "agent-selected",
         "load-last-agent",
+        "get-settings",
+        "save-settings",
+        "restart-backend",
+        "get-paths",
       ]
       if (validChannels.includes(channel)) {
         return ipcRenderer.invoke(channel, data)
@@ -73,6 +77,12 @@ contextBridge.exposeInMainWorld("electron", {
         ipcRenderer.removeListener(channel, func)
       }
     },
+  },
+  settings: {
+    get: () => ipcRenderer.invoke("get-settings"),
+    save: (patch) => ipcRenderer.invoke("save-settings", patch),
+    restartBackend: () => ipcRenderer.invoke("restart-backend"),
+    getPaths: () => ipcRenderer.invoke("get-paths"),
   },
   restoreWindow: () => ipcRenderer.send("restore-window"),
   closeWindow: () => ipcRenderer.send("close-window"),

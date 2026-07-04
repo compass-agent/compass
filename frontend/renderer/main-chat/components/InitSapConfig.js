@@ -336,14 +336,36 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
     }
   }
 
+  // Resolve the user-facing workspace directory (Documents/Compass in
+  // production; the repo root in development). Falls back to relative paths
+  // if the preload API is unavailable.
+  const getWorkspacePaths = async () => {
+    try {
+      const paths = await window.electron?.settings?.getPaths()
+      if (paths?.workspaceDir) {
+        return {
+          modelsDir: paths.modelsDir || `${paths.workspaceDir}/models`,
+          configFile:
+            paths.sapConfigPath ||
+            `${paths.workspaceDir}/models/.sapConfig.yml`,
+        }
+      }
+    } catch (_) {
+      /* fall through to relative paths */
+    }
+    return { modelsDir: "./models", configFile: "./models/.sapConfig.yml" }
+  }
+
   const generateYAML = async () => {
     // Convert PSF to kip/in² (1 PSF = 1/144000 kip/in²)
     const psfToKipPerSqIn = (psf) => psf / 144000
 
+    const { modelsDir, configFile } = await getWorkspacePaths()
+
     const yamlData = {
       general: {
         units: formState.units,
-        model_path: "./models",
+        model_path: modelsDir,
       },
       materials: {
         steel: {
@@ -428,42 +450,40 @@ const InitSapConfig = ({ isOpen, onClose, onSubmit }) => {
       "# SAP2000 Automation Configuration\n# This file controls the behavior of the structural analysis and optimization\n\n"
     const yamlString = header + jsyaml.dump(yamlData, { lineWidth: -1 })
 
-    // Save file automatically to ./models/.sapConfig.yml using Electron API
+    // Save the config file into the workspace directory using Electron API
     if (window.electron && window.electron.ipcRenderer) {
       try {
-        const filePath = "./models/.sapConfig.yml"
         const result = await window.electron.ipcRenderer.invoke("save-file", {
-          filePath,
+          filePath: configFile,
           content: yamlString,
         })
 
         if (result.success) {
-          console.log(`SAP configuration saved to ${filePath}`)
-          return true
+          console.log(`SAP configuration saved to ${configFile}`)
+          return configFile
         } else {
           console.error("Error saving SAP configuration:", result.error)
-          return false
+          return null
         }
       } catch (error) {
         console.error("Error saving SAP configuration:", error)
-        return false
+        return null
       }
     } else {
       console.error("Electron API not available")
-      return false
+      return null
     }
   }
 
   const handleSubmit = async (e) => {
     e && e.preventDefault()
     if (isFormComplete) {
-      const saveSuccess = await generateYAML()
-      if (saveSuccess) {
+      const savedConfigPath = await generateYAML()
+      if (savedConfigPath) {
         // Send the saved config file to the backend
         try {
-          const configFilePath = "./models/.sapConfig.yml"
-          console.log("Sending config file to backend:", configFilePath)
-          WebSocketService.loadSAPConfig(configFilePath)
+          console.log("Sending config file to backend:", savedConfigPath)
+          WebSocketService.loadSAPConfig(savedConfigPath)
         } catch (error) {
           console.error("Error sending config to backend:", error)
         }

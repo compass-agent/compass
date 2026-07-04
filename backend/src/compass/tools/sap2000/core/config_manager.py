@@ -30,11 +30,11 @@ class FloorLoads(BaseModel):
     roof: AreaLoads
 
 class ExclusionPoint(BaseModel):
-    x: float
-    y: float
+    x: Optional[float] = None
+    y: Optional[float] = None
     z: Optional[float] = None
 
-    @validator('x', 'y')
+    @validator('x', 'y', 'z')
     def validate_coordinates(cls, v):
         if v is not None and v < 0:
             raise ValueError("Coordinates cannot be negative")
@@ -43,7 +43,7 @@ class ExclusionPoint(BaseModel):
 class Loads(BaseModel):
     patterns: List[LoadPattern]
     area_loads: FloorLoads
-    load_direction_type: Literal["GLOBAL_Z", "DECK_ORIENTED"]
+    load_direction_type: Literal["GLOBAL_X", "GLOBAL_Y", "GLOBAL_Z", "DECK_ORIENTED"]
     exclusion_areas: List[ExclusionPoint]
 
 class SectionFilter(BaseModel):
@@ -108,4 +108,4 @@ class ModelConfig(BaseModel):
     def validate_config(self) -> bool:
         """Additional validation beyond Pydantic's built-in validation"""
         # Add any custom validation logic here
-        return True 
+        return True

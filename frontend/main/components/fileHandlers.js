@@ -18,7 +18,7 @@ module.exports = (mainWindow) => {
         fs.mkdirSync(directory, { recursive: true })
       }
 
-      fs.writeFileSync(filePath, content || "", "utf-8")
+      fs.writeFileSync(normalizedPath, content || "", "utf-8")
 
       return { success: true, path: normalizedPath }
     } catch (error) {
