@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Browser favicon: black tile so the mark stays legible in tab bars. -->
+  <defs>
+    <mask id="gap">
+      <rect width="100" height="100" fill="white"/>
+      <circle cx="73.3" cy="26.7" r="21" fill="black"/>
+    </mask>
+  </defs>
+  <rect x="6" y="6" width="88" height="88" rx="18" fill="#0C0E12"/>
+  <circle cx="50" cy="50" r="29" fill="none" stroke="#F7F8FA" stroke-width="10" mask="url(#gap)"/>
+  <circle cx="73.3" cy="26.7" r="14" fill="#A46FD1"/>
+</svg>

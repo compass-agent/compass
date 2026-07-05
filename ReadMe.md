@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/images/logo/compass-mark.png" width="88" alt="Compass logo">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo/compass.svg">
+    <img src="docs/images/logo/compass-light.svg" width="88" alt="Compass logo">
+  </picture>
 </p>
 
 <h1 align="center">Compass</h1>

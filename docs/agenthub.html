@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AgentHub - Create agents for your engineering software</title>
 <meta name="description" content="AgentHub helps teams, vendors, and expert users teach Compass new engineering software workflows and share specialized agents.">
-<link rel="icon" type="image/svg+xml" href="images/logo/compass.svg">
+<link rel="icon" type="image/svg+xml" href="images/logo/favicon.svg?v=4">
 <link rel="alternate icon" type="image/png" href="images/logo/favicon-32.png">
 <style>
   :root {
@@ -23,7 +23,48 @@
     --green: #80d88a;
     --radius: 8px;
     --max: 1100px;
+    --logo-ring: #f7f8fa;
   }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-soft: #f5f7fa;
+    --panel: #f8fafc;
+    --panel-2: #eef2f7;
+    --line: #dfe4ec;
+    --line-soft: rgba(0, 0, 0, 0.09);
+    --text: #131820;
+    --muted: #4a5566;
+    --faint: #6b7480;
+    --violet: #7c3aed;
+    --violet-strong: #6d28d9;
+    --teal: #0e9384;
+    --green: #16a34a;
+    --logo-ring: #454c5a;
+  }
+
+  :root[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.9); }
+  :root[data-theme="light"] .github-link img { filter: none; }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--faint); }
+  .theme-toggle svg { width: 17px; height: 17px; }
+  .theme-toggle .moon { display: none; }
+  :root[data-theme="light"] .theme-toggle .sun { display: none; }
+  :root[data-theme="light"] .theme-toggle .moon { display: block; }
 
   * { box-sizing: border-box; }
   html { background: var(--bg); scroll-behavior: smooth; }
@@ -119,7 +160,7 @@
   .lead {
     max-width: 790px;
     margin-bottom: 30px;
-    color: #dce3eb;
+    color: var(--muted);
     font-size: 20px;
     line-height: 1.58;
   }
@@ -143,7 +184,7 @@
     line-height: 1;
   }
   .btn:hover { text-decoration: none; }
-  .btn-primary { background: var(--violet-strong); }
+  .btn-primary { background: var(--violet-strong); color: #fff; }
   .btn-primary:hover { background: #a568e6; }
   .btn-secondary {
     background: rgba(255, 255, 255, 0.06);
@@ -193,11 +234,17 @@
     gap: 18px;
   }
   .audience-item {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     min-height: 190px;
-    padding: 22px;
+    padding: 28px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--panel);
+    background:
+      radial-gradient(circle at 82% 18%, rgba(168, 115, 232, 0.18), transparent 36%),
+      linear-gradient(180deg, #1d2531, var(--panel));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
   .audience-item p { margin-bottom: 0; }
 
@@ -207,13 +254,78 @@
     gap: 18px;
   }
   .teach-item {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     min-height: 190px;
-    padding: 22px;
+    padding: 28px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.03);
+    background:
+      radial-gradient(circle at 82% 18%, rgba(53, 213, 196, 0.13), transparent 36%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.026));
   }
   .teach-item p { margin-bottom: 0; }
+
+  .audience-item::after,
+  .teach-item::after,
+  .flow-step::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    opacity: 0.18;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(120deg, transparent 0%, black 45%, black 100%);
+  }
+
+  .card-art {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: -1;
+    width: 150px;
+    height: 112px;
+    color: var(--violet);
+    opacity: 0.28;
+  }
+  .teach-item .card-art { color: var(--teal); opacity: 0.24; }
+  .flow-step .card-art {
+    width: 136px;
+    height: 96px;
+    opacity: 0.2;
+  }
+  .card-art .line,
+  .card-art .shape {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .card-art .fill { fill: currentColor; }
+
+  .audience-item > *,
+  .teach-item > *,
+  .flow-step > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  :root[data-theme="light"] .audience-item {
+    background:
+      radial-gradient(circle at 82% 18%, rgba(124, 58, 237, 0.11), transparent 36%),
+      linear-gradient(180deg, #ffffff, var(--panel));
+  }
+  :root[data-theme="light"] .teach-item {
+    background:
+      radial-gradient(circle at 82% 18%, rgba(14, 147, 132, 0.1), transparent 36%),
+      linear-gradient(180deg, #ffffff, var(--panel));
+  }
+  :root[data-theme="light"] .card-art { opacity: 0.2; }
 
   .flow {
     display: grid;
@@ -222,15 +334,20 @@
     margin-top: 28px;
   }
   .flow-step {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     padding: 22px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--panel);
+    background:
+      radial-gradient(circle at 84% 22%, rgba(168, 115, 232, 0.13), transparent 36%),
+      linear-gradient(180deg, #1d2531, var(--panel));
   }
   .flow-step span {
     display: block;
     margin-bottom: 10px;
-    color: #d7bdff;
+    color: var(--violet);
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -319,13 +436,34 @@
 </style>
 </head>
 <body>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem('theme'); } catch (e) {}
+    var initial = saved || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    function apply(t) {
+      root.setAttribute('data-theme', t);
+      try { localStorage.setItem('theme', t); } catch (e) {}
+      var btns = document.querySelectorAll('.theme-toggle');
+      for (var i = 0; i < btns.length; i++) { btns[i].setAttribute('aria-pressed', String(t === 'light')); }
+    }
+    root.setAttribute('data-theme', initial);
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('.theme-toggle');
+      if (!btn) return;
+      apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+    });
+    document.addEventListener('DOMContentLoaded', function () { apply(root.getAttribute('data-theme')); });
+  })();
+</script>
 <nav class="nav" aria-label="Primary navigation">
   <div class="container nav-inner">
     <a class="brand" href="index.html" aria-label="Compass home">
       <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
         <defs><mask id="nav-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="33" fill="none" stroke="#f7f8fa" stroke-width="8" mask="url(#nav-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#nav-gap)"></circle>
+        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
       </svg>
       Compass
     </a>
@@ -336,6 +474,10 @@
         <img src="images/logo/github-mark.svg" width="18" height="18" alt="">
         <span class="optional">GitHub</span>
       </a>
+      <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" aria-pressed="false">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+      </button>
     </div>
   </div>
 </nav>
@@ -364,18 +506,43 @@
       </div>
       <div class="audience-list">
         <div class="audience-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <rect class="shape" x="32" y="34" width="120" height="76" rx="12"></rect>
+            <path class="shape" d="M58 60h68M58 82h46"></path>
+            <path class="shape" d="M148 56l34-22v88l-34-22"></path>
+            <circle class="fill" cx="182" cy="34" r="7"></circle>
+          </svg>
           <h3>Software vendors</h3>
           <p>Give users an assistant that understands the workflows inside your product instead of leaving them with generic help text and long manuals.</p>
         </div>
         <div class="audience-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M40 108h140"></path>
+            <path class="shape" d="M54 108V54h36v54M100 108V36h36v72M146 108V70h36v38"></path>
+            <circle class="fill" cx="118" cy="28" r="8"></circle>
+            <path class="shape" d="M46 124h128"></path>
+          </svg>
           <h3>Engineering teams</h3>
           <p>Package internal methods, project standards, and repeated tool sequences so engineers spend less time retracing the same setup steps.</p>
         </div>
         <div class="audience-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <circle class="shape" cx="74" cy="58" r="26"></circle>
+            <path class="shape" d="M50 114a36 36 0 0 1 48 0"></path>
+            <path class="shape" d="M122 42h58M122 70h42M122 98h58"></path>
+            <circle class="fill" cx="178" cy="42" r="6"></circle>
+          </svg>
           <h3>Expert users</h3>
           <p>Turn hard-earned knowledge of a niche application into an agent that can guide others through the same software with more confidence.</p>
         </div>
         <div class="audience-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M52 48h38a24 24 0 0 1 0 48H52"></path>
+            <path class="shape" d="M168 48h-38a24 24 0 0 0 0 48h38"></path>
+            <path class="shape" d="M84 72h52"></path>
+            <circle class="fill" cx="52" cy="48" r="7"></circle>
+            <circle class="fill" cx="168" cy="96" r="7"></circle>
+          </svg>
           <h3>Consultants</h3>
           <p>Carry repeatable workflows across projects, clients, and specialized desktop tools without starting from scratch each time.</p>
         </div>
@@ -395,18 +562,39 @@
       </div>
       <div class="teach-grid">
         <div class="teach-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <rect class="shape" x="34" y="30" width="152" height="92" rx="10"></rect>
+            <path class="shape" d="M58 58h104M58 86h60"></path>
+            <circle class="fill" cx="158" cy="86" r="10"></circle>
+            <path class="shape" d="M150 78l16 16"></path>
+          </svg>
           <h3>Important screens and controls</h3>
           <p>Menus, dialogs, buttons, panels, and visual states that matter for the workflow. The agent learns where the work happens and what the screen means.</p>
         </div>
         <div class="teach-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M46 44h48v34H46zM126 44h48v34h-48zM86 108h48v34H86z"></path>
+            <path class="shape" d="M94 61h32M150 78l-40 30M86 78l24 30"></path>
+            <circle class="fill" cx="110" cy="108" r="7"></circle>
+          </svg>
           <h3>Repeated task sequences</h3>
           <p>The steps experts perform again and again inside the application. These examples become reusable operating knowledge instead of one-off instructions.</p>
         </div>
         <div class="teach-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M48 42h124a14 14 0 0 1 14 14v54a14 14 0 0 1-14 14H72l-24 20v-20H48a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14z"></path>
+            <path class="shape" d="M64 72h88M64 96h56"></path>
+            <circle class="fill" cx="166" cy="72" r="6"></circle>
+          </svg>
           <h3>Domain vocabulary</h3>
           <p>Terms, documents, naming conventions, and project language the agent should understand for that tool and discipline.</p>
         </div>
         <div class="teach-item">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M76 52l-34 28 34 28M144 52l34 28-34 28M126 34l-32 92"></path>
+            <circle class="fill" cx="110" cy="80" r="9"></circle>
+            <path class="shape" d="M48 124h124"></path>
+          </svg>
           <h3>Automation hooks</h3>
           <p>Optional scripts, APIs, file formats, or command paths when the software exposes them. This lets Compass combine screen operation with faster direct automation.</p>
         </div>
@@ -430,14 +618,33 @@
       </div>
       <div class="flow">
         <div class="flow-step">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <rect class="shape" x="42" y="32" width="136" height="88" rx="12"></rect>
+            <circle class="shape" cx="96" cy="76" r="24"></circle>
+            <path class="shape" d="M122 94l28 22"></path>
+            <circle class="fill" cx="154" cy="48" r="7"></circle>
+          </svg>
           <h3>Capture examples</h3>
           <p>Record the screens, controls, files, and examples that define how the task is done in the real application.</p>
         </div>
         <div class="flow-step">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M54 52h112v72H54z"></path>
+            <path class="shape" d="M72 34h76l18 18H54z"></path>
+            <path class="shape" d="M78 78h64M78 100h42"></path>
+            <circle class="fill" cx="154" cy="100" r="8"></circle>
+          </svg>
           <h3>Package context</h3>
           <p>Save UI templates, workflow examples, documentation, prompts, and optional automation hooks that guide the agent.</p>
         </div>
         <div class="flow-step">
+          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
+            <circle class="shape" cx="62" cy="74" r="22"></circle>
+            <circle class="shape" cx="158" cy="46" r="22"></circle>
+            <circle class="shape" cx="150" cy="112" r="22"></circle>
+            <path class="shape" d="M83 68l54-16M83 82l46 22"></path>
+            <circle class="fill" cx="110" cy="74" r="6"></circle>
+          </svg>
           <h3>Share and reuse</h3>
           <p>Export the agent so teammates, customers, or other experts can import it and work with the same specialized knowledge.</p>
         </div>
@@ -471,8 +678,8 @@
     <a class="brand" href="index.html">
       <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
         <defs><mask id="footer-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="33" fill="none" stroke="#bac3cf" stroke-width="8" mask="url(#footer-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#footer-gap)"></circle>
+        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
       </svg>
       Compass
     </a>

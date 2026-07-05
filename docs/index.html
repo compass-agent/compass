@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compass - AI assistant for engineering software</title>
 <meta name="description" content="Compass is an open-source Windows desktop AI assistant for engineering software. It helps operate complex desktop tools, automate repeated workflows, and turn domain knowledge into reusable agents.">
-<link rel="icon" type="image/svg+xml" href="images/logo/compass.svg">
+<link rel="icon" type="image/svg+xml" href="images/logo/favicon.svg?v=4">
 <link rel="alternate icon" type="image/png" href="images/logo/favicon-32.png">
 <meta property="og:title" content="Compass - AI assistant for engineering software">
 <meta property="og:description" content="A Windows desktop AI assistant for complex engineering software.">
@@ -30,7 +30,61 @@
     --green: #80d88a;
     --radius: 8px;
     --max: 1100px;
+    --logo-ring: #f7f8fa;
   }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-soft: #f5f7fa;
+    --panel: #f8fafc;
+    --panel-2: #eef2f7;
+    --line: #dfe4ec;
+    --line-soft: rgba(0, 0, 0, 0.09);
+    --text: #131820;
+    --muted: #4a5566;
+    --faint: #6b7480;
+    --violet: #7c3aed;
+    --violet-strong: #6d28d9;
+    --teal: #0e9384;
+    --green: #16a34a;
+    --logo-ring: #454c5a;
+  }
+
+  :root[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.9); }
+  :root[data-theme="light"] .github-link img { filter: none; }
+
+  /* Light-mode hero: white base + faint original (non-inverted) blueprint
+     + white fade so the now-dark text stays readable. */
+  :root[data-theme="light"] .hero-bg { background: #eef3fa; }
+  :root[data-theme="light"] .hero-bg img {
+    filter: saturate(1.02) contrast(1.02) brightness(1.02);
+    opacity: 0.5;
+  }
+  :root[data-theme="light"] .hero::before {
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.96) 34%, rgba(255, 255, 255, 0.74) 58%, rgba(255, 255, 255, 0.32) 100%),
+      linear-gradient(0deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.58) 100%);
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+  }
+  .theme-toggle:hover { color: var(--text); border-color: var(--faint); }
+  .theme-toggle svg { width: 17px; height: 17px; }
+  .theme-toggle .moon { display: none; }
+  :root[data-theme="light"] .theme-toggle .sun { display: none; }
+  :root[data-theme="light"] .theme-toggle .moon { display: block; }
 
   * { box-sizing: border-box; }
 
@@ -233,7 +287,7 @@
   .lead {
     max-width: 650px;
     margin-bottom: 30px;
-    color: #dce3eb;
+    color: var(--muted);
     font-size: 20px;
     line-height: 1.55;
   }
@@ -265,7 +319,7 @@
 
   .btn:hover { text-decoration: none; }
 
-  .btn-primary { background: var(--violet-strong); }
+  .btn-primary { background: var(--violet-strong); color: #fff; }
   .btn-primary:hover { background: #a568e6; }
 
   .btn-secondary {
@@ -281,7 +335,7 @@
   .hero-note {
     display: inline-flex;
     align-items: center;
-    color: rgba(186, 195, 207, 0.76);
+    color: var(--faint);
     font-size: 13px;
   }
 
@@ -291,7 +345,7 @@
     margin: 0 0 28px;
     padding: 0;
     list-style: none;
-    color: #edf2f7;
+    color: var(--text);
     font-size: 17px;
     font-weight: 650;
   }
@@ -323,9 +377,43 @@
     border-bottom: 1px solid var(--line-soft);
   }
 
+  .section.usecases {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section.usecases::before {
+    content: "";
+    position: absolute;
+    inset: 12% 0 auto 0;
+    height: 360px;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 30%, rgba(53, 213, 196, 0.08), transparent 28%),
+      radial-gradient(circle at 82% 55%, rgba(168, 115, 232, 0.1), transparent 30%);
+  }
+
+  .section.usecases > * {
+    position: relative;
+  }
+
   .section-head {
     max-width: 740px;
     margin-bottom: 30px;
+  }
+
+  .section-head.compact {
+    max-width: 620px;
+    margin-bottom: 20px;
+  }
+
+  .section-head.compact h2 {
+    margin-bottom: 6px;
+    font-size: 34px;
+  }
+
+  .section-head.compact p {
+    margin-bottom: 0;
   }
 
   .section-head.center {
@@ -394,25 +482,83 @@
 
   .usecase-track {
     display: flex;
-    gap: 20px;
+    gap: 24px;
     width: max-content;
     padding: 0 calc((100vw - min(var(--max), calc(100vw - 48px))) / 2);
   }
 
   .usecase-card {
-    width: 330px;
-    min-height: 190px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: 430px;
+    min-height: 255px;
     flex: 0 0 auto;
     scroll-snap-align: center;
-    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 34px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    background:
+      radial-gradient(circle at 80% 20%, rgba(168, 115, 232, 0.2), transparent 38%),
+      linear-gradient(180deg, var(--panel-2), var(--panel));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .usecase-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    opacity: 0.22;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(120deg, transparent 0%, black 42%, black 100%);
+  }
+
+  .usecase-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .usecase-art {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: -1;
+    width: 190px;
+    height: 126px;
+    color: var(--violet);
+    opacity: 0.32;
+  }
+
+  .usecase-art .line,
+  .usecase-art .shape {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .usecase-art .fill {
+    fill: currentColor;
+  }
+
+  :root[data-theme="light"] .usecase-art { opacity: 0.22; }
+  :root[data-theme="light"] .usecase-card {
+    background:
+      radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.12), transparent 38%),
+      linear-gradient(180deg, #ffffff, var(--panel));
   }
 
   .usecase-card h3 {
     margin-bottom: 18px;
-    font-size: 21px;
+    font-size: 22px;
     line-height: 1.28;
   }
 
@@ -598,9 +744,13 @@
     .section { padding: 62px 0; }
     .btn { width: 100%; }
     .usecase-card {
-      width: 286px;
-      min-height: 184px;
-      padding: 24px;
+      width: 350px;
+      min-height: 235px;
+      padding: 28px;
+    }
+    .usecase-art {
+      width: 154px;
+      height: 104px;
     }
     .software-card {
       width: 196px;
@@ -615,13 +765,34 @@
 </style>
 </head>
 <body>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var saved = null;
+    try { saved = localStorage.getItem('theme'); } catch (e) {}
+    var initial = saved || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    function apply(t) {
+      root.setAttribute('data-theme', t);
+      try { localStorage.setItem('theme', t); } catch (e) {}
+      var btns = document.querySelectorAll('.theme-toggle');
+      for (var i = 0; i < btns.length; i++) { btns[i].setAttribute('aria-pressed', String(t === 'light')); }
+    }
+    root.setAttribute('data-theme', initial);
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('.theme-toggle');
+      if (!btn) return;
+      apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+    });
+    document.addEventListener('DOMContentLoaded', function () { apply(root.getAttribute('data-theme')); });
+  })();
+</script>
 <nav class="nav" aria-label="Primary navigation">
   <div class="container nav-inner">
     <a class="brand" href="#top" aria-label="Compass home">
       <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
         <defs><mask id="nav-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="33" fill="none" stroke="#f7f8fa" stroke-width="8" mask="url(#nav-gap)"></circle>
-        <circle class="brand-dot" cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#nav-gap)"></circle>
+        <circle class="brand-dot" cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
       </svg>
       Compass
     </a>
@@ -632,6 +803,10 @@
         <img src="images/logo/github-mark.svg" width="18" height="18" alt="">
         <span class="optional">GitHub</span>
       </a>
+      <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" aria-pressed="false">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+      </button>
     </div>
   </div>
 </nav>
@@ -665,6 +840,7 @@
 </header>
 
 <main>
+
   <section class="section" id="software">
     <div class="container">
       <div class="section-head center">
@@ -707,11 +883,11 @@
     </div>
   </section>
 
-  <section class="section" id="use-cases">
+  <section class="section usecases" id="use-cases">
     <div class="container">
-      <div class="section-head center">
-        <h2>Repeated work inside desktop tools.</h2>
-        <p>Compass is not a generic task bot. It helps with the engineering software work people repeat: from reviewing a simulation and drafting a report to running a full analysis and design optimization from initial geometry.</p>
+      <div class="section-head center compact">
+        <h2>Use cases</h2>
+        <p>Small checks, design studies, and full project workflows.</p>
       </div>
       <div class="rail-controls" aria-label="Use case card navigation">
         <button class="rail-btn" type="button" data-scroll-target="#usecase-rail" data-scroll-dir="-1" aria-label="Scroll use cases left">&lsaquo;</button>
@@ -721,22 +897,56 @@
     <div class="usecase-rail" id="usecase-rail" aria-label="Examples of Compass use cases">
       <div class="usecase-track">
         <article class="usecase-card">
+          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M28 116h164"></path>
+            <path class="shape" d="M38 98l35-34 31 25 43-54 30 24"></path>
+            <circle class="fill" cx="73" cy="64" r="7"></circle>
+            <circle class="fill" cx="147" cy="35" r="7"></circle>
+            <path class="shape" d="M42 28h46M42 46h28"></path>
+          </svg>
           <h3>Analyze results and reports</h3>
           <p>Review simulation output, warnings, checks, and result tables, then turn them into a clear engineering report.</p>
         </article>
         <article class="usecase-card">
+          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
+            <rect class="shape" x="32" y="30" width="156" height="92" rx="10"></rect>
+            <path class="shape" d="M58 58h104M58 86h104"></path>
+            <circle class="fill" cx="92" cy="58" r="8"></circle>
+            <circle class="fill" cx="138" cy="86" r="8"></circle>
+            <path class="shape" d="M72 122v18M148 122v18"></path>
+          </svg>
           <h3>Prepare model setup</h3>
           <p>Handle repeated assignments, settings, load definitions, and setup checks before analysis.</p>
         </article>
         <article class="usecase-card">
+          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M110 30v32M110 62L62 104M110 62l48 42"></path>
+            <rect class="shape" x="78" y="16" width="64" height="28" rx="7"></rect>
+            <rect class="shape" x="30" y="104" width="64" height="28" rx="7"></rect>
+            <rect class="shape" x="126" y="104" width="64" height="28" rx="7"></rect>
+            <circle class="fill" cx="110" cy="62" r="7"></circle>
+          </svg>
           <h3>Compare design options</h3>
           <p>Study alternatives in geometry, materials, member sizes, parameters, or analysis settings.</p>
         </article>
         <article class="usecase-card">
+          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M58 76a52 52 0 0 1 92-33"></path>
+            <path class="shape" d="M150 43h-30M150 43v-30"></path>
+            <path class="shape" d="M162 76a52 52 0 0 1-92 33"></path>
+            <path class="shape" d="M70 109h30M70 109v30"></path>
+            <circle class="fill" cx="110" cy="76" r="12"></circle>
+          </svg>
           <h3>Run design optimization</h3>
           <p>Iterate on an initial geometry and evaluate changes across performance, weight, and constructability.</p>
         </article>
         <article class="usecase-card">
+          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
+            <path class="shape" d="M46 42h86a20 20 0 0 1 0 40H92a20 20 0 0 0 0 40h82"></path>
+            <circle class="fill" cx="46" cy="42" r="8"></circle>
+            <circle class="fill" cx="174" cy="122" r="8"></circle>
+            <path class="shape" d="M142 26l22 16-22 16"></path>
+          </svg>
           <h3>Guide complex software</h3>
           <p>Help engineers find commands, understand workflows, and avoid the setup mistakes that slow projects down.</p>
         </article>
@@ -759,6 +969,147 @@
     </div>
   </section>
 
+  <section class="section how" id="how">
+    <style>
+      .how { padding: 66px 0 58px; }
+      .how-grid { width: min(1500px, calc(100% - 64px)); display: grid; grid-template-columns: 1fr; gap: 34px; align-items: center; }
+      @media (min-width: 940px) {
+        .how-grid {
+          grid-template-columns: minmax(0, 820px) minmax(0, 620px);
+          justify-content: space-between;
+          gap: 40px;
+        }
+      }
+      .how-copy h2 { margin-bottom: 14px; }
+      .how-lead { color: var(--muted); font-size: 18px; line-height: 1.62; max-width: 820px; margin: 0 0 22px; }
+      .how-actions { display: grid; gap: 0; max-width: 820px; border-top: 1px solid var(--line-soft); }
+      .how-action { display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+      .how-action-icon { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--teal); }
+      .how-action-icon svg { width: 18px; height: 18px; }
+      .how-action h3 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
+      .how-action p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+      .how-action a,
+      .how-lead a,
+      .how svg a {
+        color: var(--text);
+        text-decoration: underline;
+        text-decoration-color: rgba(168, 115, 232, 0.78);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 4px;
+        transition: color 120ms ease, text-decoration-color 120ms ease;
+      }
+      .how-action a:hover,
+      .how-lead a:hover,
+      .how svg a:hover {
+        color: var(--violet);
+        text-decoration-color: var(--violet);
+      }
+      .how-foot { color: var(--faint); font-size: 14px; line-height: 1.6; max-width: 820px; margin: 18px 0 0; }
+      .how-foot a { color: var(--violet); font-weight: 650; }
+      .how-figure { margin: 0; justify-self: start; }
+      .how-figure svg { width: min(100%, 620px); height: auto; margin-left: 0; overflow: visible; }
+      .how .node-label { font: 800 25px "Segoe UI", system-ui, sans-serif; fill: var(--text); }
+      .how .small-label { font: 700 17px "Segoe UI", system-ui, sans-serif; fill: var(--muted); }
+      .how .edge-label { font: 800 18px "Segoe UI", system-ui, sans-serif; fill: var(--muted); }
+      .how .edge { fill: none; stroke: var(--faint); stroke-width: 3.4; stroke-linecap: round; }
+      .how .edge-soft { fill: none; stroke: var(--line); stroke-width: 1.6; stroke-dasharray: 8 12; opacity: 0.62; }
+      .how .ic { fill: none; stroke: var(--text); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .how .dot { fill: var(--violet); }
+      .how .agent-ring { fill: none; stroke: var(--text); stroke-width: 11; }
+    </style>
+    <div class="container how-grid">
+      <div class="how-copy">
+        <h2>How Compass works</h2>
+        <p class="how-lead">Compass is a <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">ReAct-style</a> desktop agent: it reasons about the goal, acts inside the target software, observes what changed, and continues. The important part is that it can choose the right control surface for the job, not only chat about it.</p>
+        <div class="how-actions">
+          <div class="how-action">
+            <span class="how-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+            </span>
+            <div>
+              <h3>Vision-grounded <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer use</a></h3>
+              <p>It reads the screen through application-specific visual context, then moves the mouse and types against real controls rather than guessing from raw pixels.</p>
+            </div>
+          </div>
+          <div class="how-action">
+            <span class="how-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M14 4l-4 16"></path></svg>
+            </span>
+            <div>
+              <h3>Native scripting when available</h3>
+              <p>For software such as SAP2000, it can call <a href="https://learn.microsoft.com/en-us/windows/win32/com/the-component-object-model" target="_blank" rel="noopener">COM automation</a> through Python <a href="https://pypi.org/project/comtypes/" target="_blank" rel="noopener">comtypes</a>, using repeatable scripts for operations that should not depend on clicks.</p>
+            </div>
+          </div>
+          <div class="how-action">
+            <span class="how-action-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path><path d="M14 2v5h5M8 13h8M8 17h6"></path></svg>
+            </span>
+            <div>
+              <h3>Workflow knowledge that can be reused</h3>
+              <p>Prompts, screen templates, documentation, scripts, and project conventions can be captured so the agent gets deeper for a specific tool or team.</p>
+            </div>
+          </div>
+        </div>
+        <p class="how-foot">That is the role of <a href="agenthub.html">AgentHub</a>: turning domain and product knowledge into specialized agents for complex desktop software.</p>
+      </div>
+      <div class="how-figure">
+        <svg viewBox="110 60 625 455" role="img" aria-label="Triangle diagram: user, Compass agent, and engineering software connected by prompt, GUI, computer use, and scripting.">
+          <defs>
+            <marker id="how-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--faint)"></path>
+            </marker>
+            <mask id="how-agent-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask>
+          </defs>
+
+          <path class="edge-soft" d="M166 170 L594 170 L380 386 Z"></path>
+          <path class="edge" d="M204 152 C306 94, 454 94, 556 152" marker-end="url(#how-arrow)"></path>
+          <path class="edge" d="M166 226 C218 314, 292 372, 340 388" marker-end="url(#how-arrow)"></path>
+          <path class="edge" d="M418 380 C498 338, 546 272, 572 218" marker-end="url(#how-arrow)"></path>
+
+          <g transform="translate(380 100)">
+            <circle class="dot" cx="-23" cy="0" r="5"></circle>
+            <text class="edge-label" x="-4" y="6">GUI</text>
+          </g>
+
+          <g transform="translate(240 312)">
+            <circle class="dot" cx="-22" cy="0" r="5"></circle>
+            <text class="edge-label" x="-2" y="6">Prompt</text>
+          </g>
+
+          <g transform="translate(500 316)">
+            <circle class="dot" cx="-22" cy="-18" r="5"></circle>
+            <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener"><text class="edge-label" x="0" y="-12">Computer use</text></a>
+            <circle class="dot" cx="-22" cy="22" r="5"></circle>
+            <a href="https://pypi.org/project/comtypes/" target="_blank" rel="noopener"><text class="edge-label" x="0" y="28">COM / comtypes scripting</text></a>
+          </g>
+
+          <g transform="translate(166 170)">
+            <circle class="ic" cx="0" cy="-22" r="19"></circle>
+            <path class="ic" d="M-36 42a36 36 0 0 1 72 0"></path>
+            <text class="node-label" x="-28" y="98">User</text>
+          </g>
+
+          <g transform="translate(594 170)">
+            <rect class="ic" x="-38" y="-42" width="76" height="54" rx="8"></rect>
+            <line class="ic" x1="0" y1="12" x2="0" y2="30"></line>
+            <line class="ic" x1="-24" y1="30" x2="24" y2="30"></line>
+            <path class="ic" d="M-18 -17h36M-18 1h26"></path>
+            <text class="node-label" x="-126" y="98">Engineering software</text>
+          </g>
+
+          <g transform="translate(380 386)">
+            <svg x="-44" y="-50" width="88" height="88" viewBox="0 0 100 100" overflow="visible">
+              <circle class="agent-ring" cx="50" cy="50" r="29" mask="url(#how-agent-gap)"></circle>
+              <circle class="dot" cx="73.3" cy="26.7" r="13"></circle>
+            </svg>
+            <text class="node-label" x="-94" y="88">Compass agent</text>
+            <text class="small-label" x="-74" y="114">reason / act / observe</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="download">
     <div class="container download-layout">
       <div>
@@ -768,14 +1119,14 @@
       <div class="download-card">
         <a class="btn btn-primary" id="dl-btn" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span id="dl-btn-text">Download from GitHub</span>
+          <span id="dl-btn-text">See GitHub Releases</span>
         </a>
         <div class="release-links">
           <a href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">All releases</a>
           <a id="dl-notes" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">Release notes</a>
         </div>
-        <p class="note">
-          No account required.
+        <p class="note" id="dl-note">
+          The first Windows installer has not been published yet. After the first release, this button will update automatically.
         </p>
       </div>
     </div>
@@ -787,8 +1138,8 @@
     <a class="brand" href="#top" aria-label="Compass home">
       <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
         <defs><mask id="footer-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="33" fill="none" stroke="#bac3cf" stroke-width="8" mask="url(#footer-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="#a873e8"></circle>
+        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#footer-gap)"></circle>
+        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
       </svg>
       Compass
     </a>
@@ -839,6 +1190,8 @@
     function setFallback() {
       document.getElementById("dl-btn").href = releasesUrl;
       document.getElementById("dl-hero").href = "#download";
+      document.getElementById("dl-btn-text").textContent = "See GitHub Releases";
+      document.getElementById("dl-note").textContent = "The first Windows installer has not been published yet. After the first release, this button will update automatically.";
     }
 
     fetch(apiUrl)
@@ -862,6 +1215,7 @@
         document.getElementById("dl-btn-text").textContent = "Download Compass " + version;
         document.getElementById("dl-hero").href = installer.browser_download_url;
         document.getElementById("dl-notes").href = release.html_url || releasesUrl;
+        document.getElementById("dl-note").textContent = "No account required.";
       })
       .catch(setFallback);
   })();

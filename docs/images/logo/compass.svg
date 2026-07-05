@@ -8,6 +8,6 @@
       <circle cx="73.3" cy="26.7" r="19.5" fill="black"/>
     </mask>
   </defs>
-  <circle cx="50" cy="50" r="33" fill="none" stroke="#EDEDEF" stroke-width="8" mask="url(#gap)"/>
+  <circle cx="50" cy="50" r="29" fill="none" stroke="#EDEDEF" stroke-width="8" mask="url(#gap)"/>
   <circle cx="73.3" cy="26.7" r="13" fill="#A46FD1"/>
 </svg>
