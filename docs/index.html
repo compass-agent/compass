@@ -17,9 +17,11 @@
   <style>
     body { margin: 0; background: #FAF9F7; }
     html { scroll-behavior: smooth; }
-    .brand-link:hover .brand-orbit {
+    .brand-orbit, .brand-orbit-scroll {
       transform-box: view-box;
       transform-origin: 50px 50px;
+    }
+    .brand-link:hover .brand-orbit {
       animation: brand-bearing 700ms ease;
     }
     @keyframes brand-bearing {
@@ -40,9 +42,11 @@
       <a class="brand-link" href="#top" style="display:inline-flex; align-items:center; gap:10px; color:#232029; font-size:18px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; text-decoration:none;">
         <svg viewBox="0 0 100 100" aria-hidden="true" style="width:28px; height:28px; display:block;">
           <circle cx="50" cy="50" r="29" fill="none" stroke="#232029" stroke-width="8"></circle>
-          <g class="brand-orbit">
-            <circle cx="73.3" cy="26.7" r="19.5" fill="#FAF9F7"></circle>
-            <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
+          <g class="brand-orbit-scroll">
+            <g class="brand-orbit">
+              <circle cx="73.3" cy="26.7" r="19.5" fill="#FAF9F7"></circle>
+              <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
+            </g>
           </g>
         </svg>
         Compass
@@ -271,7 +275,12 @@
             <a href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">All releases</a>
             <a id="dl-notes" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">Release notes</a>
           </div>
-          <p id="dl-note" style="margin:18px 0 0; color:#8B8694; font-size:13px;">Open the latest GitHub release to download the Windows installer.</p>
+          <div aria-label="System requirements" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:26px;">
+            <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border:1px solid #E2DDEC; border-radius:999px; background:#FFFFFF; color:#5C5766; font-size:13px; font-weight:600;">Windows 10 / 11 · 64-bit</span>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border:1px solid #E2DDEC; border-radius:999px; background:#FFFFFF; color:#5C5766; font-size:13px; font-weight:600;">Licensed SAP2000 install</span>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border:1px solid #E2DDEC; border-radius:999px; background:#FFFFFF; color:#5C5766; font-size:13px; font-weight:600;">Anthropic API key</span>
+          </div>
+          <p id="dl-note" style="margin:16px 0 0; color:#8B8694; font-size:13px;">Open the latest GitHub release to download the Windows installer.</p>
         </div>
       </div>
     </section>
@@ -304,11 +313,9 @@
 
   function setReleaseFallback() {
     var btn = document.getElementById("dl-btn");
-    var hero = document.getElementById("dl-hero");
     var text = document.getElementById("dl-btn-text");
     var note = document.getElementById("dl-note");
     if (btn) btn.href = releasesUrl;
-    if (hero) hero.href = "#download";
     if (text) text.textContent = "See GitHub Releases";
     if (note) note.textContent = "Open the latest GitHub release to download the Windows installer.";
   }
@@ -335,20 +342,35 @@
         }
         var version = (release.tag_name || "latest").replace(/^v/i, "");
         var btn = document.getElementById("dl-btn");
-        var hero = document.getElementById("dl-hero");
         var text = document.getElementById("dl-btn-text");
         var notes = document.getElementById("dl-notes");
         var note = document.getElementById("dl-note");
         if (btn) btn.href = installer.browser_download_url;
-        if (hero) hero.href = installer.browser_download_url;
-        if (text) text.textContent = "Download Compass " + version;
+        if (text) text.textContent = "Download Compass " + version + " for Windows";
         if (notes) notes.href = release.html_url || releasesUrl;
-        if (note) note.textContent = "No account required.";
+        if (note) note.textContent = "Free download · No account required.";
       })
       .catch(setReleaseFallback);
   }
+  function initOrbitScroll() {
+    var orbit = document.querySelector(".brand-orbit-scroll");
+    if (!orbit) return;
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var ticking = false;
+    function update() {
+      ticking = false;
+      if (reduced.matches) { orbit.style.transform = ""; return; }
+      orbit.style.transform = "rotate(" + ((window.scrollY || window.pageYOffset || 0) * 0.35) + "deg)";
+    }
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
+
   function init() {
     applyLatestRelease();
+    initOrbitScroll();
   }
 
   if (document.readyState === "loading") {
