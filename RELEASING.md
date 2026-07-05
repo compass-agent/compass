@@ -42,7 +42,7 @@ npm run dist:win
 
 This runs:
 
-1. PyInstaller, which bundles the Python backend to `backend/dist/compass_backend/`.
+1. PyInstaller, which bundles the Python backend to `backend/dist/Compass Backend/`.
 2. webpack, which builds the production renderer bundle.
 3. electron-builder, which creates `dist/Compass-Setup-<version>.exe`.
 
@@ -58,7 +58,7 @@ On a Windows machine or clean user account with SAP2000 installed:
 - [ ] The SAP2000 status turns connected without opening a second SAP2000 instance.
 - [ ] Send a minimal prompt such as `Tell me whether you are connected to SAP2000`.
 - [ ] Run one tiny SAP2000 action, such as creating a blank model/project.
-- [ ] Close Compass and confirm no orphan `compass_backend.exe` remains in Task Manager.
+- [ ] Close Compass and confirm no orphan `Compass Backend.exe` or `compass_backend.exe` remains in Task Manager.
 
 Run Compass and SAP2000 at the same Windows privilege level. If one is elevated
 and the other is not, COM attach can fail.

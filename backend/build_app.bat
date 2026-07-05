@@ -3,9 +3,10 @@ REM Build script for the Compass Python backend (PyInstaller onedir bundle).
 REM Prefer running from the repo root via:  npm run build:backend
 REM This script is the standalone equivalent.
 
-echo ===== Building compass_backend =====
+echo ===== Building Compass Backend =====
 
-REM Stop any running instances of compass_backend.exe
+REM Stop any running instances of the backend.
+taskkill /F /IM "Compass Backend.exe" 2>nul
 taskkill /F /IM compass_backend.exe 2>nul
 timeout /t 2 /nobreak >nul
 
@@ -20,4 +21,4 @@ if not exist ".venv\Scripts\python.exe" (
 .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm backend\compass_backend.spec --distpath backend\dist --workpath backend\build
 
 echo ===== Build complete =====
-echo Bundle created at: backend\dist\compass_backend\compass_backend.exe
+echo Bundle created at: backend\dist\Compass Backend\Compass Backend.exe

@@ -82,15 +82,15 @@ Rather than calling basic API functions directly, the backend wraps the raw SAP2
 The application is built as a React/Electron shell plus a PyInstaller onedir backend:
 
 ```
-[PyInstaller]      -> backend/src/compass/app.py -> backend/dist/compass_backend/compass_backend.exe
+[PyInstaller]      -> backend/src/compass/app.py -> backend/dist/Compass Backend/Compass Backend.exe
 [Webpack]          -> frontend/renderer/*.js     -> frontend/renderer/dist/
-[electron-builder] -> package.json extraResources -> resources/backend/compass_backend/
+[electron-builder] -> package.json extraResources -> resources/backend/Compass Backend/
 ```
 
 1. **Backend Packaging**: PyInstaller uses [compass_backend.spec](file:///c:/Users/mksad/Projects/compass/backend/compass_backend.spec) to create an onedir bundle. The spec bundles Compass data files, prompts, config defaults, SAP2000 RAG seed data, and section tables. Heavy optional ML packages such as torch, torchvision, ultralytics, easyocr, transformers, scipy, and sklearn are excluded; YOLO icon detection degrades gracefully when they are not present.
 2. **Frontend Compiling**: Webpack builds `app.bundle.js` and `templateTraining.bundle.js` into `frontend/renderer/dist/`.
-3. **App Distribution**: `electron-builder` reads the `build` section in [package.json](file:///c:/Users/mksad/Projects/compass/package.json). The backend onedir folder is included through `extraResources` as `resources/backend/compass_backend`; there is no `build-config.js` copy hook anymore.
-4. **Unsigned Local Windows Builds**: `win.signAndEditExecutable` is disabled because this repo does not configure a signing certificate. This avoids electron-builder's `winCodeSign` helper extraction path, which can fail on Windows accounts without symlink creation privilege. The NSIS installer still builds; enable executable editing/signing again in a signed CI/release environment if app executable version/icon resources must be stamped.
+3. **App Distribution**: `electron-builder` reads the `build` section in [package.json](file:///c:/Users/mksad/Projects/compass/package.json). The backend onedir folder is included through `extraResources` as `resources/backend/Compass Backend`; there is no `build-config.js` copy hook anymore.
+4. **Windows executable resources**: `electron-builder` is allowed to stamp the Windows executable resources so `Compass.exe` carries the Compass icon/product metadata instead of the default Electron resources.
 5. **Runtime Data Layout**: Packaged installs treat the app directory as read-only. Writable state lives under `%APPDATA%/Compass`, while user-facing generated models/configs live under `Documents/Compass`.
 
 ---
@@ -113,7 +113,7 @@ The backend centralizes path decisions in [runtime_paths.py](file:///c:/Users/mk
 The following historical failure modes have been addressed in the current codebase:
 
 * **Production backend lifecycle**: [main.js](file:///c:/Users/mksad/Projects/compass/frontend/main/main.js) starts the packaged backend during `app.whenReady()` when `app.isPackaged` is true. [backendManager.js](file:///c:/Users/mksad/Projects/compass/frontend/main/backendManager.js) locates the onedir executable, sets `COMPASS_ENV=production`, passes `WORKSPACE_FOLDER`, logs to `%APPDATA%/Compass/logs/electron_main.log`, and stops/restarts the process when needed.
-* **Executable naming/layout**: PyInstaller produces `backend/dist/compass_backend/compass_backend.exe`, and `package.json` copies that onedir folder into `resources/backend/compass_backend`.
+* **Executable naming/layout**: PyInstaller produces `backend/dist/Compass Backend/Compass Backend.exe`, and `package.json` copies that onedir folder into `resources/backend/Compass Backend`.
 * **Keyless first-run boot**: Missing LLM keys no longer crash the backend. The backend emits `backend_status`; the renderer shows onboarding/settings and can validate/save keys through IPC and Socket.IO events.
 * **Writable frozen paths**: Logs, settings, template DB, Chroma seed data, generated comtypes wrappers, SAP config output, and generated model files no longer rely on writing inside Program Files or the PyInstaller bundle.
 * **SAP2000 attach diagnostics**: SAP COM connection failures now distinguish "SAP2000 is not running", "COM class not registered", and the likely UAC privilege mismatch where SAP2000 and Compass are running at different privilege levels.
@@ -128,7 +128,7 @@ Current automated/local checks:
 * `npm run build` completes successfully, with only Webpack bundle-size warnings.
 * Backend Python modules compile successfully with `python -m compileall`.
 * Development backend boot reaches Socket.IO polling HTTP 200.
-* Standalone `backend/dist/compass_backend/compass_backend.exe` boots in a fresh AppData sandbox, serves Socket.IO polling HTTP 200, seeds Chroma/template data, and creates the writable comtypes cache.
+* Standalone `backend/dist/Compass Backend/Compass Backend.exe` boots in a fresh AppData sandbox, serves Socket.IO polling HTTP 200, seeds Chroma/template data, and creates the writable comtypes cache.
 * `npm run package-win` creates `dist/Compass-Setup-1.0.0.exe`.
 * `dist/win-unpacked/Compass.exe` launches the packaged backend and reaches Socket.IO polling HTTP 200.
 * The NSIS installer installs successfully into a temporary per-user directory; the installed app launches the packaged backend and reaches Socket.IO polling HTTP 200; silent uninstall returns success.

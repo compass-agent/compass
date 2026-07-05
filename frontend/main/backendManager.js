@@ -29,6 +29,7 @@ let backendProcess = null
 let restartCount = 0
 let stoppingIntentionally = false
 const MAX_AUTO_RESTARTS = 3
+const BACKEND_IMAGE_NAMES = ["Compass Backend.exe", "compass_backend.exe"]
 
 /**
  * Directory where user-facing artifacts (SAP models, generated configs)
@@ -49,8 +50,13 @@ function getWorkspaceDir() {
 function findBackendExecutable() {
   const resourcesPath = process.resourcesPath
   const possibleLocations = [
+    // onedir bundle (current layout, friendly executable name)
+    path.join(resourcesPath, "backend", "Compass Backend", "Compass Backend.exe"),
     // onedir bundle (current layout)
     path.join(resourcesPath, "backend", "compass_backend", "compass_backend.exe"),
+    // friendly onefile fallbacks
+    path.join(resourcesPath, "backend", "Compass Backend.exe"),
+    path.join(resourcesPath, "Compass Backend.exe"),
     // legacy onefile layouts, kept as fallbacks
     path.join(resourcesPath, "backend", "compass_backend.exe"),
     path.join(resourcesPath, "compass_backend.exe"),
@@ -64,17 +70,19 @@ function findBackendExecutable() {
  */
 function killOrphanedBackends() {
   return new Promise((resolve) => {
-    execFile(
-      "taskkill",
-      ["/F", "/IM", "compass_backend.exe", "/T"],
-      (error) => {
-        // Exit code 128 means "not found", which is the normal case
+    let pending = BACKEND_IMAGE_NAMES.length
+    for (const imageName of BACKEND_IMAGE_NAMES) {
+      execFile("taskkill", ["/F", "/IM", imageName, "/T"], (error) => {
+        // Exit code 128 means "not found", which is the normal case.
         if (!error) {
-          logToFile("Killed orphaned compass_backend.exe process(es)")
+          logToFile(`Killed orphaned ${imageName} process(es)`)
         }
-        resolve()
-      }
-    )
+        pending -= 1
+        if (pending === 0) {
+          resolve()
+        }
+      })
+    }
   })
 }
 

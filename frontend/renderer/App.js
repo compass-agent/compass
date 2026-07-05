@@ -1,5 +1,3 @@
-import { faSpinner } from "@fortawesome/free-solid-svg-icons"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useEffect, useRef, useState } from "react"
 import { Route, HashRouter as Router, Routes } from "react-router-dom"
 import { AgentMode } from "./common/constants"
@@ -37,7 +35,7 @@ function AppContent() {
       window.electron.settings
         .get()
         .then((s) => {
-          if (!s.anthropicKeySet && !s.onboardingCompleted) {
+          if (!s.onboardingCompleted) {
             setIsFirstRun(true)
             setSettingsOpen(true)
           }
@@ -88,12 +86,26 @@ function AppContent() {
       >
         {!isCompassReady && (
           <div className="loading-spinner-container">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              spin
-              size="3x"
-              className="spinner-icon"
-            />
+            <svg
+              className="compass-loading-mark"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
+              <circle
+                className="compass-loading-ring"
+                cx="50"
+                cy="50"
+                r="28"
+              />
+              <g className="compass-loading-orbit">
+                <circle
+                  className="compass-loading-dot"
+                  cx="72"
+                  cy="28"
+                  r="8"
+                />
+              </g>
+            </svg>
             <div className="spinner-text">Connecting to Compass...</div>
           </div>
         )}

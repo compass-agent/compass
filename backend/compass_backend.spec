@@ -4,8 +4,8 @@
 # Build (from the repo root):
 #   .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm backend\compass_backend.spec
 #
-# Produces a onedir bundle at backend/dist/compass_backend/ containing
-# compass_backend.exe plus its _internal folder. onedir (instead of onefile)
+# Produces a onedir bundle at backend/dist/Compass Backend/ containing
+# Compass Backend.exe plus its _internal folder. onedir (instead of onefile)
 # avoids the multi-hundred-MB self-extraction on every launch and is far more
 # reliable for apps of this size.
 
@@ -17,6 +17,7 @@ block_cipher = None
 
 spec_dir = os.path.abspath(SPECPATH)
 src_dir = os.path.join(spec_dir, 'src')
+icon_path = os.path.abspath(os.path.join(spec_dir, '..', 'resources', 'compass.ico'))
 
 # Bundle the compass package's data files (prompts, configs, RAG database
 # seed, section tables) next to the executable under _internal/compass.
@@ -95,17 +96,18 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='compass_backend',
+    name='Compass Backend',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,
-    disable_windowed_traceback=False,
+    console=False,
+    disable_windowed_traceback=True,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon_path,
 )
 
 coll = COLLECT(
@@ -117,5 +119,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='compass_backend',
+    name='Compass Backend',
 )

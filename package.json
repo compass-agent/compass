@@ -92,14 +92,17 @@
     ],
     "extraResources": [
       {
-        "from": "backend/dist/compass_backend",
-        "to": "backend/compass_backend"
+        "from": "backend/dist/Compass Backend",
+        "to": "backend/Compass Backend"
+      },
+      {
+        "from": "resources/compass.png",
+        "to": "compass.png"
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "resources/compass.ico",
-      "signAndEditExecutable": false
+      "icon": "resources/compass.ico"
     },
     "nsis": {
       "oneClick": false,

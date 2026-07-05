@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 logger.info(f"Starting backend in {env} environment")
 debug_mode = env != 'production'
+backend_host = os.environ.get('COMPASS_BACKEND_HOST', '127.0.0.1')
 
 # Frozen-build runtime setup: seed user data (RAG database) into AppData and
 # redirect the comtypes code-generation cache to a writable directory. Must
@@ -141,8 +142,10 @@ def ensure_agent_service() -> bool:
         return True
     return initialize_agent_service()
 
-
-initialize_agent_service()
+# Do not initialize the heavy agent during backend import. Packaged startup must
+# reach Socket.IO quickly so the renderer can connect and show onboarding/status.
+# The agent is created lazily when a message/new chat arrives or after settings
+# explicitly request initialize_agent.
 def cleanup():
     """Cleanup function to handle graceful shutdown"""
     logger.info('Shutting down gracefully...')
@@ -167,9 +170,6 @@ def handle_connect():
 
 @socketio.on('get_backend_status')
 def handle_get_backend_status():
-    # Retry agent initialization on demand: keys may have been saved since boot.
-    if agent_service is None:
-        ensure_agent_service()
     emit('backend_status', get_backend_status())
 
 @socketio.on('validate_api_key')
@@ -609,7 +609,7 @@ def handle_delete_page(data):
 if __name__ == '__main__':
     try:
         socketio.run(app,
-            host='0.0.0.0',
+            host=backend_host,
             debug=debug_mode,
             port=5001,
             use_reloader=False,

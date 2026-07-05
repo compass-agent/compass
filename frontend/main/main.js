@@ -27,9 +27,13 @@ if (!gotSingleInstanceLock) {
   app.quit()
 }
 
-if (process.platform === "darwin") {
-  app.setName("Compass")
-  app.name = "Compass"
+const APP_USER_MODEL_ID = "com.compass.app"
+
+app.setName("Compass")
+app.name = "Compass"
+
+if (process.platform === "win32") {
+  app.setAppUserModelId(APP_USER_MODEL_ID)
 }
 
 // Only import devtools in development
@@ -91,6 +95,15 @@ let mainWindow
 let previewWindow = null
 let templateTrainingWindow = null
 
+function getWindowIconPath() {
+  const candidates = [
+    path.join(__dirname, "../renderer/assets/compass.png"),
+    path.join(__dirname, "../../resources/compass.png"),
+    path.join(process.resourcesPath || "", "compass.png"),
+  ]
+  return candidates.find((candidate) => fs.existsSync(candidate))
+}
+
 function createMenu() {
   const template = [
     {
@@ -128,6 +141,7 @@ function createMenu() {
 
 function createWindow() {
   const savedBounds = loadWindowBounds()
+  const windowIcon = getWindowIconPath()
 
   mainWindow = new BrowserWindow({
     width: savedBounds?.width || WINDOW_CONFIG.WIDTH,
@@ -150,6 +164,7 @@ function createWindow() {
     minHeight: WINDOW_CONFIG.MIN_HEIGHT,
     backgroundColor: "#00000000", // Ensure a transparent background
     title: "Compass",
+    icon: windowIcon,
   })
 
   mainWindow.setResizable(true)
@@ -188,6 +203,7 @@ function createWindow() {
 }
 
 function createTemplateTrainingWindow() {
+  const windowIcon = getWindowIconPath()
   const mainBounds = mainWindow
     ? mainWindow.getBounds()
     : { x: 100, y: 100, width: 900, height: 700 }
@@ -198,6 +214,7 @@ function createTemplateTrainingWindow() {
     y: Math.max(0, (mainBounds.y || 0) + 40),
     modal: false,
     title: "Agent Hub",
+    icon: windowIcon,
     frame: false,
     titleBarStyle: "hidden",
     webPreferences: {

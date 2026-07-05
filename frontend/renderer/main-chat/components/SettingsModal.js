@@ -129,7 +129,9 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
 
   const completeOnboarding = async () => {
     try {
-      await window.electron.settings.save({ onboardingCompleted: true })
+      if (savedState.anthropicKeySet) {
+        await window.electron.settings.save({ onboardingCompleted: true })
+      }
     } catch (_) {
       /* non-fatal */
     }
@@ -155,9 +157,12 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
         <div className="settings-modal-body">
           {isFirstRun && (
             <p className="settings-intro">
-              Compass is an AI copilot for SAP2000. To get started, add your
-              Anthropic API key - this powers the AI agent. You can get a key
-              at <span className="mono">console.anthropic.com</span>.
+              {savedState.anthropicKeySet
+                ? "This Windows account already has a saved Anthropic API key for Compass. You can keep it, replace it, or update it later in Settings."
+                : "Compass needs your Anthropic API key before the AI agent can run. You can get a key at "}
+              {!savedState.anthropicKeySet && (
+                <span className="mono">console.anthropic.com</span>
+              )}
             </p>
           )}
 
@@ -181,7 +186,7 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
               type="password"
               placeholder={
                 savedState.anthropicKeySet
-                  ? "•••••••• (enter a new key to replace)"
+                  ? "******** (enter a new key to replace)"
                   : "sk-ant-..."
               }
               value={anthropicKey}
@@ -189,7 +194,7 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
               disabled={busy}
               autoFocus={isFirstRun}
             />
-            <div className="field-hint">Powers the structural engineering agent.</div>
+            <div className="field-hint">Powers the Compass agent.</div>
           </div>
 
           <div className="settings-field">
@@ -205,7 +210,7 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
               type="password"
               placeholder={
                 savedState.openaiKeySet
-                  ? "•••••••• (enter a new key to replace)"
+                  ? "******** (enter a new key to replace)"
                   : "sk-..."
               }
               value={openaiKey}
@@ -237,7 +242,7 @@ const SettingsModal = ({ isOpen, onClose, isFirstRun, connected }) => {
               onClick={completeOnboarding}
               disabled={busy}
             >
-              Skip for now
+              {savedState.anthropicKeySet ? "Use saved key" : "Skip for now"}
             </button>
           )}
           <button
