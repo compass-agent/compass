@@ -1,698 +1,239 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AgentHub - Create agents for your engineering software</title>
-<meta name="description" content="AgentHub helps teams, vendors, and expert users teach Compass new engineering software workflows and share specialized agents.">
+<title>AgentHub - Specialized agents for engineering software</title>
+<meta name="description" content="AgentHub helps teams and software vendors teach Compass specialized workflows for their own engineering software.">
 <link rel="icon" type="image/svg+xml" href="images/logo/favicon.svg?v=5">
 <link rel="alternate icon" type="image/png" sizes="32x32" href="images/logo/favicon-32.png?v=5">
-<style>
-  :root {
-    --bg: #0c0e12;
-    --bg-soft: #10151c;
-    --panel: #171d25;
-    --line: #2a3441;
-    --line-soft: rgba(255, 255, 255, 0.1);
-    --text: #f7f8fa;
-    --muted: #bac3cf;
-    --faint: #818b98;
-    --violet: #a873e8;
-    --violet-strong: #9255d7;
-    --teal: #35d5c4;
-    --green: #80d88a;
-    --radius: 8px;
-    --max: 1100px;
-    --logo-ring: #f7f8fa;
-  }
-
-  :root[data-theme="light"] {
-    --bg: #ffffff;
-    --bg-soft: #f5f7fa;
-    --panel: #f8fafc;
-    --panel-2: #eef2f7;
-    --line: #dfe4ec;
-    --line-soft: rgba(0, 0, 0, 0.09);
-    --text: #131820;
-    --muted: #4a5566;
-    --faint: #6b7480;
-    --violet: #7c3aed;
-    --violet-strong: #6d28d9;
-    --teal: #0e9384;
-    --green: #16a34a;
-    --logo-ring: #454c5a;
-  }
-
-  :root[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.9); }
-  :root[data-theme="light"] .github-link img { filter: none; }
-
-  .theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    transition: color 120ms ease, border-color 120ms ease;
-  }
-  .theme-toggle:hover { color: var(--text); border-color: var(--faint); }
-  .theme-toggle svg { width: 17px; height: 17px; }
-  .theme-toggle .moon { display: none; }
-  :root[data-theme="light"] .theme-toggle .sun { display: none; }
-  :root[data-theme="light"] .theme-toggle .moon { display: block; }
-
-  * { box-sizing: border-box; }
-  html { background: var(--bg); scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    color: var(--text);
-    background: var(--bg);
-    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  a { color: inherit; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  img, video, svg { display: block; max-width: 100%; }
-  .container { width: min(var(--max), calc(100% - 48px)); margin: 0 auto; }
-
-  .nav {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: rgba(12, 14, 18, 0.88);
-    border-bottom: 1px solid var(--line-soft);
-    backdrop-filter: blur(14px);
-  }
-  .nav-inner {
-    min-height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-  }
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text);
-    font-size: 18px;
-    font-weight: 750;
-    white-space: nowrap;
-  }
-  .brand:hover { text-decoration: none; }
-  .brand-mark { width: 28px; height: 28px; }
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 650;
-  }
-  .nav-links a:hover { color: var(--text); text-decoration: none; }
-  .github-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .github-link img {
-    width: 18px;
-    height: 18px;
-    filter: invert(1);
-    opacity: 0.86;
-  }
-
-  .hero {
-    position: relative;
-    overflow: hidden;
-    padding: 104px 0 84px;
-    border-bottom: 1px solid var(--line-soft);
-    background:
-      linear-gradient(120deg, rgba(168, 115, 232, 0.13), rgba(53, 213, 196, 0.04) 46%, rgba(12, 14, 18, 0) 78%),
-      var(--bg);
-  }
-  .hero-inner { max-width: 880px; }
-  .eyebrow {
-    display: inline-flex;
-    margin-bottom: 20px;
-    color: var(--teal);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  h1, h2, h3, p { margin-top: 0; }
-  h1 {
-    max-width: 850px;
-    margin-bottom: 24px;
-    font-size: 62px;
-    line-height: 1.04;
-    letter-spacing: 0;
-  }
-  .lead {
-    max-width: 790px;
-    margin-bottom: 30px;
-    color: var(--muted);
-    font-size: 20px;
-    line-height: 1.58;
-  }
-  .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .btn {
-    min-height: 46px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border: 1px solid transparent;
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 750;
-    line-height: 1;
-  }
-  .btn:hover { text-decoration: none; }
-  .btn-primary { background: var(--violet-strong); color: #fff; }
-  .btn-primary:hover { background: #a568e6; }
-  .btn-secondary {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.18);
-  }
-  .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  .section { padding: 78px 0; }
-  .section.alt {
-    background: var(--bg-soft);
-    border-top: 1px solid var(--line-soft);
-    border-bottom: 1px solid var(--line-soft);
-  }
-  .section-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: 52px;
-    align-items: start;
-  }
-  .kicker {
-    margin-bottom: 10px;
-    color: var(--teal);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  h2 {
-    margin-bottom: 14px;
-    font-size: 38px;
-    line-height: 1.18;
-    letter-spacing: 0;
-  }
-  h3 {
-    margin-bottom: 8px;
-    font-size: 20px;
-    line-height: 1.3;
-  }
-  .muted, .section-grid p { color: var(--muted); }
-
-  .audience-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
-  .audience-item {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    min-height: 190px;
-    padding: 28px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(circle at 82% 18%, rgba(168, 115, 232, 0.18), transparent 36%),
-      linear-gradient(180deg, #1d2531, var(--panel));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-  .audience-item p { margin-bottom: 0; }
-
-  .teach-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
-  .teach-item {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    min-height: 190px;
-    padding: 28px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(circle at 82% 18%, rgba(53, 213, 196, 0.13), transparent 36%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.026));
-  }
-  .teach-item p { margin-bottom: 0; }
-
-  .audience-item::after,
-  .teach-item::after,
-  .flow-step::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    opacity: 0.18;
-    background-image:
-      linear-gradient(var(--line-soft) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-    background-size: 28px 28px;
-    mask-image: linear-gradient(120deg, transparent 0%, black 45%, black 100%);
-  }
-
-  .card-art {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    z-index: -1;
-    width: 150px;
-    height: 112px;
-    color: var(--violet);
-    opacity: 0.28;
-  }
-  .teach-item .card-art { color: var(--teal); opacity: 0.24; }
-  .flow-step .card-art {
-    width: 136px;
-    height: 96px;
-    opacity: 0.2;
-  }
-  .card-art .line,
-  .card-art .shape {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  .card-art .fill { fill: currentColor; }
-
-  .audience-item > *,
-  .teach-item > *,
-  .flow-step > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  :root[data-theme="light"] .audience-item {
-    background:
-      radial-gradient(circle at 82% 18%, rgba(124, 58, 237, 0.11), transparent 36%),
-      linear-gradient(180deg, #ffffff, var(--panel));
-  }
-  :root[data-theme="light"] .teach-item {
-    background:
-      radial-gradient(circle at 82% 18%, rgba(14, 147, 132, 0.1), transparent 36%),
-      linear-gradient(180deg, #ffffff, var(--panel));
-  }
-  :root[data-theme="light"] .card-art { opacity: 0.2; }
-
-  .flow {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 28px;
-  }
-  .flow-step {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    padding: 22px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(circle at 84% 22%, rgba(168, 115, 232, 0.13), transparent 36%),
-      linear-gradient(180deg, #1d2531, var(--panel));
-  }
-  .flow-step span {
-    display: block;
-    margin-bottom: 10px;
-    color: var(--violet);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .flow-step p { margin-bottom: 0; }
-
-  .media-frame {
-    overflow: hidden;
-    margin-top: 34px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: #050608;
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
-  }
-  .media-frame video {
-    width: 100%;
-    height: auto;
-    background: #050608;
-  }
-
-  .contact {
-    max-width: 760px;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .contact h2 { margin-bottom: 14px; }
-  .contact p {
-    margin-bottom: 26px;
-    color: var(--muted);
-  }
-  .contact-details {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
-  .pill {
-    padding: 8px 12px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    background: rgba(255, 255, 255, 0.03);
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .footer {
-    padding: 34px 0 42px;
-    border-top: 1px solid var(--line-soft);
-    color: var(--faint);
-    font-size: 13px;
-  }
-  .footer-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-  .footer .brand { color: var(--muted); font-size: 15px; }
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-
-  @media (max-width: 920px) {
-    h1 { font-size: 46px; }
-    h2 { font-size: 31px; }
-    .section-grid, .flow { grid-template-columns: 1fr; gap: 30px; }
-    .audience-list, .teach-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 720px) {
-    .container { width: min(100% - 32px, var(--max)); }
-    .nav-inner { min-height: 58px; }
-    .nav-links { gap: 14px; }
-    .nav-links .optional { display: none; }
-    .hero { padding: 66px 0 58px; }
-    h1 { font-size: 38px; }
-    .lead { font-size: 17px; }
-    .section { padding: 60px 0; }
-    .btn { width: 100%; }
-  }
-</style>
+<meta property="og:title" content="AgentHub - Specialized agents for engineering software">
+<meta property="og:description" content="AgentHub helps teams and software vendors teach Compass specialized workflows for their own engineering software.">
+<meta property="og:image" content="https://compass-agent.github.io/compass/images/thumbnail/compass-thumbnail.png">
+<script src="./support.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    html { scroll-behavior: smooth; }
+    .brand-link:hover .brand-orbit {
+      transform-box: view-box;
+      transform-origin: 50px 50px;
+      animation: brand-bearing 700ms ease;
+    }
+    @keyframes brand-bearing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-link:hover .brand-orbit { animation: none; }
+    }
+  </style>
 </head>
 <body>
-<script>
-  (function () {
-    var root = document.documentElement;
-    var saved = null;
-    try { saved = localStorage.getItem('theme'); } catch (e) {}
-    var initial = saved || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    function apply(t) {
-      root.setAttribute('data-theme', t);
-      try { localStorage.setItem('theme', t); } catch (e) {}
-      var btns = document.querySelectorAll('.theme-toggle');
-      for (var i = 0; i < btns.length; i++) { btns[i].setAttribute('aria-pressed', String(t === 'light')); }
-    }
-    root.setAttribute('data-theme', initial);
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest && e.target.closest('.theme-toggle');
-      if (!btn) return;
-      apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-    });
-    document.addEventListener('DOMContentLoaded', function () { apply(root.getAttribute('data-theme')); });
-  })();
-</script>
-<nav class="nav" aria-label="Primary navigation">
-  <div class="container nav-inner">
-    <a class="brand" href="index.html" aria-label="Compass home">
-      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-        <defs><mask id="nav-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#nav-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
-      </svg>
-      Compass
-    </a>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="agenthub.html">AgentHub</a>
-      <a class="github-link" href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" aria-label="Compass on GitHub">
-        <img src="images/logo/github-mark.svg" width="18" height="18" alt="">
-        <span class="optional">GitHub</span>
-      </a>
-      <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" aria-pressed="false">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
-      </button>
-    </div>
-  </div>
-</nav>
+<div style="background:#FAF9F7; color:#232029; font-family:'Instrument Sans', 'Segoe UI', system-ui, sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;">
 
-<main>
-  <header class="hero">
-    <div class="container hero-inner">
-      <h1>AgentHub creates specialized agents for your own software.</h1>
-      <p class="lead">
-        The general Compass agent does not automatically know the details of every engineering
-        application, company standard, or workflow. With AgentHub, you can create that missing
-        knowledge for your own case, save it, and share it with your team or anyone who needs
-        an agent that understands the software the way an expert user does.
-      </p>
+  <!-- NAV -->
+  <nav style="position:sticky; top:0; z-index:30; background:rgba(250,249,247,0.88); border-bottom:1px solid rgba(35,32,41,0.08); backdrop-filter:blur(14px);" data-screen-label="Nav">
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:24px;">
+      <a class="brand-link" href="index.html" style="display:inline-flex; align-items:center; gap:10px; color:#232029; font-size:18px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; text-decoration:none;">
+        <svg viewBox="0 0 100 100" aria-hidden="true" style="width:28px; height:28px; display:block;">
+          <circle cx="50" cy="50" r="29" fill="none" stroke="#232029" stroke-width="8"></circle>
+          <g class="brand-orbit">
+            <circle cx="73.3" cy="26.7" r="19.5" fill="#FAF9F7"></circle>
+            <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
+          </g>
+        </svg>
+        Compass
+      </a>
+      <div style="display:flex; align-items:center; gap:26px; color:#6E6878; font-size:14.5px; font-weight:600;">
+        <a href="index.html" style="color:inherit; text-decoration:none;" style-hover="color:#232029;">Home</a>
+        <a href="#" style="color:#232029; text-decoration:none;">AgentHub</a>
+        <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:8px; color:inherit; text-decoration:none;" style-hover="color:#232029;">
+          <img src="images/logo/github-mark.svg" width="17" height="17" alt="" style="display:block; opacity:0.75;">
+          <span>GitHub</span>
+        </a>
+        <a href="index.html#download" style="display:inline-flex; align-items:center; padding:9px 16px; border-radius:10px; background:#232029; color:#FAF9F7; font-size:14px; font-weight:600; text-decoration:none;" style-hover="background:#34303D;">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header id="top" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(35,32,41,0.08); background:radial-gradient(circle at 85% 0%, rgba(138,85,201,0.12), transparent 45%), radial-gradient(circle at 0% 100%, rgba(138,85,201,0.06), transparent 40%), #FAF9F7;" data-screen-label="Hero">
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+      <div style="padding:104px 0 88px; max-width:820px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:24px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">
+          <span style="width:22px; height:1.5px; background:#8A55C9;"></span>
+          AgentHub
+        </div>
+        <h1 style="margin:0 0 26px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:56px; line-height:1.08; letter-spacing:-0.015em; text-wrap:balance;">Specialized agents for your own software.</h1>
+        <p style="margin:0; max-width:720px; color:#5C5766; font-size:19px; line-height:1.62;">
+          The general Compass agent does not automatically know the details of every engineering
+          application, company standard, or workflow. With AgentHub, you can create that missing
+          knowledge for your own case, save it, and share it with your team or anyone who needs
+          an agent that understands the software the way an expert user does.
+        </p>
+      </div>
     </div>
   </header>
 
-  <section class="section">
-    <div class="container section-grid">
-      <div>
-        <h2>Who should build specialized agents?</h2>
-        <p class="muted">
-          The best agents start with people who already know the work: what the software is used for,
-          which steps matter, where mistakes happen, and what a good result looks like.
-        </p>
-      </div>
-      <div class="audience-list">
-        <div class="audience-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <rect class="shape" x="32" y="34" width="120" height="76" rx="12"></rect>
-            <path class="shape" d="M58 60h68M58 82h46"></path>
-            <path class="shape" d="M148 56l34-22v88l-34-22"></path>
-            <circle class="fill" cx="182" cy="34" r="7"></circle>
-          </svg>
-          <h3>Software vendors</h3>
-          <p>Give users an assistant that understands the workflows inside your product instead of leaving them with generic help text and long manuals.</p>
-        </div>
-        <div class="audience-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M40 108h140"></path>
-            <path class="shape" d="M54 108V54h36v54M100 108V36h36v72M146 108V70h36v38"></path>
-            <circle class="fill" cx="118" cy="28" r="8"></circle>
-            <path class="shape" d="M46 124h128"></path>
-          </svg>
-          <h3>Engineering teams</h3>
-          <p>Package internal methods, project standards, and repeated tool sequences so engineers spend less time retracing the same setup steps.</p>
-        </div>
-        <div class="audience-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <circle class="shape" cx="74" cy="58" r="26"></circle>
-            <path class="shape" d="M50 114a36 36 0 0 1 48 0"></path>
-            <path class="shape" d="M122 42h58M122 70h42M122 98h58"></path>
-            <circle class="fill" cx="178" cy="42" r="6"></circle>
-          </svg>
-          <h3>Expert users</h3>
-          <p>Turn hard-earned knowledge of a niche application into an agent that can guide others through the same software with more confidence.</p>
-        </div>
-        <div class="audience-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M52 48h38a24 24 0 0 1 0 48H52"></path>
-            <path class="shape" d="M168 48h-38a24 24 0 0 0 0 48h38"></path>
-            <path class="shape" d="M84 72h52"></path>
-            <circle class="fill" cx="52" cy="48" r="7"></circle>
-            <circle class="fill" cx="168" cy="96" r="7"></circle>
-          </svg>
-          <h3>Consultants</h3>
-          <p>Carry repeatable workflows across projects, clients, and specialized desktop tools without starting from scratch each time.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section alt">
-    <div class="container section-grid">
-      <div>
-        <h2>What information do you teach the agent?</h2>
-        <p class="muted">
-          AgentHub is not about training a new foundation model from scratch. It is about giving
-          Compass the software-specific context it needs: what to look at, what steps to follow,
-          what language to understand, and which automation paths are available.
-        </p>
-      </div>
-      <div class="teach-grid">
-        <div class="teach-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <rect class="shape" x="34" y="30" width="152" height="92" rx="10"></rect>
-            <path class="shape" d="M58 58h104M58 86h60"></path>
-            <circle class="fill" cx="158" cy="86" r="10"></circle>
-            <path class="shape" d="M150 78l16 16"></path>
-          </svg>
-          <h3>Important screens and controls</h3>
-          <p>Menus, dialogs, buttons, panels, and visual states that matter for the workflow. The agent learns where the work happens and what the screen means.</p>
-        </div>
-        <div class="teach-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M46 44h48v34H46zM126 44h48v34h-48zM86 108h48v34H86z"></path>
-            <path class="shape" d="M94 61h32M150 78l-40 30M86 78l24 30"></path>
-            <circle class="fill" cx="110" cy="108" r="7"></circle>
-          </svg>
-          <h3>Repeated task sequences</h3>
-          <p>The steps experts perform again and again inside the application. These examples become reusable operating knowledge instead of one-off instructions.</p>
-        </div>
-        <div class="teach-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M48 42h124a14 14 0 0 1 14 14v54a14 14 0 0 1-14 14H72l-24 20v-20H48a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14z"></path>
-            <path class="shape" d="M64 72h88M64 96h56"></path>
-            <circle class="fill" cx="166" cy="72" r="6"></circle>
-          </svg>
-          <h3>Domain vocabulary</h3>
-          <p>Terms, documents, naming conventions, and project language the agent should understand for that tool and discipline.</p>
-        </div>
-        <div class="teach-item">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M76 52l-34 28 34 28M144 52l34 28-34 28M126 34l-32 92"></path>
-            <circle class="fill" cx="110" cy="80" r="9"></circle>
-            <path class="shape" d="M48 124h124"></path>
-          </svg>
-          <h3>Automation hooks</h3>
-          <p>Optional scripts, APIs, file formats, or command paths when the software exposes them. This lets Compass combine screen operation with faster direct automation.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-grid">
-        <div>
-          <h2>How it works.</h2>
-        </div>
-        <div>
-          <p class="muted">
-            You show AgentHub the workflow, package the knowledge around that workflow, and share
-            the resulting agent. The goal is simple: one expert teaches once, then other users can
-            import that agent and benefit from the same software-specific knowledge.
+  <main>
+    <!-- AUDIENCE -->
+    <section id="audience" style="padding:96px 0;" data-screen-label="Who builds agents">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; display:grid; grid-template-columns:minmax(0, 0.8fr) minmax(0, 1.2fr); gap:52px; align-items:start;">
+        <div style="position:sticky; top:100px;">
+          <div style="margin-bottom:14px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">For experts</div>
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:38px; line-height:1.15; letter-spacing:-0.01em;">Who should build specialized agents?</h2>
+          <p style="margin:0; color:#5C5766; font-size:16.5px; line-height:1.65;">
+            The best agents start with people who already know the work: what the software is used for,
+            which steps matter, where mistakes happen, and what a good result looks like.
           </p>
         </div>
-      </div>
-      <div class="flow">
-        <div class="flow-step">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <rect class="shape" x="42" y="32" width="136" height="88" rx="12"></rect>
-            <circle class="shape" cx="96" cy="76" r="24"></circle>
-            <path class="shape" d="M122 94l28 22"></path>
-            <circle class="fill" cx="154" cy="48" r="7"></circle>
-          </svg>
-          <h3>Capture examples</h3>
-          <p>Record the screens, controls, files, and examples that define how the task is done in the real application.</p>
-        </div>
-        <div class="flow-step">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M54 52h112v72H54z"></path>
-            <path class="shape" d="M72 34h76l18 18H54z"></path>
-            <path class="shape" d="M78 78h64M78 100h42"></path>
-            <circle class="fill" cx="154" cy="100" r="8"></circle>
-          </svg>
-          <h3>Package context</h3>
-          <p>Save UI templates, workflow examples, documentation, prompts, and optional automation hooks that guide the agent.</p>
-        </div>
-        <div class="flow-step">
-          <svg class="card-art" viewBox="0 0 220 150" aria-hidden="true">
-            <circle class="shape" cx="62" cy="74" r="22"></circle>
-            <circle class="shape" cx="158" cy="46" r="22"></circle>
-            <circle class="shape" cx="150" cy="112" r="22"></circle>
-            <path class="shape" d="M83 68l54-16M83 82l46 22"></path>
-            <circle class="fill" cx="110" cy="74" r="6"></circle>
-          </svg>
-          <h3>Share and reuse</h3>
-          <p>Export the agent so teammates, customers, or other experts can import it and work with the same specialized knowledge.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:18px;">
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><rect x="32" y="34" width="120" height="76" rx="12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M58 60h68M58 82h46" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M148 56l34-22v88l-34-22" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="182" cy="34" r="7" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Software vendors</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Give users an assistant that understands the workflows inside your product instead of leaving them with generic help text and long manuals.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M40 108h140" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M54 108V54h36v54M100 108V36h36v72M146 108V70h36v38" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="118" cy="28" r="8" fill="currentColor"></circle><path d="M46 124h128" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Engineering teams</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Package internal methods, project standards, and repeated tool sequences so engineers spend less time retracing the same setup steps.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><circle cx="74" cy="58" r="26" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></circle><path d="M50 114a36 36 0 0 1 48 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M122 42h58M122 70h42M122 98h58" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="178" cy="42" r="6" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Expert users</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Turn hard-earned knowledge of a niche application into an agent that can guide others through the same software with more confidence.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M52 48h38a24 24 0 0 1 0 48H52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M168 48h-38a24 24 0 0 0 0 48h38" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M84 72h52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="52" cy="48" r="7" fill="currentColor"></circle><circle cx="168" cy="96" r="7" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Consultants</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Carry repeatable workflows across projects, clients, and specialized desktop tools without starting from scratch each time.</p>
+            </article>
         </div>
       </div>
-      <div class="media-frame">
-        <video controls preload="none" poster="images/thumbnail/agenthub-thumbnail.jpg">
-          <source src="images/anim/compass-agenthub.mov">
-          Your browser cannot play this video. <a href="images/anim/compass-agenthub.mov">Download the AgentHub demo instead.</a>
-        </video>
+    </section>
+
+    <!-- TEACH -->
+    <section id="teach" style="padding:96px 0; background:#F3F1F8; border-top:1px solid rgba(35,32,41,0.06); border-bottom:1px solid rgba(35,32,41,0.06);" data-screen-label="What you teach">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; display:grid; grid-template-columns:minmax(0, 0.8fr) minmax(0, 1.2fr); gap:52px; align-items:start;">
+        <div style="position:sticky; top:100px;">
+          <div style="margin-bottom:14px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">The knowledge</div>
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:38px; line-height:1.15; letter-spacing:-0.01em;">What information do you teach the agent?</h2>
+          <p style="margin:0; color:#5C5766; font-size:16.5px; line-height:1.65;">
+            AgentHub is not about training a new foundation model from scratch. It is about giving
+            Compass the software-specific context it needs: what to look at, what steps to follow,
+            what language to understand, and which automation paths are available.
+          </p>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:18px;">
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><rect x="34" y="30" width="152" height="92" rx="10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M58 58h104M58 86h60" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="158" cy="86" r="10" fill="currentColor"></circle><path d="M150 78l16 16" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Important screens and controls</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Menus, dialogs, buttons, panels, and visual states that matter for the workflow. The agent learns where the work happens and what the screen means.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M46 44h48v34H46zM126 44h48v34h-48zM86 108h48v34H86z" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M94 61h32M150 78l-40 30M86 78l24 30" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="110" cy="108" r="7" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Repeated task sequences</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">The steps experts perform again and again inside the application. These examples become reusable operating knowledge instead of one-off instructions.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M48 42h124a14 14 0 0 1 14 14v54a14 14 0 0 1-14 14H72l-24 20v-20H48a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14z" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M64 72h88M64 96h56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="166" cy="72" r="6" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Domain vocabulary</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Terms, documents, naming conventions, and project language the agent should understand for that tool and discipline.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:13px; padding:28px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:100px; height:68px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M76 52l-34 28 34 28M144 52l34 28-34 28M126 34l-32 92" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="110" cy="80" r="9" fill="currentColor"></circle><path d="M48 124h124" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:20px; line-height:1.25;">Automation hooks</h3>
+              <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Optional scripts, APIs, file formats, or command paths when the software exposes them. This lets Compass combine screen operation with faster direct automation.</p>
+            </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW / FLOW -->
+    <section id="how" style="padding:96px 0;" data-screen-label="How it works">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="max-width:640px; margin:0 0 40px;">
+          <div style="margin-bottom:14px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">How it works</div>
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:38px; line-height:1.15; letter-spacing:-0.01em;">One expert teaches once. Everyone benefits.</h2>
+          <p style="margin:0; color:#5C5766; font-size:17px; line-height:1.65;">
+            You show AgentHub the workflow, package the knowledge around that workflow, and share
+            the resulting agent. Other users can then import it and benefit from the same
+            software-specific knowledge.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:22px; align-items:stretch; padding:34px 36px; margin-bottom:34px; border-radius:20px; background:#26212E; border:1px solid rgba(245,243,248,0.08);">
+          <div style="flex:1 1 0; min-width:190px; display:grid; gap:8px;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">01</span>
+              <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Capture examples</span>
+            </div>
+            <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">Record the screens, controls, files, and examples that define how the task is done in the real application.</p>
+          </div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,248,0.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto; align-self:center;"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+          <div style="flex:1 1 0; min-width:190px; display:grid; gap:8px;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">02</span>
+              <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Package context</span>
+            </div>
+            <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">Save UI templates, workflow examples, documentation, prompts, and optional automation hooks that guide the agent.</p>
+          </div>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,248,0.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto; align-self:center;"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+          <div style="flex:1 1 0; min-width:190px; display:grid; gap:8px;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">03</span>
+              <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Share and reuse</span>
+            </div>
+            <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">Export the agent so teammates, customers, or other experts can import it and work with the same specialized knowledge.</p>
+          </div>
+        </div>
+
+        <div style="max-width:920px; margin:0 auto; overflow:hidden; border:1px solid #E7E4EE; border-radius:18px; background:#161320; box-shadow:0 30px 70px rgba(35,32,41,0.18);">
+          <video controls preload="metadata" playsinline poster="images/thumbnail/agenthub-thumbnail.jpg" style="display:block; width:100%; height:auto; max-width:100%; background:#161320;">
+            <source src="images/anim/compass-agenthub.mp4" type="video/mp4">
+            <source src="images/anim/compass-agenthub.mov" type="video/quicktime">
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" style="padding:20px 0 110px;" data-screen-label="Contact">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="padding:64px 40px; border-radius:24px; background:#F3F1F8; border:1px solid #E2DDEC; text-align:center;">
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:38px; line-height:1.15; letter-spacing:-0.01em;">Still hard to know how to do it?</h2>
+          <p style="margin:0 auto 30px; max-width:640px; color:#5C5766; font-size:16.5px; line-height:1.65;">
+            Do not worry. Bring your domain knowledge, and we can bring the agentic system and
+            implementation experience. Together we can tune Compass for your software, your workflow,
+            and the way your users actually work.
+          </p>
+          <a href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener" style="min-height:50px; display:inline-flex; align-items:center; justify-content:center; padding:14px 26px; border-radius:12px; background:#8A55C9; color:#fff; font-size:15.5px; font-weight:600; line-height:1; text-decoration:none; box-shadow:0 10px 24px rgba(138,85,201,0.25);" style-hover="background:#7845B8;">Contact us</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="padding:36px 0 44px; border-top:1px solid rgba(35,32,41,0.08); color:#8B8694; font-size:13.5px;" data-screen-label="Footer">
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+      <a href="index.html" style="display:inline-flex; align-items:center; gap:10px; color:#6E6878; font-size:15px; font-weight:700; text-decoration:none;">
+        <svg viewBox="0 0 100 100" aria-hidden="true" style="width:26px; height:26px; display:block;">
+          <defs><mask id="footer-gap-ah"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
+          <circle cx="50" cy="50" r="29" fill="none" stroke="#6E6878" stroke-width="8" mask="url(#footer-gap-ah)"></circle>
+          <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
+        </svg>
+        Compass
+      </a>
+      <div style="display:flex; flex-wrap:wrap; gap:16px;">
+        <span>Copyright 2026 Compass</span>
+        <a href="https://github.com/compass-agent/compass/blob/main/LICENSE" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">MIT License</a>
+        <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">GitHub</a>
       </div>
     </div>
-  </section>
-
-  <section class="section alt">
-    <div class="container contact">
-      <h2>Still hard to know how to do it?</h2>
-      <p>
-        Do not worry. Bring your domain knowledge, and we can bring the agentic system and
-        implementation experience. Together we can tune Compass for your software, your workflow,
-        and the way your users actually work.
-      </p>
-      <div class="cta-row" style="justify-content:center">
-        <a class="btn btn-primary" href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener">Contact us</a>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer class="footer">
-  <div class="container footer-inner">
-    <a class="brand" href="index.html">
-      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-        <defs><mask id="footer-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#footer-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
-      </svg>
-      Compass
-    </a>
-    <div class="footer-links">
-      <span>Copyright <span id="year"></span> Compass</span>
-      <a href="https://github.com/compass-agent/compass/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-      <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </div>
-</footer>
-
-<script>
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
+  </footer>
+</div>
 </body>
 </html>

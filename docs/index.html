@@ -1,1224 +1,362 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Compass - AI assistant for engineering software</title>
-<meta name="description" content="Compass is an open-source Windows desktop AI assistant for engineering software. It helps operate complex desktop tools, automate repeated workflows, and turn domain knowledge into reusable agents.">
+<title>Compass - AI operator for engineering software</title>
+<meta name="description" content="Compass is a Windows desktop AI assistant that operates engineering software like SAP2000, Ansys, and AutoCAD.">
 <link rel="icon" type="image/svg+xml" href="images/logo/favicon.svg?v=5">
 <link rel="alternate icon" type="image/png" sizes="32x32" href="images/logo/favicon-32.png?v=5">
-<meta property="og:title" content="Compass - AI assistant for engineering software">
-<meta property="og:description" content="A Windows desktop AI assistant for complex engineering software.">
-<meta property="og:image" content="https://compass-agent.github.io/compass/images/logo/og-card.png">
-<meta property="og:url" content="https://compass-agent.github.io/compass/">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<style>
-  :root {
-    --bg: #0c0e12;
-    --bg-soft: #10151c;
-    --panel: #171d25;
-    --panel-2: #1d2531;
-    --line: #2a3441;
-    --line-soft: rgba(255, 255, 255, 0.1);
-    --text: #f7f8fa;
-    --muted: #bac3cf;
-    --faint: #818b98;
-    --violet: #a873e8;
-    --violet-strong: #9255d7;
-    --teal: #35d5c4;
-    --green: #80d88a;
-    --radius: 8px;
-    --max: 1100px;
-    --logo-ring: #f7f8fa;
-  }
-
-  :root[data-theme="light"] {
-    --bg: #ffffff;
-    --bg-soft: #f5f7fa;
-    --panel: #f8fafc;
-    --panel-2: #eef2f7;
-    --line: #dfe4ec;
-    --line-soft: rgba(0, 0, 0, 0.09);
-    --text: #131820;
-    --muted: #4a5566;
-    --faint: #6b7480;
-    --violet: #7c3aed;
-    --violet-strong: #6d28d9;
-    --teal: #0e9384;
-    --green: #16a34a;
-    --logo-ring: #454c5a;
-  }
-
-  :root[data-theme="light"] .nav { background: rgba(255, 255, 255, 0.9); }
-  :root[data-theme="light"] .github-link img { filter: none; }
-
-  /* Light-mode hero: white base + faint original (non-inverted) blueprint
-     + white fade so the now-dark text stays readable. */
-  :root[data-theme="light"] .hero-bg { background: #eef3fa; }
-  :root[data-theme="light"] .hero-bg img {
-    filter: saturate(1.02) contrast(1.02) brightness(1.02);
-    opacity: 0.5;
-  }
-  :root[data-theme="light"] .hero::before {
-    background:
-      linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.96) 34%, rgba(255, 255, 255, 0.74) 58%, rgba(255, 255, 255, 0.32) 100%),
-      linear-gradient(0deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.58) 100%);
-  }
-
-  .theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    transition: color 120ms ease, border-color 120ms ease;
-  }
-  .theme-toggle:hover { color: var(--text); border-color: var(--faint); }
-  .theme-toggle svg { width: 17px; height: 17px; }
-  .theme-toggle .moon { display: none; }
-  :root[data-theme="light"] .theme-toggle .sun { display: none; }
-  :root[data-theme="light"] .theme-toggle .moon { display: block; }
-
-  * { box-sizing: border-box; }
-
-  html {
-    scroll-behavior: smooth;
-    background: var(--bg);
-  }
-
-  body {
-    margin: 0;
-    color: var(--text);
-    background: var(--bg);
-    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  a:hover { text-decoration: underline; }
-
-  img, video, svg {
-    display: block;
-    max-width: 100%;
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .container {
-    width: min(var(--max), calc(100% - 48px));
-    margin: 0 auto;
-  }
-
-  .nav {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: rgba(12, 14, 18, 0.88);
-    border-bottom: 1px solid var(--line-soft);
-    backdrop-filter: blur(14px);
-  }
-
-  .nav-inner {
-    min-height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-  }
-
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text);
-    font-size: 18px;
-    font-weight: 750;
-    white-space: nowrap;
-  }
-
-  .brand:hover { text-decoration: none; }
-
-  .brand-mark {
-    width: 28px;
-    height: 28px;
-  }
-
-  .brand:hover .brand-dot {
-    transform-box: view-box;
-    transform-origin: 50% 50%;
-    animation: bearing 700ms ease;
-  }
-
-  @keyframes bearing {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .brand:hover .brand-dot { animation: none; }
-  }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 650;
-  }
-
-  .nav-links a:hover {
-    color: var(--text);
-    text-decoration: none;
-  }
-
-  .github-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .github-link img {
-    width: 18px;
-    height: 18px;
-    filter: invert(1);
-    opacity: 0.86;
-  }
-
-  .hero {
-    position: relative;
-    min-height: 76svh;
-    display: grid;
-    align-items: center;
-    overflow: hidden;
-    border-bottom: 1px solid var(--line-soft);
-  }
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    background: #020507;
-  }
-
-  .hero-bg img {
-    width: 118%;
-    height: 100%;
-    max-width: none;
-    object-fit: cover;
-    object-position: right center;
-    opacity: 0.56;
-    filter: invert(1) hue-rotate(180deg) saturate(0.86) contrast(0.86) brightness(0.48);
-    transform: translateX(9%);
-  }
-
-  .hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(90deg, rgba(12, 14, 18, 1) 0%, rgba(12, 14, 18, 0.98) 34%, rgba(12, 14, 18, 0.82) 58%, rgba(12, 14, 18, 0.5) 100%),
-      linear-gradient(0deg, rgba(12, 14, 18, 0.8) 0%, rgba(12, 14, 18, 0.26) 45%, rgba(12, 14, 18, 0.64) 100%);
-  }
-
-  .hero-content {
-    position: relative;
-    padding: 84px 0 68px;
-    max-width: 720px;
-  }
-
-  .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    min-height: 30px;
-    padding: 6px 11px;
-    margin-bottom: 22px;
-    border: 1px solid rgba(53, 213, 196, 0.34);
-    border-radius: 999px;
-    background: rgba(53, 213, 196, 0.08);
-    color: #c8f4ee;
-    font-size: 13px;
-    font-weight: 750;
-  }
-
-  .eyebrow::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: var(--green);
-  }
-
-  h1, h2, h3, p { margin-top: 0; }
-
-  h1 {
-    max-width: 690px;
-    margin-bottom: 22px;
-    font-size: 66px;
-    line-height: 1.03;
-    letter-spacing: 0;
-  }
-
-  .lead {
-    max-width: 650px;
-    margin-bottom: 30px;
-    color: var(--muted);
-    font-size: 20px;
-    line-height: 1.55;
-  }
-
-  .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .btn {
-    min-height: 46px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border: 1px solid transparent;
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 15px;
-    font-weight: 750;
-    line-height: 1;
-    cursor: pointer;
-    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
-  }
-
-  .btn:hover { text-decoration: none; }
-
-  .btn-primary { background: var(--violet-strong); color: #fff; }
-  .btn-primary:hover { background: #a568e6; }
-
-  .btn-secondary {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.11);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  .hero-note {
-    display: inline-flex;
-    align-items: center;
-    color: var(--faint);
-    font-size: 13px;
-  }
-
-  .hero-points {
-    display: grid;
-    gap: 10px;
-    margin: 0 0 28px;
-    padding: 0;
-    list-style: none;
-    color: var(--text);
-    font-size: 17px;
-    font-weight: 650;
-  }
-
-  .hero-points li {
-    display: flex;
-    align-items: flex-start;
-    gap: 11px;
-  }
-
-  .hero-points li::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    flex: 0 0 auto;
-    margin-top: 10px;
-    border-radius: 999px;
-    background: var(--green);
-    box-shadow: 0 0 14px rgba(128, 216, 138, 0.48);
-  }
-
-  .section {
-    padding: 78px 0;
-  }
-
-  .section.alt {
-    background: var(--bg-soft);
-    border-top: 1px solid var(--line-soft);
-    border-bottom: 1px solid var(--line-soft);
-  }
-
-  .section.usecases {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .section.usecases::before {
-    content: "";
-    position: absolute;
-    inset: 12% 0 auto 0;
-    height: 360px;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 12% 30%, rgba(53, 213, 196, 0.08), transparent 28%),
-      radial-gradient(circle at 82% 55%, rgba(168, 115, 232, 0.1), transparent 30%);
-  }
-
-  .section.usecases > * {
-    position: relative;
-  }
-
-  .section-head {
-    max-width: 740px;
-    margin-bottom: 30px;
-  }
-
-  .section-head.compact {
-    max-width: 620px;
-    margin-bottom: 20px;
-  }
-
-  .section-head.compact h2 {
-    margin-bottom: 6px;
-    font-size: 34px;
-  }
-
-  .section-head.compact p {
-    margin-bottom: 0;
-  }
-
-  .section-head.center {
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-  }
-
-  .rail-controls {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: -10px;
-    margin-bottom: 12px;
-  }
-
-  .rail-btn {
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    font-size: 23px;
-    line-height: 1;
-    cursor: pointer;
-  }
-
-  .rail-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.28);
-  }
-
-  .kicker {
-    margin-bottom: 10px;
-    color: var(--teal);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  h2 {
-    margin-bottom: 12px;
-    color: var(--text);
-    font-size: 38px;
-    line-height: 1.18;
-    letter-spacing: 0;
-  }
-
-  .section-head p,
-  .muted {
-    color: var(--muted);
-  }
-
-  .usecase-rail {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 8px 0;
-    scroll-snap-type: x proximity;
-    scrollbar-color: var(--line) transparent;
-  }
-
-  .usecase-track {
-    display: flex;
-    gap: 24px;
-    width: max-content;
-    padding: 0 calc((100vw - min(var(--max), calc(100vw - 48px))) / 2);
-  }
-
-  .usecase-card {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    width: 430px;
-    min-height: 255px;
-    flex: 0 0 auto;
-    scroll-snap-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 34px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(circle at 80% 20%, rgba(168, 115, 232, 0.2), transparent 38%),
-      linear-gradient(180deg, var(--panel-2), var(--panel));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .usecase-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    opacity: 0.22;
-    background-image:
-      linear-gradient(var(--line-soft) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-    background-size: 28px 28px;
-    mask-image: linear-gradient(120deg, transparent 0%, black 42%, black 100%);
-  }
-
-  .usecase-card > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .usecase-art {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    z-index: -1;
-    width: 190px;
-    height: 126px;
-    color: var(--violet);
-    opacity: 0.32;
-  }
-
-  .usecase-art .line,
-  .usecase-art .shape {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .usecase-art .fill {
-    fill: currentColor;
-  }
-
-  :root[data-theme="light"] .usecase-art { opacity: 0.22; }
-  :root[data-theme="light"] .usecase-card {
-    background:
-      radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.12), transparent 38%),
-      linear-gradient(180deg, #ffffff, var(--panel));
-  }
-
-  .usecase-card h3 {
-    margin-bottom: 18px;
-    font-size: 22px;
-    line-height: 1.28;
-  }
-
-  .usecase-card p {
-    margin-bottom: 0;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.6;
-  }
-
-  .software-rail {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 8px 0;
-    scroll-snap-type: x proximity;
-    scrollbar-color: var(--line) transparent;
-  }
-
-  .software-track {
-    display: flex;
-    gap: 16px;
-    width: max-content;
-    padding: 0 calc((100vw - min(var(--max), calc(100vw - 48px))) / 2);
-  }
-
-  .software-card {
-    width: 240px;
-    min-height: 146px;
-    flex: 0 0 auto;
-    display: grid;
-    align-content: start;
-    gap: 12px;
-    scroll-snap-align: center;
-    padding: 20px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.035);
-  }
-
-  .software-logo {
-    width: 138px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 10px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.92);
-  }
-
-  .software-logo img {
-    max-width: 118px;
-    max-height: 34px;
-    object-fit: contain;
-  }
-
-  .software-card strong {
-    color: var(--text);
-    font-size: 19px;
-    line-height: 1.2;
-  }
-
-  .software-card span {
-    color: var(--faint);
-    font-size: 13px;
-    line-height: 1.35;
-  }
-
-  .demo-wrap {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .media-frame {
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: #050608;
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
-  }
-
-  .media-frame video,
-  .media-frame img {
-    width: 100%;
-    height: auto;
-    background: #050608;
-  }
-
-  .download-layout {
-    max-width: 860px;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .download-card {
-    margin-top: 26px;
-  }
-
-  .release-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 18px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .note {
-    margin-top: 18px;
-    margin-bottom: 0;
-    color: var(--faint);
-    font-size: 13px;
-  }
-
-  .requirements {
-    margin: 18px auto 0;
-    max-width: 680px;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.7;
-  }
-
-  .footer {
-    padding: 34px 0 42px;
-    border-top: 1px solid var(--line-soft);
-    color: var(--faint);
-    font-size: 13px;
-  }
-
-  .footer-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-
-  .footer .brand {
-    color: var(--muted);
-    font-size: 15px;
-  }
-
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-
-  @media (max-width: 960px) {
-    h1 { font-size: 52px; }
-    h2 { font-size: 32px; }
-    .download-layout { max-width: 720px; }
-  }
-
-  @media (max-width: 720px) {
-    .container { width: min(100% - 32px, var(--max)); }
-    .nav-inner { min-height: 58px; }
-    .nav-links { gap: 14px; }
-    .nav-links .optional { display: none; }
-    .rail-controls { justify-content: center; margin-top: -4px; }
-    .hero { min-height: 74svh; }
-    .hero-bg img {
-      width: 130%;
-      object-position: right center;
-      opacity: 0.46;
-      filter: invert(1) hue-rotate(180deg) saturate(0.84) contrast(0.84) brightness(0.42);
-      transform: translateX(10%);
+<meta property="og:title" content="Compass - AI operator for engineering software">
+<meta property="og:description" content="Compass is a Windows desktop AI assistant that operates engineering software like SAP2000, Ansys, and AutoCAD.">
+<meta property="og:image" content="https://compass-agent.github.io/compass/images/thumbnail/compass-thumbnail.png">
+<script src="./support.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    html { scroll-behavior: smooth; }
+    .brand-link:hover .brand-orbit {
+      transform-box: view-box;
+      transform-origin: 50px 50px;
+      animation: brand-bearing 700ms ease;
     }
-    .hero::before {
-      background:
-        linear-gradient(90deg, rgba(12, 14, 18, 1) 0%, rgba(12, 14, 18, 0.98) 74%, rgba(12, 14, 18, 0.68) 100%),
-        linear-gradient(0deg, rgba(12, 14, 18, 0.82) 0%, rgba(12, 14, 18, 0.34) 44%, rgba(12, 14, 18, 0.7) 100%);
+    @keyframes brand-bearing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
-    .hero-content { padding: 62px 0 54px; }
-    h1 {
-      font-size: 40px;
-      line-height: 1.08;
+    @media (prefers-reduced-motion: reduce) {
+      .brand-link:hover .brand-orbit { animation: none; }
     }
-    .lead { font-size: 17px; }
-    .hero-points { font-size: 15px; }
-    .section { padding: 62px 0; }
-    .btn { width: 100%; }
-    .usecase-card {
-      width: 350px;
-      min-height: 235px;
-      padding: 28px;
-    }
-    .usecase-art {
-      width: 154px;
-      height: 104px;
-    }
-    .software-card {
-      width: 196px;
-      min-height: 134px;
-      padding: 18px;
-    }
-    .software-track,
-    .usecase-track {
-      padding: 0 16px;
-    }
-  }
-</style>
+  </style>
 </head>
 <body>
-<script>
-  (function () {
-    var root = document.documentElement;
-    var saved = null;
-    try { saved = localStorage.getItem('theme'); } catch (e) {}
-    var initial = saved || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    function apply(t) {
-      root.setAttribute('data-theme', t);
-      try { localStorage.setItem('theme', t); } catch (e) {}
-      var btns = document.querySelectorAll('.theme-toggle');
-      for (var i = 0; i < btns.length; i++) { btns[i].setAttribute('aria-pressed', String(t === 'light')); }
-    }
-    root.setAttribute('data-theme', initial);
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest && e.target.closest('.theme-toggle');
-      if (!btn) return;
-      apply(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-    });
-    document.addEventListener('DOMContentLoaded', function () { apply(root.getAttribute('data-theme')); });
-  })();
-</script>
-<nav class="nav" aria-label="Primary navigation">
-  <div class="container nav-inner">
-    <a class="brand" href="#top" aria-label="Compass home">
-      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-        <defs><mask id="nav-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#nav-gap)"></circle>
-        <circle class="brand-dot" cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
-      </svg>
-      Compass
-    </a>
-    <div class="nav-links">
-      <a href="#top">Home</a>
-      <a href="agenthub.html">AgentHub</a>
-      <a class="github-link" href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" aria-label="Compass on GitHub">
-        <img src="images/logo/github-mark.svg" width="18" height="18" alt="">
-        <span class="optional">GitHub</span>
-      </a>
-      <button class="theme-toggle" type="button" aria-label="Toggle light and dark theme" aria-pressed="false">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
-      </button>
-    </div>
-  </div>
-</nav>
+<div style="background:#FAF9F7; color:#232029; font-family:'Instrument Sans', 'Segoe UI', system-ui, sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;">
 
-<header class="hero" id="top">
-  <div class="hero-bg" aria-hidden="true">
-    <img src="images/hero/blueprints-3.jpg" alt="">
-  </div>
-  <div class="container">
-    <div class="hero-content">
-      <h1>Compass</h1>
-      <p class="lead">
-        Compass is a stand-alone Windows desktop app you can chat with. It can operate
-        your engineering software like SAP2000, Ansys, or AutoCAD.
-      </p>
-      <ul class="hero-points" aria-label="Compass benefits">
-        <li>Automate repetitive work.</li>
-        <li>Reduce the learning curve.</li>
-        <li>Less time on software, more time on real engineering.</li>
-      </ul>
-      <div class="cta-row">
-        <a class="btn btn-primary" id="dl-hero" href="#download">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Download Compass with SAP2000 agent
-        </a>
-        <a class="btn btn-secondary" href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener">Contact us for other software</a>
-      </div>
-      <div class="hero-note">MIT-licensed</div>
-    </div>
-  </div>
-</header>
-
-<main>
-
-  <section class="section" id="software">
-    <div class="container">
-      <div class="section-head center">
-        <h2>For Windows engineering software.</h2>
-        <p>Compass is designed for desktop tools where real work happens through a GUI, files, scripts, or vendor automation hooks.</p>
-      </div>
-      <div class="rail-controls" aria-label="Software card navigation">
-        <button class="rail-btn" type="button" data-scroll-target="#software-rail" data-scroll-dir="-1" aria-label="Scroll software left">&lsaquo;</button>
-        <button class="rail-btn" type="button" data-scroll-target="#software-rail" data-scroll-dir="1" aria-label="Scroll software right">&rsaquo;</button>
-      </div>
-    </div>
-    <div class="software-rail" id="software-rail" aria-label="Examples of software Compass can support">
-      <div class="software-track">
-        <article class="software-card">
-          <div class="software-logo"><img src="images/brand/Ansys_logo_(2019).svg" alt="Ansys logo"></div>
-          <strong>Ansys</strong>
-          <span>Simulation workflows</span>
-        </article>
-        <article class="software-card">
-          <div class="software-logo"><img src="images/brand/FreeCAD-logo.svg" alt="FreeCAD logo"></div>
-          <strong>FreeCAD</strong>
-          <span>CAD and modeling</span>
-        </article>
-        <article class="software-card">
-          <div class="software-logo"><img src="images/brand/OpenFOAM_logo.svg" alt="OpenFOAM logo"></div>
-          <strong>OpenFOAM</strong>
-          <span>CFD workflows</span>
-        </article>
-        <article class="software-card">
-          <div class="software-logo"><img src="images/brand/sap2000-vector-logo.svg" alt="SAP2000 logo"></div>
-          <strong>SAP2000</strong>
-          <span>Structural analysis</span>
-        </article>
-        <article class="software-card">
-          <div class="software-logo"><img src="images/brand/logo-csiamerica.svg" alt="CSI America logo"></div>
-          <strong>ETABS</strong>
-          <span>Building design</span>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section usecases" id="use-cases">
-    <div class="container">
-      <div class="section-head center compact">
-        <h2>Use cases</h2>
-        <p>Small checks, design studies, and full project workflows.</p>
-      </div>
-      <div class="rail-controls" aria-label="Use case card navigation">
-        <button class="rail-btn" type="button" data-scroll-target="#usecase-rail" data-scroll-dir="-1" aria-label="Scroll use cases left">&lsaquo;</button>
-        <button class="rail-btn" type="button" data-scroll-target="#usecase-rail" data-scroll-dir="1" aria-label="Scroll use cases right">&rsaquo;</button>
-      </div>
-    </div>
-    <div class="usecase-rail" id="usecase-rail" aria-label="Examples of Compass use cases">
-      <div class="usecase-track">
-        <article class="usecase-card">
-          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M28 116h164"></path>
-            <path class="shape" d="M38 98l35-34 31 25 43-54 30 24"></path>
-            <circle class="fill" cx="73" cy="64" r="7"></circle>
-            <circle class="fill" cx="147" cy="35" r="7"></circle>
-            <path class="shape" d="M42 28h46M42 46h28"></path>
-          </svg>
-          <h3>Analyze results and reports</h3>
-          <p>Review simulation output, warnings, checks, and result tables, then turn them into a clear engineering report.</p>
-        </article>
-        <article class="usecase-card">
-          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
-            <rect class="shape" x="32" y="30" width="156" height="92" rx="10"></rect>
-            <path class="shape" d="M58 58h104M58 86h104"></path>
-            <circle class="fill" cx="92" cy="58" r="8"></circle>
-            <circle class="fill" cx="138" cy="86" r="8"></circle>
-            <path class="shape" d="M72 122v18M148 122v18"></path>
-          </svg>
-          <h3>Prepare model setup</h3>
-          <p>Handle repeated assignments, settings, load definitions, and setup checks before analysis.</p>
-        </article>
-        <article class="usecase-card">
-          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M110 30v32M110 62L62 104M110 62l48 42"></path>
-            <rect class="shape" x="78" y="16" width="64" height="28" rx="7"></rect>
-            <rect class="shape" x="30" y="104" width="64" height="28" rx="7"></rect>
-            <rect class="shape" x="126" y="104" width="64" height="28" rx="7"></rect>
-            <circle class="fill" cx="110" cy="62" r="7"></circle>
-          </svg>
-          <h3>Compare design options</h3>
-          <p>Study alternatives in geometry, materials, member sizes, parameters, or analysis settings.</p>
-        </article>
-        <article class="usecase-card">
-          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M58 76a52 52 0 0 1 92-33"></path>
-            <path class="shape" d="M150 43h-30M150 43v-30"></path>
-            <path class="shape" d="M162 76a52 52 0 0 1-92 33"></path>
-            <path class="shape" d="M70 109h30M70 109v30"></path>
-            <circle class="fill" cx="110" cy="76" r="12"></circle>
-          </svg>
-          <h3>Run design optimization</h3>
-          <p>Iterate on an initial geometry and evaluate changes across performance, weight, and constructability.</p>
-        </article>
-        <article class="usecase-card">
-          <svg class="usecase-art" viewBox="0 0 220 150" aria-hidden="true">
-            <path class="shape" d="M46 42h86a20 20 0 0 1 0 40H92a20 20 0 0 0 0 40h82"></path>
-            <circle class="fill" cx="46" cy="42" r="8"></circle>
-            <circle class="fill" cx="174" cy="122" r="8"></circle>
-            <path class="shape" d="M142 26l22 16-22 16"></path>
-          </svg>
-          <h3>Guide complex software</h3>
-          <p>Help engineers find commands, understand workflows, and avoid the setup mistakes that slow projects down.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section alt" id="demo">
-    <div class="container">
-      <div class="section-head center">
-        <h2>Watch Compass Agent for SAP2000.</h2>
-        <p>Performing an end-to-end analysis for a parking steel deck frame structure.</p>
-      </div>
-      <div class="demo-wrap media-frame">
-        <video id="sap-demo-video" controls preload="none" poster="images/thumbnail/compass-thumbnail.png">
-          <source src="images/anim/Compass-HeroPage.mov">
-          Your browser cannot play this video. <a href="images/anim/Compass-HeroPage.mov">Download the demo instead.</a>
-        </video>
-      </div>
-    </div>
-  </section>
-
-  <section class="section how" id="how">
-    <style>
-      .how { padding: 66px 0 58px; }
-      .how-grid { width: min(1500px, calc(100% - 64px)); display: grid; grid-template-columns: 1fr; gap: 34px; align-items: center; }
-      @media (min-width: 940px) {
-        .how-grid {
-          grid-template-columns: minmax(0, 820px) minmax(0, 620px);
-          justify-content: space-between;
-          gap: 40px;
-        }
-      }
-      .how-copy h2 { margin-bottom: 14px; }
-      .how-lead { color: var(--muted); font-size: 18px; line-height: 1.62; max-width: 820px; margin: 0 0 22px; }
-      .how-actions { display: grid; gap: 0; max-width: 820px; border-top: 1px solid var(--line-soft); }
-      .how-action { display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
-      .how-action-icon { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--teal); }
-      .how-action-icon svg { width: 18px; height: 18px; }
-      .how-action h3 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
-      .how-action p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
-      .how-action a,
-      .how-lead a,
-      .how svg a {
-        color: var(--text);
-        text-decoration: underline;
-        text-decoration-color: rgba(168, 115, 232, 0.78);
-        text-decoration-thickness: 1.5px;
-        text-underline-offset: 4px;
-        transition: color 120ms ease, text-decoration-color 120ms ease;
-      }
-      .how-action a:hover,
-      .how-lead a:hover,
-      .how svg a:hover {
-        color: var(--violet);
-        text-decoration-color: var(--violet);
-      }
-      .how-foot { color: var(--faint); font-size: 14px; line-height: 1.6; max-width: 820px; margin: 18px 0 0; }
-      .how-foot a { color: var(--violet); font-weight: 650; }
-      .how-figure { margin: 0; justify-self: start; }
-      .how-figure svg { width: min(100%, 620px); height: auto; margin-left: 0; overflow: visible; }
-      .how .node-label { font: 800 25px "Segoe UI", system-ui, sans-serif; fill: var(--text); }
-      .how .small-label { font: 700 17px "Segoe UI", system-ui, sans-serif; fill: var(--muted); }
-      .how .edge-label { font: 800 18px "Segoe UI", system-ui, sans-serif; fill: var(--muted); }
-      .how .edge { fill: none; stroke: var(--faint); stroke-width: 3.4; stroke-linecap: round; }
-      .how .edge-soft { fill: none; stroke: var(--line); stroke-width: 1.6; stroke-dasharray: 8 12; opacity: 0.62; }
-      .how .ic { fill: none; stroke: var(--text); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-      .how .dot { fill: var(--violet); }
-      .how .agent-ring { fill: none; stroke: var(--text); stroke-width: 11; }
-    </style>
-    <div class="container how-grid">
-      <div class="how-copy">
-        <h2>How Compass works</h2>
-        <p class="how-lead">Compass is a <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">ReAct-style</a> desktop agent: it reasons about the goal, acts inside the target software, observes what changed, and continues. The important part is that it can choose the right control surface for the job, not only chat about it.</p>
-        <div class="how-actions">
-          <div class="how-action">
-            <span class="how-action-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
-            </span>
-            <div>
-              <h3>Vision-grounded <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer use</a></h3>
-              <p>It reads the screen through application-specific visual context, then moves the mouse and types against real controls rather than guessing from raw pixels.</p>
-            </div>
-          </div>
-          <div class="how-action">
-            <span class="how-action-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M14 4l-4 16"></path></svg>
-            </span>
-            <div>
-              <h3>Native scripting when available</h3>
-              <p>For software such as SAP2000, it can call <a href="https://learn.microsoft.com/en-us/windows/win32/com/the-component-object-model" target="_blank" rel="noopener">COM automation</a> through Python <a href="https://pypi.org/project/comtypes/" target="_blank" rel="noopener">comtypes</a>, using repeatable scripts for operations that should not depend on clicks.</p>
-            </div>
-          </div>
-          <div class="how-action">
-            <span class="how-action-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path><path d="M14 2v5h5M8 13h8M8 17h6"></path></svg>
-            </span>
-            <div>
-              <h3>Workflow knowledge that can be reused</h3>
-              <p>Prompts, screen templates, documentation, scripts, and project conventions can be captured so the agent gets deeper for a specific tool or team.</p>
-            </div>
-          </div>
-        </div>
-        <p class="how-foot">That is the role of <a href="agenthub.html">AgentHub</a>: turning domain and product knowledge into specialized agents for complex desktop software.</p>
-      </div>
-      <div class="how-figure">
-        <svg viewBox="110 60 625 455" role="img" aria-label="Triangle diagram: user, Compass agent, and engineering software connected by prompt, GUI, computer use, and scripting.">
-          <defs>
-            <marker id="how-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-              <path d="M0 0 L10 5 L0 10 z" fill="var(--faint)"></path>
-            </marker>
-            <mask id="how-agent-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask>
-          </defs>
-
-          <path class="edge-soft" d="M166 170 L594 170 L380 386 Z"></path>
-          <path class="edge" d="M204 152 C306 94, 454 94, 556 152" marker-end="url(#how-arrow)"></path>
-          <path class="edge" d="M166 226 C218 314, 292 372, 340 388" marker-end="url(#how-arrow)"></path>
-          <path class="edge" d="M418 380 C498 338, 546 272, 572 218" marker-end="url(#how-arrow)"></path>
-
-          <g transform="translate(380 100)">
-            <circle class="dot" cx="-23" cy="0" r="5"></circle>
-            <text class="edge-label" x="-4" y="6">GUI</text>
-          </g>
-
-          <g transform="translate(240 312)">
-            <circle class="dot" cx="-22" cy="0" r="5"></circle>
-            <text class="edge-label" x="-2" y="6">Prompt</text>
-          </g>
-
-          <g transform="translate(500 316)">
-            <circle class="dot" cx="-22" cy="-18" r="5"></circle>
-            <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener"><text class="edge-label" x="0" y="-12">Computer use</text></a>
-            <circle class="dot" cx="-22" cy="22" r="5"></circle>
-            <a href="https://pypi.org/project/comtypes/" target="_blank" rel="noopener"><text class="edge-label" x="0" y="28">COM / comtypes scripting</text></a>
-          </g>
-
-          <g transform="translate(166 170)">
-            <circle class="ic" cx="0" cy="-22" r="19"></circle>
-            <path class="ic" d="M-36 42a36 36 0 0 1 72 0"></path>
-            <text class="node-label" x="-28" y="98">User</text>
-          </g>
-
-          <g transform="translate(594 170)">
-            <rect class="ic" x="-38" y="-42" width="76" height="54" rx="8"></rect>
-            <line class="ic" x1="0" y1="12" x2="0" y2="30"></line>
-            <line class="ic" x1="-24" y1="30" x2="24" y2="30"></line>
-            <path class="ic" d="M-18 -17h36M-18 1h26"></path>
-            <text class="node-label" x="-126" y="98">Engineering software</text>
-          </g>
-
-          <g transform="translate(380 386)">
-            <svg x="-44" y="-50" width="88" height="88" viewBox="0 0 100 100" overflow="visible">
-              <circle class="agent-ring" cx="50" cy="50" r="29" mask="url(#how-agent-gap)"></circle>
-              <circle class="dot" cx="73.3" cy="26.7" r="13"></circle>
-            </svg>
-            <text class="node-label" x="-94" y="88">Compass agent</text>
-            <text class="small-label" x="-74" y="114">reason / act / observe</text>
+  <!-- NAV -->
+  <nav style="position:sticky; top:0; z-index:30; background:rgba(250,249,247,0.88); border-bottom:1px solid rgba(35,32,41,0.08); backdrop-filter:blur(14px);" data-screen-label="Nav">
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:24px;">
+      <a class="brand-link" href="#top" style="display:inline-flex; align-items:center; gap:10px; color:#232029; font-size:18px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; text-decoration:none;">
+        <svg viewBox="0 0 100 100" aria-hidden="true" style="width:28px; height:28px; display:block;">
+          <circle cx="50" cy="50" r="29" fill="none" stroke="#232029" stroke-width="8"></circle>
+          <g class="brand-orbit">
+            <circle cx="73.3" cy="26.7" r="19.5" fill="#FAF9F7"></circle>
+            <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
           </g>
         </svg>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="download">
-    <div class="container download-layout">
-      <div>
-        <h2>Download Compass.</h2>
-        <p class="requirements">The current Windows release comes preloaded with the SAP2000 agent. For other engineering software or workflows, <a href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener">contact us</a>.</p>
-      </div>
-      <div class="download-card">
-        <a class="btn btn-primary" id="dl-btn" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span id="dl-btn-text">See GitHub Releases</span>
+        Compass
+      </a>
+      <div style="display:flex; align-items:center; gap:26px; color:#6E6878; font-size:14.5px; font-weight:600;">
+        <a href="#top" style="color:inherit; text-decoration:none;" style-hover="color:#232029;">Home</a>
+        <a href="agenthub.html" style="color:inherit; text-decoration:none;" style-hover="color:#232029;">AgentHub</a>
+        <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:8px; color:inherit; text-decoration:none;" style-hover="color:#232029;">
+          <img src="images/logo/github-mark.svg" width="17" height="17" alt="" style="display:block; opacity:0.75;">
+          <span>GitHub</span>
         </a>
-        <div class="release-links">
-          <a href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">All releases</a>
-          <a id="dl-notes" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener">Release notes</a>
-        </div>
-        <p class="note" id="dl-note">
-          The first Windows installer has not been published yet. After the first release, this button will update automatically.
-        </p>
+        <a href="#download" style="display:inline-flex; align-items:center; padding:9px 16px; border-radius:10px; background:#232029; color:#FAF9F7; font-size:14px; font-weight:600; text-decoration:none;" style-hover="background:#34303D;">Download</a>
       </div>
     </div>
-  </section>
-</main>
+  </nav>
 
-<footer class="footer">
-  <div class="container footer-inner">
-    <a class="brand" href="#top" aria-label="Compass home">
-      <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-        <defs><mask id="footer-gap"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
-        <circle cx="50" cy="50" r="29" fill="none" stroke="var(--logo-ring)" stroke-width="8" mask="url(#footer-gap)"></circle>
-        <circle cx="73.3" cy="26.7" r="13" fill="var(--violet)"></circle>
-      </svg>
-      Compass
-    </a>
-    <div class="footer-links">
-      <span>Copyright <span id="year"></span> Compass</span>
-      <a href="https://github.com/compass-agent/compass/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-      <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener">GitHub</a>
+  <!-- HERO -->
+  <header id="top" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(35,32,41,0.08);" data-screen-label="Hero">
+    <div aria-hidden="true" style="position:absolute; inset:0;">
+      <img src="images/hero/blueprints-3.jpg" alt="" style="display:block; width:70%; height:100%; max-width:none; object-fit:cover; object-position:left center; margin-left:auto; opacity:0.35; filter:saturate(0.55) hue-rotate(35deg) contrast(0.95) brightness(1.06);">
+      <div style="position:absolute; inset:0; background:linear-gradient(90deg, #FAF9F7 0%, #FAF9F7 42%, rgba(250,249,247,0.82) 62%, rgba(250,249,247,0.25) 100%), linear-gradient(0deg, #FAF9F7 0%, rgba(250,249,247,0) 30%, rgba(250,249,247,0) 75%, rgba(250,249,247,0.7) 100%);"></div>
     </div>
-  </div>
-</footer>
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; position:relative;">
+      <div style="padding:110px 0 96px; max-width:700px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:26px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">
+          <span style="width:22px; height:1.5px; background:#8A55C9;"></span>
+          Open source · MIT licensed
+        </div>
+        <h1 style="margin:0 0 24px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:62px; line-height:1.06; letter-spacing:-0.015em; text-wrap:balance;">Your AI operator for engineering software.</h1>
+        <p style="margin:0 0 32px; max-width:560px; color:#5C5766; font-size:19px; line-height:1.6;">
+          Compass is a stand-alone Windows desktop app you can chat with. It can operate
+          your engineering software like SAP2000, Ansys, or AutoCAD.
+        </p>
+        <ul aria-label="Compass benefits" style="display:grid; gap:12px; margin:0 0 36px; padding:0; list-style:none; color:#232029; font-size:16.5px; font-weight:500;">
+          <li style="display:flex; align-items:center; gap:12px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A55C9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Automate repetitive work.
+          </li>
+          <li style="display:flex; align-items:center; gap:12px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A55C9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Reduce the learning curve.
+          </li>
+          <li style="display:flex; align-items:center; gap:12px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A55C9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Less time on software, more time on real engineering.
+          </li>
+        </ul>
+        <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+          <a id="dl-hero" href="#download" style="min-height:50px; display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:14px 22px; border-radius:12px; background:#8A55C9; color:#fff; font-size:15.5px; font-weight:600; line-height:1; text-decoration:none; box-shadow:0 10px 24px rgba(138,85,201,0.28);" style-hover="background:#7845B8;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download Compass with SAP2000 agent
+          </a>
+          <a href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener" style="min-height:50px; display:inline-flex; align-items:center; justify-content:center; padding:14px 22px; border:1.5px solid rgba(35,32,41,0.22); border-radius:12px; background:transparent; color:#232029; font-size:15.5px; font-weight:600; line-height:1; text-decoration:none;" style-hover="border-color:#232029; background:rgba(35,32,41,0.04);">Contact us for other software</a>
+        </div>
+      </div>
+    </div>
+  </header>
 
+  <main>
+    <!-- SOFTWARE -->
+    <section id="software" style="padding:96px 0;" data-screen-label="Software">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="max-width:640px; margin:0 auto 48px; text-align:center;">
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:40px; line-height:1.15; letter-spacing:-0.01em;">For Windows engineering software</h2>
+          <p style="margin:0; color:#5C5766; font-size:17px;">Compass is designed for desktop tools where real work happens through a GUI, files, scripts, or vendor automation hooks.</p>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:14px;">
+          <article style="display:grid; align-content:start; gap:14px; padding:24px; border:1px solid #E7E4EE; border-radius:16px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 14px 34px rgba(35,32,41,0.08); transform:translateY(-2px);">
+            <div style="height:44px; display:flex; align-items:center;"><img src="images/brand/Ansys_logo_(2019).svg" alt="Ansys logo" style="display:block; max-width:110px; max-height:32px; object-fit:contain;"></div>
+            <div><strong style="display:block; color:#232029; font-size:17px; line-height:1.2;">Ansys</strong>
+            <span style="color:#8B8694; font-size:13.5px; line-height:1.4;">Simulation workflows</span></div>
+          </article>
+          <article style="display:grid; align-content:start; gap:14px; padding:24px; border:1px solid #E7E4EE; border-radius:16px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 14px 34px rgba(35,32,41,0.08); transform:translateY(-2px);">
+            <div style="height:44px; display:flex; align-items:center;"><img src="images/brand/FreeCAD-logo.svg" alt="FreeCAD logo" style="display:block; max-width:110px; max-height:32px; object-fit:contain;"></div>
+            <div><strong style="display:block; color:#232029; font-size:17px; line-height:1.2;">FreeCAD</strong>
+            <span style="color:#8B8694; font-size:13.5px; line-height:1.4;">CAD and modeling</span></div>
+          </article>
+          <article style="display:grid; align-content:start; gap:14px; padding:24px; border:1px solid #E7E4EE; border-radius:16px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 14px 34px rgba(35,32,41,0.08); transform:translateY(-2px);">
+            <div style="height:44px; display:flex; align-items:center;"><img src="images/brand/OpenFOAM_logo.svg" alt="OpenFOAM logo" style="display:block; max-width:110px; max-height:32px; object-fit:contain;"></div>
+            <div><strong style="display:block; color:#232029; font-size:17px; line-height:1.2;">OpenFOAM</strong>
+            <span style="color:#8B8694; font-size:13.5px; line-height:1.4;">CFD workflows</span></div>
+          </article>
+          <article style="display:grid; align-content:start; gap:14px; padding:24px; border:1px solid #E7E4EE; border-radius:16px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 14px 34px rgba(35,32,41,0.08); transform:translateY(-2px);">
+            <div style="height:44px; display:flex; align-items:center;"><img src="images/brand/sap2000-vector-logo.svg" alt="SAP2000 logo" style="display:block; max-width:110px; max-height:32px; object-fit:contain;"></div>
+            <div><strong style="display:block; color:#232029; font-size:17px; line-height:1.2;">SAP2000</strong>
+            <span style="color:#8B8694; font-size:13.5px; line-height:1.4;">Structural analysis</span></div>
+          </article>
+          <article style="display:grid; align-content:start; gap:14px; padding:24px; border:1px solid #E7E4EE; border-radius:16px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 14px 34px rgba(35,32,41,0.08); transform:translateY(-2px);">
+            <div style="height:44px; display:flex; align-items:center;"><img src="images/brand/logo-csiamerica.svg" alt="CSI America logo" style="display:block; max-width:110px; max-height:32px; object-fit:contain;"></div>
+            <div><strong style="display:block; color:#232029; font-size:17px; line-height:1.2;">ETABS</strong>
+            <span style="color:#8B8694; font-size:13.5px; line-height:1.4;">Building design</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- USE CASES -->
+    <section id="use-cases" style="padding:96px 0; background:#F3F1F8; border-top:1px solid rgba(35,32,41,0.06); border-bottom:1px solid rgba(35,32,41,0.06);" data-screen-label="Use cases">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="max-width:620px; margin:0 0 44px;">
+          <div style="margin-bottom:14px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">Use cases</div>
+          <h2 style="margin:0 0 12px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:40px; line-height:1.15; letter-spacing:-0.01em;">Small checks, design studies, and full project workflows.</h2>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px;">
+            <article style="display:grid; align-content:start; gap:14px; padding:30px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M28 116h164" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M38 98l35-34 31 25 43-54 30 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="73" cy="64" r="7" fill="currentColor"></circle><circle cx="147" cy="35" r="7" fill="currentColor"></circle><path d="M42 28h46M42 46h28" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:22px; line-height:1.25;">Analyze results and reports</h3>
+              <p style="margin:0; color:#5C5766; font-size:15px; line-height:1.62;">Review simulation output, warnings, checks, and result tables, then turn them into a clear engineering report.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:14px; padding:30px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><rect x="32" y="30" width="156" height="92" rx="10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M58 58h104M58 86h104" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="92" cy="58" r="8" fill="currentColor"></circle><circle cx="138" cy="86" r="8" fill="currentColor"></circle><path d="M72 122v18M148 122v18" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:22px; line-height:1.25;">Prepare model setup</h3>
+              <p style="margin:0; color:#5C5766; font-size:15px; line-height:1.62;">Handle repeated assignments, settings, load definitions, and setup checks before analysis.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:14px; padding:30px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M110 44v18M110 62L62 104M110 62l48 42" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><rect x="78" y="16" width="64" height="28" rx="7" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><rect x="30" y="104" width="64" height="28" rx="7" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><rect x="126" y="104" width="64" height="28" rx="7" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><circle cx="110" cy="62" r="7" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:22px; line-height:1.25;">Compare design options</h3>
+              <p style="margin:0; color:#5C5766; font-size:15px; line-height:1.62;">Study alternatives in geometry, materials, member sizes, parameters, or analysis settings.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:14px; padding:30px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M58 76a52 52 0 0 1 92-33" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M150 43h-30M150 43v-30" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M162 76a52 52 0 0 1-92 33" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M70 109h30M70 109v30" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="110" cy="76" r="12" fill="currentColor"></circle></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:22px; line-height:1.25;">Run design optimization</h3>
+              <p style="margin:0; color:#5C5766; font-size:15px; line-height:1.62;">Iterate on an initial geometry and evaluate changes across performance, weight, and constructability.</p>
+            </article>
+            <article style="display:grid; align-content:start; gap:14px; padding:30px; border:1px solid #E2DDEC; border-radius:18px; background:#FBFAFD; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+              <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;" aria-hidden="true"><path d="M46 42h86a20 20 0 0 1 0 40H92a20 20 0 0 0 0 40h82" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="46" cy="42" r="8" fill="currentColor"></circle><circle cx="174" cy="122" r="8" fill="currentColor"></circle><path d="M118 28l14 14-14 14" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:22px; line-height:1.25;">Guide complex software</h3>
+              <p style="margin:0; color:#5C5766; font-size:15px; line-height:1.62;">Help engineers find commands, understand workflows, and avoid the setup mistakes that slow projects down.</p>
+            </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO (dark warm band) -->
+    <section id="demo" style="padding:96px 0; background:#26212E;" data-screen-label="Demo">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="max-width:680px; margin:0 auto 44px; text-align:center;">
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:40px; line-height:1.15; letter-spacing:-0.01em; color:#F5F3F8;">Watch Compass Agent for SAP2000</h2>
+          <p style="margin:0; color:#B0A9BE; font-size:17px;">Performing an end-to-end analysis for a parking steel deck frame structure.</p>
+        </div>
+        <div style="max-width:920px; margin:0 auto; overflow:hidden; border:1px solid rgba(245,243,248,0.14); border-radius:18px; background:#161320; box-shadow:0 40px 90px rgba(0,0,0,0.4);">
+          <video controls preload="metadata" playsinline poster="images/thumbnail/compass-thumbnail.png" style="display:block; width:100%; height:auto; max-width:100%; background:#161320;">
+            <source src="images/anim/Compass-HeroPage.mp4" type="video/mp4">
+            <source src="images/anim/Compass-HeroPage.mov" type="video/quicktime">
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section id="how" style="padding:96px 0;" data-screen-label="How it works">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="max-width:640px; margin:0 0 40px;">
+          <div style="margin-bottom:14px; color:#7A4AB5; font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">How it works</div>
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:40px; line-height:1.15; letter-spacing:-0.01em;">An agent that works the loop, not just the chat.</h2>
+          <p style="margin:0; color:#5C5766; font-size:17px; line-height:1.65;">Compass is a <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener" style="color:#232029; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.6); text-decoration-thickness:1.5px; text-underline-offset:4px;" style-hover="color:#8A55C9;">ReAct-style</a> desktop agent. It runs a simple loop against your real software — and picks the right control surface for each step, not only chat about it.</p>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:22px; align-items:stretch; padding:34px 36px; margin-bottom:22px; border-radius:20px; background:#26212E; border:1px solid rgba(245,243,248,0.08);">
+
+            <div style="flex:1 1 0; min-width:170px; display:grid; gap:8px;">
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">01</span>
+                <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Reason</span>
+              </div>
+              <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">It thinks about the goal and the current state of the model before touching anything.</p>
+            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,248,0.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto; align-self:center;"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+            <div style="flex:1 1 0; min-width:170px; display:grid; gap:8px;">
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">02</span>
+                <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Act</span>
+              </div>
+              <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">It works inside the target software — mouse, keyboard, or a repeatable script.</p>
+            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,248,0.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto; align-self:center;"><line x1="4" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg>
+            <div style="flex:1 1 0; min-width:170px; display:grid; gap:8px;">
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <span style="font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:30px; line-height:1; color:#8A55C9;">03</span>
+                <span style="font-size:18px; font-weight:600; color:#F5F3F8;">Observe</span>
+              </div>
+              <p style="margin:0; color:#B0A9BE; font-size:14px; line-height:1.55;">It reads what changed on screen and in the results, then continues the loop.</p>
+            </div>
+          <div title="Repeats until done" aria-label="Repeats until done" style="flex:0 0 auto; align-self:center; display:grid; place-items:center; width:46px; height:46px; border-radius:999px; border:1px solid rgba(138,85,201,0.5); background:rgba(138,85,201,0.14); color:#CBB2F0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+
+          <article style="position:relative; display:grid; align-content:start; gap:16px; padding:30px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+            <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;" aria-hidden="true"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;"><rect x="32" y="24" width="156" height="92" rx="10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M110 116v16M84 132h52" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M56 48h44M56 66h28" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M118 56l42 17-18 6-7 18z" fill="currentColor"></path></svg></div>
+            <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:21px; line-height:1.25;">Vision-grounded computer use</h3>
+            <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">It reads the screen through application-specific visual context, then moves the mouse and types against real controls rather than guessing from raw pixels. <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener" style="color:#232029; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.6); text-decoration-thickness:1.5px; text-underline-offset:4px;" style-hover="color:#8A55C9;">Learn about computer use</a>.</p>
+
+          </article>
+          <article style="position:relative; display:grid; align-content:start; gap:16px; padding:30px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+            <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;" aria-hidden="true"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;"><rect x="32" y="22" width="156" height="106" rx="10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><circle cx="52" cy="42" r="5" fill="currentColor"></circle><circle cx="70" cy="42" r="5" fill="currentColor"></circle><path d="M56 72l18 14-18 14" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M94 100h38" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:21px; line-height:1.25;">Native scripting when available</h3>
+            <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">For software such as SAP2000, it can call <a href="https://learn.microsoft.com/en-us/windows/win32/com/the-component-object-model" target="_blank" rel="noopener" style="color:#232029; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.6); text-decoration-thickness:1.5px; text-underline-offset:4px;" style-hover="color:#8A55C9;">COM automation</a> through Python <a href="https://pypi.org/project/comtypes/" target="_blank" rel="noopener" style="color:#232029; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.6); text-decoration-thickness:1.5px; text-underline-offset:4px;" style-hover="color:#8A55C9;">comtypes</a> — repeatable scripts for operations that should not depend on clicks.</p>
+
+          </article>
+          <article style="position:relative; display:grid; align-content:start; gap:16px; padding:30px; border:1px solid #E7E4EE; border-radius:18px; background:#FFFFFF; transition:box-shadow 160ms ease, transform 160ms ease;" style-hover="box-shadow:0 16px 40px rgba(35,32,41,0.09); transform:translateY(-2px);">
+            <div style="width:110px; height:74px; color:#8A55C9; opacity:0.85;" aria-hidden="true"><svg viewBox="0 0 220 150" style="display:block; width:100%; height:100%;"><path d="M64 34v-6a10 10 0 0 1 10-10h72a10 10 0 0 1 10 10v70" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><rect x="48" y="34" width="92" height="98" rx="10" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></rect><path d="M66 62h56M66 82h56M66 102h36" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <h3 style="margin:0; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:21px; line-height:1.25;">Workflow knowledge that can be reused</h3>
+            <p style="margin:0; color:#5C5766; font-size:14.5px; line-height:1.62;">Prompts, screen templates, documentation, scripts, and project conventions can be captured so the agent gets deeper for a specific tool or team.</p>
+
+          </article>
+        </div>
+
+        <p style="color:#8B8694; font-size:14.5px; line-height:1.6; margin:22px 0 0;">That is the role of <a href="agenthub.html" style="color:#8A55C9; font-weight:600; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.5); text-decoration-thickness:1.5px; text-underline-offset:4px;">AgentHub</a>: turning domain and product knowledge into specialized agents for complex desktop software.</p>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section id="download" style="padding:40px 0 110px;" data-screen-label="Download">
+      <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto;">
+        <div style="padding:64px 40px; border-radius:24px; background:#F3F1F8; border:1px solid #E2DDEC; text-align:center;">
+          <h2 style="margin:0 0 14px; font-family:'Source Serif 4', Georgia, serif; font-weight:600; font-size:40px; line-height:1.15; letter-spacing:-0.01em;">Download Compass</h2>
+          <p style="margin:0 auto 30px; max-width:600px; color:#5C5766; font-size:16px; line-height:1.65;">The current Windows release comes preloaded with the SAP2000 agent. For other engineering software or workflows, <a href="https://github.com/compass-agent/compass/issues/new" target="_blank" rel="noopener" style="color:#232029; text-decoration:underline; text-decoration-color:rgba(138,85,201,0.6); text-underline-offset:3px;">contact us</a>.</p>
+          <a id="dl-btn" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener" style="min-height:50px; display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:14px 24px; border-radius:12px; background:#8A55C9; color:#fff; font-size:15.5px; font-weight:600; line-height:1; text-decoration:none; box-shadow:0 10px 24px rgba(138,85,201,0.25);" style-hover="background:#7845B8;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span id="dl-btn-text">See GitHub Releases</span>
+          </a>
+          <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:18px; margin-top:22px; color:#6E6878; font-size:13.5px; font-weight:600;">
+            <a href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">All releases</a>
+            <a id="dl-notes" href="https://github.com/compass-agent/compass/releases" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">Release notes</a>
+          </div>
+          <p id="dl-note" style="margin:18px 0 0; color:#8B8694; font-size:13px;">Open the latest GitHub release to download the Windows installer.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="padding:36px 0 44px; border-top:1px solid rgba(35,32,41,0.08); color:#8B8694; font-size:13.5px;" data-screen-label="Footer">
+    <div style="width:min(1140px, calc(100% - 48px)); margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+      <a href="#top" style="display:inline-flex; align-items:center; gap:10px; color:#6E6878; font-size:15px; font-weight:700; text-decoration:none;">
+        <svg viewBox="0 0 100 100" aria-hidden="true" style="width:26px; height:26px; display:block;">
+          <defs><mask id="footer-gap-r"><rect width="100" height="100" fill="white"></rect><circle cx="73.3" cy="26.7" r="19.5" fill="black"></circle></mask></defs>
+          <circle cx="50" cy="50" r="29" fill="none" stroke="#6E6878" stroke-width="8" mask="url(#footer-gap-r)"></circle>
+          <circle cx="73.3" cy="26.7" r="13" fill="#8A55C9"></circle>
+        </svg>
+        Compass
+      </a>
+      <div style="display:flex; flex-wrap:wrap; gap:16px;">
+        <span>Copyright 2026 Compass</span>
+        <a href="https://github.com/compass-agent/compass/blob/main/LICENSE" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">MIT License</a>
+        <a href="https://github.com/compass-agent/compass" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;" style-hover="text-decoration:underline;">GitHub</a>
+      </div>
+    </div>
+  </footer>
+</div>
 <script>
-  document.getElementById("year").textContent = new Date().getFullYear();
+(function () {
+  var repo = "compass-agent/compass";
+  var releasesUrl = "https://github.com/" + repo + "/releases";
+  var apiUrl = "https://api.github.com/repos/" + repo + "/releases/latest";
 
-  document.querySelectorAll("[data-scroll-target]").forEach(function (button) {
-    button.addEventListener("click", function () {
-      var rail = document.querySelector(button.getAttribute("data-scroll-target"));
-      if (!rail) return;
-      var direction = Number(button.getAttribute("data-scroll-dir")) || 1;
-      var distance = Math.min(rail.clientWidth * 0.85, 520);
-      rail.scrollBy({ left: direction * distance, behavior: "smooth" });
+  function setReleaseFallback() {
+    var btn = document.getElementById("dl-btn");
+    var hero = document.getElementById("dl-hero");
+    var text = document.getElementById("dl-btn-text");
+    var note = document.getElementById("dl-note");
+    if (btn) btn.href = releasesUrl;
+    if (hero) hero.href = "#download";
+    if (text) text.textContent = "See GitHub Releases";
+    if (note) note.textContent = "Open the latest GitHub release to download the Windows installer.";
+  }
+
+  function findInstaller(assets) {
+    return (assets || []).find(function (asset) {
+      return /^Compass-Setup-.*\.exe$/i.test(asset.name);
+    }) || (assets || []).find(function (asset) {
+      return /\.exe$/i.test(asset.name) && !/blockmap/i.test(asset.name);
     });
-  });
+  }
 
-  (function () {
-    var repo = "compass-agent/compass";
-    var releasesUrl = "https://github.com/" + repo + "/releases";
-    var apiUrl = "https://api.github.com/repos/" + repo + "/releases/latest";
-
-    function formatDate(value) {
-      if (!value) return "";
-      return new Date(value).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      });
-    }
-
-    function chooseInstaller(assets) {
-      assets = assets || [];
-      return assets.find(function (asset) {
-        return /^Compass-Setup-.*\.exe$/i.test(asset.name);
-      }) || assets.find(function (asset) {
-        return /\.exe$/i.test(asset.name) && !/blockmap/i.test(asset.name);
-      });
-    }
-
-    function setFallback() {
-      document.getElementById("dl-btn").href = releasesUrl;
-      document.getElementById("dl-hero").href = "#download";
-      document.getElementById("dl-btn-text").textContent = "See GitHub Releases";
-      document.getElementById("dl-note").textContent = "The first Windows installer has not been published yet. After the first release, this button will update automatically.";
-    }
-
-    fetch(apiUrl)
+  function applyLatestRelease() {
+    fetch(apiUrl, { headers: { Accept: "application/vnd.github+json" } })
       .then(function (response) {
-        if (!response.ok) throw new Error("No release found");
+        if (!response.ok) throw new Error("No published release");
         return response.json();
       })
       .then(function (release) {
-        var installer = chooseInstaller(release.assets);
-        if (!installer) throw new Error("No Windows installer asset found");
-
-        var version = release.tag_name || release.name || "latest";
-        var published = formatDate(release.published_at);
-        var sizeMb = installer.size ? Math.round(installer.size / 1048576) : null;
-        var meta = [];
-        if (published) meta.push(published);
-        if (sizeMb) meta.push(sizeMb + " MB");
-        meta.push(".exe installer");
-
-        document.getElementById("dl-btn").href = installer.browser_download_url;
-        document.getElementById("dl-btn-text").textContent = "Download Compass " + version;
-        document.getElementById("dl-hero").href = installer.browser_download_url;
-        document.getElementById("dl-notes").href = release.html_url || releasesUrl;
-        document.getElementById("dl-note").textContent = "No account required.";
+        var installer = findInstaller(release.assets);
+        if (!installer || !installer.browser_download_url) {
+          setReleaseFallback();
+          return;
+        }
+        var version = (release.tag_name || "latest").replace(/^v/i, "");
+        var btn = document.getElementById("dl-btn");
+        var hero = document.getElementById("dl-hero");
+        var text = document.getElementById("dl-btn-text");
+        var notes = document.getElementById("dl-notes");
+        var note = document.getElementById("dl-note");
+        if (btn) btn.href = installer.browser_download_url;
+        if (hero) hero.href = installer.browser_download_url;
+        if (text) text.textContent = "Download Compass " + version;
+        if (notes) notes.href = release.html_url || releasesUrl;
+        if (note) note.textContent = "No account required.";
       })
-      .catch(setFallback);
-  })();
+      .catch(setReleaseFallback);
+  }
+  function init() {
+    applyLatestRelease();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+}());
 </script>
 </body>
 </html>
