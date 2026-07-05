@@ -1,7 +1,7 @@
 {
   "name": "compass",
   "productName": "Compass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "frontend/main/main.js",
   "scripts": {
     "setup": "python -m venv .venv && .venv\\Scripts\\pip install -r backend\\requirements.txt && npm install",
