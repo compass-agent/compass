@@ -15,7 +15,7 @@
     "build": "webpack --mode production",
     "clean": "rimraf dist/ build/",
     "build:backend": ".venv\\Scripts\\python.exe -m PyInstaller --clean --noconfirm backend\\compass_backend.spec --distpath backend\\dist --workpath backend\\build",
-    "package-win": "npm run clean && npm run build && electron-builder build --win",
+    "package-win": "npm run clean && npm run build && electron-builder build --win --publish never",
     "dist:win": "npm run build:backend && npm run package-win",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "electron-builder install-app-deps"
